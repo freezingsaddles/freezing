@@ -24,6 +24,9 @@ jobs:
         run: |
           pip install uv==0.12.15
           uv sync --frozen --all-packages --all-extras
+      - name: common tests
+        working-directory: packages/common
+        run: uv run --no-sync pytest
       - name: sync tests
         working-directory: apps/sync
         run: APP_SETTINGS=example.cfg uv run --no-sync pytest -m "not live"
