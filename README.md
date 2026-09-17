@@ -20,8 +20,7 @@ repositories, whose histories are preserved here.
 
 The Python projects form a [uv](https://docs.astral.sh/uv/) workspace with a
 single lock file. `freezing-model` is a workspace dependency of each app, so a
-change to the model and the code that uses it land in one pull request; there
-is no separate model release.
+change to the model and the code that uses it land in one pull request.
 
     uv sync --all-packages --all-extras   # one virtualenv for everything
     uv run black --check .                 # formatting, isort and flake8 the same way
@@ -29,9 +28,7 @@ is no separate model release.
     cd apps/sync && APP_SETTINGS=example.cfg uv run pytest -m "not live"
     cd apps/nq && uv run pytest
 
-Each app has its own `README.md` with runtime configuration details. The
-`infra` directory is Scala and sbt rather than Python; see its
-[README](infra/README.md).
+Each app has its own `README.md` with runtime configuration details.
 
 Dependency versions are pinned by `uv.lock`; the apps declare compatible
 ranges, the model declares the ranges it supports, and dependabot updates the
