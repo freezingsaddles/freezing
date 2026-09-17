@@ -1,9 +1,9 @@
 import json
 
 import arrow
+
 from freezing.model.msg.mq import ActivityUpdate, DefinedTubes
 from freezing.model.msg.strava import AspectType
-
 from freezing.nq.config import config
 from freezing.nq.publish import ActivityPublisher
 

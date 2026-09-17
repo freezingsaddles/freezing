@@ -1,14 +1,14 @@
 import logging
 from typing import Dict, List
 
-from freezing.model import meta
-from freezing.model.orm import Ride, RideGeo, RideTrack
 from geoalchemy2.elements import WKTElement
 from sqlalchemy import and_
 from sqlalchemy.orm import joinedload
 from stravalib.exc import ObjectNotFound
 from stravalib.model import Stream
 
+from freezing.model import meta
+from freezing.model.orm import Ride, RideGeo, RideTrack
 from freezing.sync.config import config
 from freezing.sync.exc import ActivityNotFound
 from freezing.sync.utils import wktutils

@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from statistics import mean
 
-from freezing.model import meta, orm
 from pytz import timezone
 from sqlalchemy import text
 
+from freezing.model import meta, orm
 from freezing.sync.config import config
 from freezing.sync.data import BaseSync
 from freezing.sync.utils.wktutils import parse_point_wkt

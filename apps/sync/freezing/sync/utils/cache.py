@@ -87,7 +87,7 @@ class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
         athlete_id: int,
         object_id: int,
         use_cache: bool = True,
-        only_cache: bool = False
+        only_cache: bool = False,
         # ):
     ) -> Optional[BoundClientEntity]:
         pass
@@ -98,7 +98,7 @@ class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
         athlete_id: int,
         object_id: int,
         use_cache: bool = True,
-        only_cache: bool = False
+        only_cache: bool = False,
     ) -> Optional[Any]:
         """
         Fetches an object, possibly from cache, and returns the JSON for it.
@@ -181,7 +181,7 @@ class CachingActivityFetcher(CachingAthleteObjectFetcher):
         athlete_id: int,
         object_id: int,
         use_cache: bool = True,
-        only_cache: bool = False
+        only_cache: bool = False,
     ) -> Optional[DetailedActivity]:
         """
         Fetches activity and returns it.
@@ -221,7 +221,7 @@ class CachingStreamFetcher(CachingAthleteObjectFetcher):
         athlete_id: int,
         object_id: int,
         use_cache: bool = True,
-        only_cache: bool = False
+        only_cache: bool = False,
     ) -> Optional[List[Stream]]:
         """
         Fetches activity and returns it.

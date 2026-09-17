@@ -10,11 +10,11 @@ from datetime import datetime, timedelta
 
 from dateutil import rrule
 from flask import Blueprint, jsonify
-from freezing.model import meta
-from freezing.model.orm import Team
 from pytz import utc
 from sqlalchemy import text
 
+from freezing.model import meta
+from freezing.model.orm import Team
 from freezing.web import config
 from freezing.web.views.shared_sql import (
     indiv_freeze_query,

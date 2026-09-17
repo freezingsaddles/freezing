@@ -11,11 +11,11 @@ from pathlib import Path
 import arrow
 import pytz
 from flask import Blueprint, abort, jsonify, make_response, request, session
-from freezing.model import meta
-from freezing.model.orm import Athlete, Ride, RidePhoto, RideTrack
 from sqlalchemy import func, text
 from werkzeug.utils import secure_filename
 
+from freezing.model import meta
+from freezing.model.orm import Athlete, Ride, RidePhoto, RideTrack
 from freezing.web import config
 from freezing.web.autolog import log
 from freezing.web.serialize import RidePhotoSchema

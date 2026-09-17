@@ -17,11 +17,11 @@ from urllib.parse import urlparse
 
 import yaml
 from flask import Flask, g, session
+from marshmallow import fields
+
 from freezing.model import init_model, meta
 from freezing.model.msg import BaseMessage, BaseSchema
 from freezing.model.orm import Athlete, Team
-from marshmallow import fields
-
 from freezing.web.autolog import log
 from freezing.web.utils.genericboard import load_board
 from freezing.web.utils.hashboard import load_hashboard

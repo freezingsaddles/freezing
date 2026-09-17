@@ -2,8 +2,8 @@ import json
 from typing import Any
 
 import greenstalk
-from freezing.model.msg.mq import DefinedTubes
 
+from freezing.model.msg.mq import DefinedTubes
 from freezing.nq.autolog import log
 from freezing.nq.config import config
 

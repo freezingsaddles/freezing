@@ -3,11 +3,11 @@ import threading
 from time import sleep
 
 import greenstalk
+
 from freezing.model import meta
 from freezing.model.msg.mq import ActivityUpdate, ActivityUpdateSchema
 from freezing.model.msg.strava import AspectType
 from freezing.model.orm import Athlete
-
 from freezing.sync.autolog import log
 from freezing.sync.config import Config, statsd
 from freezing.sync.data.activity import ActivitySync

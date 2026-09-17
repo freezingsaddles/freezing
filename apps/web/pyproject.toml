@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 # https://peps.python.org/pep-0420/
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["freezing"]
+include = ["freezing*"]
 namespaces = true
 
 [project]
@@ -25,22 +25,23 @@ authors = [
     {name = "Joe Tatsuko"}
 ]
 license = {text = "Apache License (2.0)"}
+requires-python = ">=3.10"
 dependencies = [
-    "Flask==3.1.3",
-    "PyMySQL[rsa]==1.1.2",
-    "PyYAML==6.0.3",
-    "SQLAlchemy==2.0.52",
+    "Flask>=3.1.3,<4",
+    "PyMySQL[rsa]>=1.1.2,<2",
+    "PyYAML>=6.0.3,<7",
+    "SQLAlchemy>=2.0.52,<3",
     # Thanks https://stackoverflow.com/a/77214086/424301 - Flask did not pin Werkzeug dep
-    "Werkzeug==3.1.8",
-    "arrow==1.4.0",
-    "colorlog==6.10.1",
-    "python-dateutil==2.9.0.post0",
-    "envparse==0.2.0",
-    "freezing-model @ https://github.com/freezingsaddles/freezing-model/archive/0.13.0.tar.gz",
-    "marshmallow==4.3.1",
-    "python-instagram==1.3.2",
-    "pytz==2025.2",
-    "stravalib==2.4",
+    "Werkzeug>=3.1.8,<4",
+    "arrow>=1.4.0,<2",
+    "colorlog>=6.10.1,<7",
+    "python-dateutil>=2.9.0.post0,<3",
+    "envparse>=0.2.0,<1",
+    "freezing-model",
+    "marshmallow>=4.3.1,<5",
+    "python-instagram>=1.3.2,<2",
+    "pytz>=2025.2",
+    "stravalib>=2.4,<3",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -54,47 +55,12 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "autoflake==2.4.0",
-    "bandit==1.9.4",
-    "black==26.5.1",
-    "djlint==1.36.4",
-    "fawltydeps==0.20.0",
-    "flake8==7.3.0",
-    "flake8-pyproject==1.2.4",
-    "isort==9.0.1",
-    "pre-commit==4.6.2",
-    "pymarkdownlnt==0.9.37",
-]
 runtime = [
-    "gunicorn==26.2.0",
+    "gunicorn>=26.2.0,<27",
 ]
-
-[tool.isort]
-profile = "black"
-
-[tool.djlint]
-line_break_after_multiline_tag=true
-max_line_length=88
-
-[tool.pymarkdown]
-plugins.md013.enabled = false
-extensions.front-matter.enabled = true
 
 [project.scripts]
 freezing-server = "freezing.web.runserver:main"
-
-[tool.flake8]
-# Thanks https://www.reddit.com/r/learnpython/comments/rr6y69/comment/hqeqt68/?utm_source=share&utm_medium=web2x&context=3
-ignore = [
-    "E203",
-    "E501",
-    "W503",
-]
-max-line-length = 88
-max-complexity = 39
-extend-ignore = "E203"
-inline-quotes = "double"
 
 [tool.fawltydeps]
 ignore_unused = [
@@ -112,3 +78,11 @@ ignore_unused = [
     "pre-commit",
     "pymarkdownlnt",
 ]
+
+[tool.uv.sources]
+freezing-model = { workspace = true }
+
+# djlint looks for its config next to the templates, not at the workspace root
+[tool.djlint]
+line_break_after_multiline_tag=true
+max_line_length=88

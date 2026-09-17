@@ -12,8 +12,9 @@ from flask import (
     Blueprint,
     render_template,
 )
-from freezing.model import meta
 from sqlalchemy import text
+
+from freezing.model import meta
 
 blueprint = Blueprint("explore", __name__)
 

@@ -2,10 +2,10 @@ from datetime import timedelta
 from math import ceil
 
 from flask import Blueprint, abort, render_template
-from freezing.model import meta
-from freezing.model.orm import Team
 from sqlalchemy import text
 
+from freezing.model import meta
+from freezing.model.orm import Team
 from freezing.web import config
 
 blueprint = Blueprint("teams", __name__)

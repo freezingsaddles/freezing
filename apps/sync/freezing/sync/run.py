@@ -2,10 +2,10 @@ import threading
 
 import arrow
 from apscheduler.schedulers.background import BackgroundScheduler
-from freezing.model import init_model
-from freezing.model.msg.mq import DefinedTubes
 from greenstalk import Client
 
+from freezing.model import init_model
+from freezing.model.msg.mq import DefinedTubes
 from freezing.sync.autolog import log
 from freezing.sync.config import config, init_logging
 from freezing.sync.data.activity import ActivitySync

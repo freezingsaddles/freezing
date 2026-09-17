@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from freezing.model import meta
-from freezing.model.orm import Athlete, Team
 from stravalib import model as sm
 
+from freezing.model import meta
+from freezing.model.orm import Athlete, Team
 from freezing.sync.config import config
 from freezing.sync.exc import MultipleTeamsError, NoTeamsError
 
