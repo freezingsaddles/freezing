@@ -17,3 +17,8 @@ updates:
       - "/docker/beanstalkd"
     schedule:
       interval: "weekly"
+    ignore:
+      # The Python version is pinned for the whole workspace in .python-version;
+      # bump it there deliberately, not per Dockerfile.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
