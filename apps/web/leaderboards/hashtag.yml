@@ -222,6 +222,7 @@ tags:
       Tag your ride with hashtag <code>lolfunny</code> and add the photo to your ride in Strava.
       If it's not obvious, add a description to the photo of what about it struck you as funny.
     discord: 1457486832831959151
+    freezebot: true
     sponsors: [2831630]
     rank_by: days
     default_view: photos
