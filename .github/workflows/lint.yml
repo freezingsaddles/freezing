@@ -1,0 +1,57 @@
+---
+name: Lint
+
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python Lint
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+      - name: Install workspace
+        run: |
+          pip install uv==0.12.15
+          uv sync --frozen --all-packages --all-extras
+      - name: black
+        run: uv run --no-sync black --check --diff .
+      - name: isort
+        run: uv run --no-sync isort --check-only --diff .
+      - name: flake8
+        # There are too many findings to start with to fail on this
+        continue-on-error: true
+        run: uv run --no-sync flake8 .
+      - name: fawltydeps
+        run: |
+          for member in packages/model apps/web apps/sync apps/nq; do
+            echo "::group::$member"
+            (cd "$member" && uv run --no-sync fawltydeps --pyenv "$GITHUB_WORKSPACE/.venv")
+            echo "::endgroup::"
+          done
+
+  templates:
+    name: Templates Lint
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+      - name: Install workspace
+        run: |
+          pip install uv==0.12.15
+          uv sync --frozen --only-dev
+      - name: djlint
+        run: uv run --no-sync djlint --check apps/web/freezing/web/templates
+      - name: pymarkdown
+        run: uv run --no-sync pymarkdown scan apps/web

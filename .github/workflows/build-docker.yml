@@ -1,0 +1,61 @@
+---
+name: Docker Build and maybe Push
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: 'app directory under apps/ (also the image name suffix)'
+        required: true
+        type: string
+      org:
+        default: freezingsaddles
+        description: 'Docker Hub organization'
+        required: false
+        type: string
+      tag:
+        default: latest
+        description: 'tag for Docker container'
+        required: false
+        type: string
+      push:
+        default: false
+        description: 'push the image to Docker Hub (requires the DOCKERHUB secrets)'
+        required: false
+        type: boolean
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: false
+      DOCKERHUB_TOKEN:
+        required: false
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Stamp version
+        run: |
+          if [ -x "apps/${{ inputs.app }}/bin/freeze.sh" ]; then
+            (cd "apps/${{ inputs.app }}" && bin/freeze.sh)
+          fi
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v3
+      - name: Login to Docker Hub
+        if: ${{ inputs.push }}
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and maybe push
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v6
+        with:
+          context: .
+          file: apps/${{ inputs.app }}/Dockerfile
+          push: ${{ inputs.push }}
+          tags: ${{ inputs.org }}/freezing-${{ inputs.app }}:${{ inputs.tag }}
