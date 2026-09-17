@@ -57,10 +57,6 @@ extend-ignore = "E203"
 inline-quotes = "double"
 exclude = [".venv", ".git", "__pycache__", "build", "dist"]
 
-[tool.djlint]
-line_break_after_multiline_tag=true
-max_line_length=88
-
 [tool.pymarkdown]
 plugins.md013.enabled = false
 extensions.front-matter.enabled = true
