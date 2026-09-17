@@ -1,6 +1,6 @@
 # freezing-model
 
-# SQLAlchemy model for Freezing Saddles database
+SQLAlchemy model for the Freezing Saddles database.
 
 This package uses [SQLAlchemy](https://www.sqlalchemy.org/) to model the
 database tables for the Freezing Saddles database. It uses
@@ -8,9 +8,11 @@ database tables for the Freezing Saddles database. It uses
 
 ## Usage
 
-This is intended for use with the other
-[Freezing Saddles projects](https://github.org/freezingsaddles/) projects
-including [freezing-web](https://github.org/freezingsaddles/freezing-web).
+This is a workspace member used by the apps in this repository:
+[web](../../apps/web), [sync](../../apps/sync) and [nq](../../apps/nq).
+There is no separate release; a change to the model and the app code that
+uses it land in the same pull request.
+
 When used from `freezing-web` it will retrieve its database configuration
 from the [Flask](http://flask.pocoo.org/) application configuration. When
 used from the command line, it will take its configuration from the
@@ -19,57 +21,35 @@ used from the command line, it will take its configuration from the
 You can override the database URL by specifying a `SQLALCHEMY_URL` environment
 variable, for example:
 
+    cd packages/model
     export SQLALCHEMY_URL='mysql+pymysql://user:password@127.0.0.1/freezing?charset=utf8mb4&binary_prefix=true'
-    PYTHONPATH=$(pwd) alembic current
-    PYTHONPATH=$(pwd) alembic upgrade head
-
-### Coding standards
-
-The `freezing-web` code is intended to be [PEP-8](https://www.python.org/dev/peps/pep-0008/) compliant. Code formatting is done with [black](https://black.readthedocs.io/en/stable/) and [isort](https://pycqa.github.io/isort/) and can be linted with [flake8](http://flake8.pycqa.org/en/latest/). See the [.flake8](.flake8) file and install the `dev` dependencies to get these tools (`pip install -e '.[dev]'`).
+    uv run alembic current
+    uv run alembic upgrade head
 
 ## Developing
 
-This project uses [setuptools](https://setuptools.readthedocs.io/en/latest/) for packaging with a modern [pyproject.toml](https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html) configuration. To get started, create a virtual environment and install the dependencies:
-
-    python3.10 -m venv env  # new pythons cause sadness and upset
-    source env/bin/activate
-    pip install -e '.[dev]'  # install with linters for development
-
-### Linting
-
-This project uses [flake8](http://flake8.pycqa.org/en/latest/) for linting. To run the linter:
-
-    flake8 freezing
-
-This project uses black for code formatting. To format the code:
-
-    black freezing
-
-This project uses isort for sorting imports. To sort the imports:
-
-    isort freezing
+Install, lint and format from the repository root as described in the
+[top-level README](../../README.md); there is nothing package-specific to set
+up. The commands below assume you are in `packages/model`, where
+`alembic.ini` lives.
 
 ## Altering the schema
 
 Alter `orm.py` to add your new tables or fields to the ORM. This will be used when initializing a database from scratch.
 
-Alter your `PYTHONPATH` so Python can find `freezing`:
-
-    export PYTHONPATH=$(pwd)
-
 Create a migration script:
 
-    alembic revision -m "description of change"
+    uv run alembic revision -m "description of change"
 
 Edit the resulting migration script to upgrade and downgrade.
 
 Check your current version:
 
-    alembic current
+    uv run alembic current
 
 Apply the changes:
 
-    alembic upgrade head
+    uv run alembic upgrade head
 
 Check your table with mysql:
 
@@ -78,7 +58,7 @@ Check your table with mysql:
 
 Unapply the changes using the version from the current command:
 
-    alembic downgrade <version>
+    uv run alembic downgrade <version>
 
 You can then re-upgrade and be done.
 

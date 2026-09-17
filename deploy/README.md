@@ -1,6 +1,6 @@
 # Freezing Saddles Docker Compose Files
 
-This project is for deploying the Freezing Saddles application for either development or production.
+This directory holds the Docker Compose files and server scripts for deploying the Freezing Saddles application for either development or production. The application images are built from the app directories in this repository; see the [top-level README](../README.md).
 
 Before you get started, we assume you have already installed [Docker](https://docker.com) and [Docker Compose](https://docs.docker.com/compose/). Older versions of Docker may not work properly, as they may not support some features this uses, such as buildsteps. This has been tested with these versions:
 
@@ -24,7 +24,7 @@ The `docker-compose.yml` file does not define a service for the database, but th
 
 To make it easier to deal with both of these files at once, please create an alias in your shell:
 ```shell
-alias docker-compose-dev='docker-compose -f docker-compose.yml -f docker-compose.dev.yml'
+alias docker-compose-dev='docker compose -f docker-compose.yml -f docker-compose.dev.yml'
 ```
 Add this to your `$HOME/.profile` or `$HOME/.bash_profile` to make it permanent.
 
@@ -35,28 +35,28 @@ Start by cloning this repository on your development workstation.
 For example:
 
 ```shell
-git clone https://github.com/freezingsaddles/freezing-compose
+git clone https://github.com/freezingsaddles/freezing
 ```
 
-Now you can confirm that docker-compose is working correctly by changing to that directory and executing `docker-compose` commands.
+Now you can confirm that Docker Compose is working correctly by changing to the `deploy` directory and executing `docker compose` commands.
 
 ```shell
-cd freezing-compose
-docker-compose ps
+cd freezing/deploy
+docker compose ps
 ```
 
 You should see lots of warnings about undefined configuration variables. Good! We will get to that next.
 
-### 1.2 Configure Environment Variables for `docker-compose` in `.env` file
+### 1.2 Configure Environment Variables for `docker compose` in `.env` file
 
-Copy the `example.env` file to a file named `.env`.  This is where `docker-compose` will look for environment variables.
+Copy the `example.env` file to a file named `.env`.  This is where `docker compose` will look for environment variables.
 ```shell
-cp sample-env .env
+cp example.env .env
 # edit the environment
 vi .env
 ```
 
-See [sample.env](sample.env) for a complete annotated example of a docker-compose `.env` file.
+See [example.env](example.env) for a complete annotated example of a docker compose `.env` file.
 
 These environment variables will be passed in to the various services that need them. Look through them the `docker-compose.yml` file to see how that works.
 
@@ -64,8 +64,8 @@ For development, you won't need all the values, so don't worry about needing to 
 
 ### 1.3 Configure and Start MySQL Only
 
-We recommend that for development, you run MySQL through Docker and `docker-compose`. To start up 
-start up MySQL using `docker-compose`, follow these steps:
+We recommend that for development, you run MySQL through Docker and `docker compose`. To start up 
+start up MySQL using `docker compose`, follow these steps:
 
 1. Make sure that you have edited your `.env` file to have different passwords for MYSQL_ROOT_PASSWORD and MYSQL_PASSWORD
 2. Create the named volume Docker will use for the MySQL database
@@ -83,7 +83,7 @@ docker volume create --name=beanstalkd-data
 ```
 
 # Then you can start MySQL container
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d mysql
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d mysql
 
 # MySQL will take up to 60 seconds to become ready, you can monitor 
 docker logs freezing-mysql 2>&1 | tail
@@ -217,17 +217,17 @@ This will complete the upgrade to MySQL 5.7.
 If you ever want to destroy and recreate your MySQL database, just remove the container and volume and re "up" it:
 
 ```shell
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml stop mysql
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml rm mysql
+docker compose -f docker-compose.yml -f docker-compose.dev.yml stop mysql
+docker compose -f docker-compose.yml -f docker-compose.dev.yml rm mysql
 
 docker volume rm freezing-data && \
     docker volume create --name=freezing-data && \
-    docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d mysql
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d mysql
 # If you have trouble, you might need to do a `docker rm XXXXXX` where XXXXXX is
 # the ID of a stopped freezing-mysql container, then repeat the above commands.
 ```
 
-### 1.6 Running `freezing-web` and Other Containers via `docker-compose`
+### 1.6 Running `freezing-web` and Other Containers via `docker compose`
 
 Now that MySQL is running, you can also start up the freezing-web container to actually have the website running locally.
 
@@ -252,7 +252,7 @@ Now you can start up the `freezing-web` container!
 These commands will start it, wait 20 seconds for it to boot, and then tail the logs of the container:
 
 ```shell
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d freezing-web
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d freezing-web
 docker ps
 ```
 After this starts, `docker ps` should yield:
@@ -288,17 +288,17 @@ If it fails, it will have a stack trace that complains about the problem. The fi
 
 *Note*: if you just want to do website development, it is probably easier to just set up a Python 3 virtual environment on your host instead.
 
-See the README for [freezing-web](https://github.com/freezingsaddles/freezing-web) for those instructions.  
+See the [web README](../apps/web/README.md) for those instructions.  
 
 ### 1.7 Using a local container instead of a repository-pulled container
 
 In order to test a locally created container in Docker before pushing it up to the repository, follow this procedure:
 
 ```shell
-# Build the docker image in the freezing-web or other project
-cd ../freezing-web
-docker build . -t local/freezing-web
-cd ../freezing-compose
+# Images are built from the repository root so they can see packages/model
+cd ..
+docker build -f apps/web/Dockerfile . -t local/freezing-web
+cd deploy
 export FREEZING_WEB_IMAGE=local/freezing-web:latest
 docker-compose-dev up -d freezing-web
 ```
@@ -356,13 +356,13 @@ The current production setup assumes that you will use an external MySQL server,
 
 ### 2.1 Clone Repository
 
-Clone the repository this repository onto a server that runs Docker and `docker-compose`. [freezingsaddles.org](https://freezingsaddles.org/) ran on CoreOS from 2018 to 2020, and today runs on Rocky Linux 9. Ths should works but any modern operating system distribution that has Docker support will probably work. That includes RHEL 7+ and open source derivatives such as Centos, Rocky Linux and Alma Linux, all Ubuntu LTS versions from 16.04 on, and so on.
+Clone this repository onto a server that runs Docker and Docker Compose. [freezingsaddles.org](https://freezingsaddles.org/) ran on CoreOS from 2018 to 2020, and today runs on Rocky Linux 9. Ths should works but any modern operating system distribution that has Docker support will probably work. That includes RHEL 7+ and open source derivatives such as Centos, Rocky Linux and Alma Linux, all Ubuntu LTS versions from 16.04 on, and so on.
 
 For example:
 
 ```shell
-git clone https://github.com/freezingsaddles/freezing-compose
-ln -s "$PWD/freezing-compose" /opt/compose
+git clone https://github.com/freezingsaddles/freezing
+ln -s "$PWD/freezing/deploy" /opt/compose
 ```
 
 ### 2.2 Create Persistent Docker Volumes
@@ -376,7 +376,7 @@ docker volume create --name=wordpress-data
 
 ### 2.3 Configure MySQL production server
 
-*Note:* The production configuration assumes you will run a MySQL server outside of the environment managed by `docker-compose`. Please configure an external MySQL server, for example an AWS RDS MySQL server, in the `.env` file for production use.
+*Note:* The production configuration assumes you will run a MySQL server outside of the environment managed by `docker compose`. Please configure an external MySQL server, for example an AWS RDS MySQL server, in the `.env` file for production use.
 
 Connect to your production database as the root user and issue these commands to create the database, putting in a real password instead of the one below:
 ```sql
@@ -400,23 +400,21 @@ cp example.env .env
 vi .env
 
 # Verify Docker compose is working
-docker-compose ps
+docker compose ps
 ```
 
 ### 2.5 Run Containers
 ```shell
 cd /opt/compose
-docker-compose up -d
+docker compose up -d
 # wait a minute, then verify that the containers are working
 sleep 60
-docker-compose ps
+docker compose ps
 ```
 
-If any containers are not started, troubleshoot with `docker ps` and `docker logs container-name`. You might need to tweak the configuration multiple times before all containers come up cleanly. Restart the containers after tweaking the `.env` file each time with `docker-compose up -d` until things work.
+If any containers are not started, troubleshoot with `docker ps` and `docker logs container-name`. You might need to tweak the configuration multiple times before all containers come up cleanly. Restart the containers after tweaking the `.env` file each time with `docker compose up -d` until things work.
 
-# Legal
-
-# Legal
+## Legal
 
 This software is a community-driven effort, and as such the contributions are owned by the individual contributors:
 
@@ -424,4 +422,4 @@ Copyright 2018 Hans Lellelid <br>
 Copyright 2018 Richard Bullington-McGuire <br>
 Copyright 2023 Adam Sloan <br>
 
-This software is licensed under the [Apache 2.0 license](LICENSE), with some marked portions available under compatible licenses (such as the [MIT-licensed `bin/provision-server.sh`](bin/provision-server.sh) and [`bin/recover-container-name-conflict.sh`](recover-container-name-conflict.sh).)
+This software is licensed under the [Apache 2.0 license](../LICENSE), with some marked portions available under compatible licenses (such as the [MIT-licensed `bin/provision-server.sh`](bin/provision-server.sh) and [`bin/recover-container-name-conflict.sh`](bin/recover-container-name-conflict.sh).)

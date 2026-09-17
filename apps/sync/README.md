@@ -2,7 +2,7 @@
 
 This component is part of the [Freezing Saddles](http://freezingsaddles.com) project. Its purpose is to:
 
-1. Receive workflow messages published from [freezing-nq](https://github.com/freezingsaddles/freezing-nq) and perform Strava API calls to retrieve activities/streams/etc.
+1. Receive workflow messages published from [nq](../nq) and perform Strava API calls to retrieve activities/streams/etc.
 2. Perform periodic (cron-like) double checks to make sure that we haven't missed any activity updates/deletes.
 3. Perform periodic updates for non-Strava data (e.g. weather data).
 
@@ -10,20 +10,16 @@ This component is part of the [Freezing Saddles](http://freezingsaddles.com) pro
 
 This project supports local development both with Docker and by running directly on the host.
 
-To get started, you should clone the project and install the dependencies:
-
-```bash
-shell$ git clone https://github.com/freezingsaddles/freezing-sync
-shell$ cd freezing-sync
-shell$ python3 -m venv env
-shell$ source env/bin/activate
-(env) shell$ pip install -e '.[dev]'
-``````
+Install the workspace from the repository root as described in the
+[top-level README](../../README.md). The commands in this document assume the
+workspace virtualenv is active (`source .venv/bin/activate` at the repository
+root); alternatively prefix each with `uv run`.
 
 ### Deploying With Docker
 
-See [freezing-compose](https://github.com/freezingsaddles/freezing-compose) for guide to deploying this in production along
-with the related containers.
+The image is built from the repository root with
+`docker build -f apps/sync/Dockerfile .`. See [deploy](../../deploy) for the
+production compose setup this runs in alongside the related containers.
 
 This component is designed to run as a container and should be configured with environment variables for:
 
@@ -63,9 +59,9 @@ There are a few additional settings you may need (i.e. not to be default) when n
 #### Example local.cfg
 
 Here is a minimal `local.cfg` for local development. The database is provided by
-[freezing-web](https://github.com/freezingsaddles/freezing-web)'s Docker Compose setup —
-start it with `docker-compose up -d freezing-db` from the `freezing-web` directory before
-running any sync commands.
+the [web app](../web)'s Docker Compose setup: start it with
+`docker compose up -d freezing-db` from the `apps/web` directory before running
+any sync commands.
 
 ````ini
 SQLALCHEMY_URL = mysql+pymysql://freezing:zeer0@127.0.0.1:3306/freezing
@@ -108,13 +104,13 @@ long-running daemon that requires Beanstalkd; use these CLI commands instead for
 #### Getting OAuth tokens for local testing
 
 `freezing-sync` requires real Strava OAuth tokens to call the Strava API. These tokens are stored
-in the `athletes` table by [freezing-web](https://github.com/freezingsaddles/freezing-web) when
+in the `athletes` table by the [web app](../web) when
 an athlete completes the Strava OAuth flow.
 
 A freshly initialized local database has no athletes and no tokens, so `freezing-sync-athletes`
 and `freezing-sync-activities` will have nothing to sync. The recommended approach for local
 development is to restore a production database dump — see the "On dumping and restoring the
-database" section in the freezing-web README for instructions.
+database" section in the [web README](../web/README.md) for instructions.
 
 **Strava club membership and team assignment:** `freezing-sync` assigns athletes to teams based
 on which Strava clubs they belong to, matched against the club IDs in `MAIN_TEAM` and `TEAMS` in
@@ -160,17 +156,19 @@ on this local development limitation.
 
 ### Running Unit Tests
 
-To run the unit tests, you can use `pytest`. Make sure you have all the dependencies installed, including the ones in `requirements-test.txt`. You can run the tests with the following command:
+Run the unit tests from this directory. Tests marked `live` call the real
+Strava API and are skipped by default:
 
 ```bash
-pytest
+cd apps/sync
+APP_SETTINGS=example.cfg pytest -m "not live"
 ```
 
 ### Coding standards
 
-The `freezing-sync` code is intended to be [PEP-8](https://www.python.org/dev/peps/pep-0008/) compliant. Code formatting is done with [black](https://black.readthedocs.io/en/stable/), [isort](https://pycqa.github.io/isort/) and [djlint](https://www.djlint.com/) and can be linted with [flake8](http://flake8.pycqa.org/en/latest/). See the [pyproject.toml](pyproject.toml) file and install the dev dependencies to get these tools.
-
-This project also has _optional_ support for [pre-commit](https://pre-commit.org) to run these checks automatically before you commit. To install pre-commit, install the `dev` dependencies and then run `pre-commit install` in the root of the repository.
+The code is formatted with black and isort and linted with flake8, configured
+once for the whole workspace; see the [top-level README](../../README.md) for
+the commands.
 
 ## End-to-End Local Development Walkthrough
 
@@ -180,7 +178,7 @@ pitfalls encountered along the way. It covers both `freezing-web` and
 
 ### Prerequisites
 
-- Python 3.11+
+- [uv](https://docs.astral.sh/uv/), which installs the pinned Python itself
 - Docker Desktop running
 - `gh` CLI authenticated with GitHub
 - A Strava account with rides recorded during the competition dates
@@ -192,23 +190,21 @@ pitfalls encountered along the way. It covers both `freezing-web` and
 `freezing-sync` depends on the database that `freezing-web` manages. Start there:
 
 ```bash
-git clone https://github.com/freezingsaddles/freezing-web
-cd freezing-web
-python3 -m venv .venv
+uv sync --all-packages --all-extras   # at the repository root
 source .venv/bin/activate
-pip install -e '.[dev]'
-docker-compose up -d freezing-db
+cd apps/web
+docker compose up -d freezing-db
 APP_SETTINGS=development.cfg freezing-server
 ```
 
-See the [freezing-web README](https://github.com/freezingsaddles/freezing-web) for full
-setup instructions including the `development.cfg` configuration.
+See the [web README](../web/README.md) for full setup instructions including
+the `development.cfg` configuration.
 
 ### Step 2: Bootstrap your Strava OAuth tokens
 
 A fresh database has no athletes and no tokens. `freezing-sync` needs real OAuth tokens
 to call the Strava API. The recommended path is to restore a production database dump —
-see the "On dumping and restoring the database" section in the freezing-web README.
+see the "On dumping and restoring the database" section in the [web README](../web/README.md).
 
 **If you don't have a production dump**, you can use your own personal Strava account
 as a test athlete, provided you have rides recorded during the competition dates. Use
@@ -242,8 +238,7 @@ your athlete record will have no team assigned and will not appear on leaderboar
 With tokens in the database and club memberships in place:
 
 ```bash
-cd ~/code/freezing-sync
-source .venv/bin/activate
+cd apps/sync
 
 # Sync your athlete record and team membership from Strava
 APP_SETTINGS=local.cfg freezing-sync-athletes
@@ -300,7 +295,7 @@ UTC and re-run — cached results will not be re-fetched.
 **Map shows no ride tracks after a successful sync:** The freezing-web JSON cache may have captured an empty response before your data was loaded. Clear it:
 
 ```bash
-rm -f freezing-web/data/cache/json/*.json.gz
+rm -f apps/web/data/cache/json/*.json.gz
 ```
 
 Then reload the map page. The cache is file-based and has no automatic invalidation when new rides are added, so this is a common gotcha when loading data incrementally during local development.
@@ -321,7 +316,7 @@ Then update the `access_token` and `expires_at` in the `athletes` table.
 
 ## Legal
 
-This software is a an [Apache 2.0 Licensed](LICENSE), community-driven effort, and as such the contributions are owned by the individual contributors:
+This software is a an [Apache 2.0 Licensed](../../LICENSE), community-driven effort, and as such the contributions are owned by the individual contributors:
 
 - Copyright 2018 Hans Lellelid
 - Copyright 2020 Richard Bullington-McGuire
