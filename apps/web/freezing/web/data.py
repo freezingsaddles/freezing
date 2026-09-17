@@ -4,10 +4,10 @@ Functions for interacting with the datastore and the strava apis.
 
 from __future__ import division, unicode_literals
 
+from freezing.common import teams
 from freezing.model import meta
-from freezing.model.orm import Athlete, Team
+from freezing.model.orm import Athlete
 from freezing.web import config
-from freezing.web.exc import MultipleTeamsError, NoTeamsError
 
 
 def register_athlete(strava_athlete, token_dict):
@@ -58,68 +58,13 @@ def register_athlete_team(strava_athlete, athlete_model):
     """
     Updates db with configured team that matches the athlete's teams.
 
-    Updates the passed-in Athlete model object with created/updated team.
-
-    :param strava_athlete: The Strava athlete object returned by
-        ``Client.get_athlete()``. (Type path changed in stravalib 2.x; the
-        old ``stravalib.orm.Athlete`` reference is deprecated.)
-
-    :param athlete_model: The athlete model object.
-    :type athlete_model: :class:`bafs.orm.Athlete`
-
-    :return: The :class:`bafs.orm.Team` object will be returned which matches
-             configured teams.
-    :rtype: :class:`bafs.orm.Team`
-
-    :raise MultipleTeamsError: If this athlete is registered for multiple of
-                               the configured teams.  That won't work.
-    :raise NoTeamsError: If no teams match.
+    Thin binding of :func:`freezing.common.teams.register_athlete_team` to this
+    app's configuration; see that function for the rules and exceptions.
     """
-    # TODO: This is redundant with freezingsaddles/freezing-sync which has a
-    # very similar method in freezing/sync/data/athlete.py
-    # Figure out how to DRY (Don't Repeat Yourself) for this code.
-
-    all_teams = config.COMPETITION_TEAMS
-    if strava_athlete.clubs is None:
-        raise NoTeamsError(
-            "Athlete {0} ({1} {2}): No clubs returned- {3}. {4}.".format(
-                strava_athlete.id,
-                strava_athlete.firstname,
-                strava_athlete.lastname,
-                "Full Profile Access required",
-                "Please re-authorize",
-            )
-        )
-    matches = [c for c in strava_athlete.clubs if c.id in all_teams]
-    athlete_model.team = None
-    if len(matches) > 1:
-        # you can be on multiple teams
-        # as long as only one is an official team
-        matches = [c for c in matches if c.id not in config.OBSERVER_TEAMS]
-    if len(matches) > 1:
-        raise MultipleTeamsError(matches)
-    if len(matches) == 0:
-        # Fall back to main team if it is the only team they are in
-        matches = [c for c in strava_athlete.clubs if c.id == config.MAIN_TEAM]
-    if len(matches) == 0:
-        raise NoTeamsError(
-            "Athlete {0} ({1} {2}): {3} {4}".format(
-                strava_athlete.id,
-                strava_athlete.firstname,
-                strava_athlete.lastname,
-                "No teams matched ours. Teams defined:",
-                strava_athlete.clubs,
-            )
-        )
-    else:
-        club = matches[0]
-        # create the team row if it does not exist
-        team = meta.scoped_session().get(Team, club.id)
-        if team is None:
-            team = Team()
-        team.id = club.id
-        team.name = club.name
-        team.leaderboard_exclude = club.id in config.OBSERVER_TEAMS
-        athlete_model.team = team
-        meta.scoped_session().add(team)
-        return team
+    return teams.register_athlete_team(
+        strava_athlete,
+        athlete_model,
+        competition_teams=config.COMPETITION_TEAMS,
+        observer_teams=config.OBSERVER_TEAMS,
+        main_team=config.MAIN_TEAM,
+    )

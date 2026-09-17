@@ -37,6 +37,7 @@ dependencies = [
     "colorlog>=6.10.1,<7",
     "python-dateutil>=2.9.0.post0,<3",
     "envparse>=0.2.0,<1",
+    "freezing-common",
     "freezing-model",
     "marshmallow>=4.3.1,<5",
     "python-instagram>=1.3.2,<2",
@@ -72,6 +73,8 @@ ignore_unused = [
     "fawltydeps",
     "flake8",
     "flake8-pyproject",
+    "freezing-common",
+    "freezing-common",
     "freezing-model",
     "gunicorn",
     "isort",
@@ -80,6 +83,7 @@ ignore_unused = [
 ]
 
 [tool.uv.sources]
+freezing-common = { workspace = true }
 freezing-model = { workspace = true }
 
 # djlint looks for its config next to the templates, not at the workspace root
