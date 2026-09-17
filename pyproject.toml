@@ -10,6 +10,8 @@ package = false
 
 [tool.uv.workspace]
 members = ["packages/*", "apps/*"]
+# Freezebot is an sbt build, not a Python package.
+exclude = ["apps/freezebot"]
 
 [dependency-groups]
 dev = [

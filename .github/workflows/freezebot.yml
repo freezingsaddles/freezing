@@ -20,6 +20,8 @@ jobs:
   build:
     name: freezebot
     permissions:
+      checks: write        # for test results
+      pull-requests: write # for test results
       contents: read
     runs-on: ubuntu-latest
     steps:
