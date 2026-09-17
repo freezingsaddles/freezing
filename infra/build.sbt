@@ -26,6 +26,7 @@ lazy val registration = (project in file("."))
       "com.amazonaws"         % "aws-lambda-java-core"   % "1.2.3",
       "com.amazonaws"         % "aws-lambda-java-events" % "3.14.0",
       "com.lihaoyi"          %% "upickle"                % "4.1.0",
+      "com.augustnagro"      %% "magnum"                 % "1.3.1",
       "com.mysql"             % "mysql-connector-j"      % "9.3.0",
       // MIME parsing: the API plus the Eclipse implementation that provides it.
       "jakarta.mail"          % "jakarta.mail-api"       % "2.1.3",
@@ -35,7 +36,9 @@ lazy val registration = (project in file("."))
       awsSdk("s3"),
       awsSdk("ssm"),
       awsSdk("url-connection-client"),
-      "org.scalameta"        %% "munit"                  % "1.1.0" % Test,
+      "org.scalameta"        %% "munit"                  % "1.1.0"   % Test,
+      // In-process MySQL-compatible database for the repository tests.
+      "com.h2database"        % "h2"                     % "2.3.232" % Test,
     ),
     run / fork                       := true,
     assembly / assemblyJarName       := "registration.jar",

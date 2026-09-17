@@ -4,7 +4,7 @@ import scala.jdk.CollectionConverters.*
 
 class HandlerTest extends munit.FunSuite:
   private val raw = getClass.getResourceAsStream("/registration.eml").readAllBytes()
-  private val db  = DbConfig("localhost", 3306, "freezing", "u", "p")
+  private val db  = DbConfig("localhost", 3306, "freezing", "u", "p").dataSource
 
   private def aws(bytes: Array[Byte]) = new Aws:
     def readObject(bucket: String, key: String): Array[Byte] = bytes

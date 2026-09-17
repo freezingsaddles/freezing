@@ -1,15 +1,25 @@
 package org.freezingsaddles.registration
 
-import java.sql.{Connection, DriverManager, Timestamp}
-import java.time.Instant
-import scala.util.Using
+import com.augustnagro.magnum.*
+import com.mysql.cj.jdbc.MysqlDataSource
+import java.time.LocalDateTime
+import javax.sql.DataSource
 
-/** Where the rows go. Plain JDBC: one insert per email is not worth a connection pool, an effect
-  * system or a query DSL, and every dependency here is paid for again at each cold start.
+/** Where the rows go. Magnum over plain JDBC: the case classes are the schema, and the same
+  * repositories serve whatever reads the next Lambda needs.
   */
 case class DbConfig(host: String, port: Int, database: String, username: String, password: String):
   def url: String =
     s"jdbc:mysql://$host:$port/$database?characterEncoding=utf8&connectTimeout=10000&socketTimeout=30000"
+
+  /** One connection per invocation; a pool would outlive nothing at this traffic level. */
+  def dataSource: DataSource =
+    val ds = MysqlDataSource()
+    ds.setUrl(url)
+    ds.setUser(username)
+    ds.setPassword(password)
+    ds
+end DbConfig
 
 object DbConfig:
   /** Everything but the password comes from the environment, as the Python apps read theirs from a
@@ -28,55 +38,66 @@ object DbConfig:
     )
 end DbConfig
 
-object Db:
-  /** Records one registration. Keyed on the email's Message-Id, so SES delivering the same message
-    * twice, or a Lambda retry after a partial failure, updates the row rather than duplicating it.
-    * The athlete link is set only when the athletes table already has that id; a typo or an athlete
-    * who has not authorised yet leaves it null, and the raw value is kept in strava_id so nothing
-    * is lost.
+/** Magnum 1.x maps `java.sql.Timestamp` but not `LocalDateTime`; DATETIME columns want the latter.
+  */
+given DbCodec[LocalDateTime] =
+  DbCodec[java.sql.Timestamp].biMap(_.toLocalDateTime, java.sql.Timestamp.valueOf)
+
+/** A `registrations` row. The email's Message-Id is the key, in the schema's habit of external
+  * identifiers over generated ones; a redelivered email is the same row again.
+  */
+@SqlName("registrations")
+@Table(MySqlDbType, SqlNameMapper.CamelToSnakeCase)
+case class Registration(
+    @Id messageId: String,
+    registeredAt: LocalDateTime, // UTC, as the email's Date header
+    firstName: String,
+    lastName: String,
+    zipCode: String,
+    email: String,
+    /** What they typed as their Strava user id, kept whether or not it matched an athlete. */
+    stravaId: Option[String],
+    /** Set only when an athletes row with that id existed when the email arrived. */
+    athleteId: Option[Long],
+    previousMileage: Option[String],
+    teamCaptain: Boolean,
+) derives DbCodec
+
+object Registration:
+  def apply(messageId: String, registeredAt: LocalDateTime, form: Submission): Registration =
+    Registration(
+      messageId = messageId,
+      registeredAt = registeredAt,
+      firstName = form.firstName,
+      lastName = form.lastName,
+      zipCode = form.zipCode,
+      email = form.email,
+      stravaId = form.stravaId.map(_.toString),
+      athleteId = form.stravaId,
+      previousMileage = form.previousMileage,
+      teamCaptain = form.teamCaptain,
+    )
+end Registration
+
+/** The one column of `athletes` this needs: whether a Strava id is known to us yet. */
+@SqlName("athletes")
+@Table(MySqlDbType)
+case class Athlete(@Id id: Long) derives DbCodec
+
+object Registrations:
+  private val repo     = Repo[Registration, Registration, String]
+  private val athletes = ImmutableRepo[Athlete, Long]
+
+  /** Inserts, or replaces the row an earlier delivery of the same email left. The athlete link
+    * survives only if the athletes table has the id; a typo or an athlete who has not authorised
+    * yet leaves it null, and `stravaId` keeps what was typed.
     *
     * @return
-    *   true if a row was inserted, false if an existing row was refreshed
+    *   true for a new row, false for a refreshed one
     */
-  def record(cfg: DbConfig, reg: Registration, messageId: String, registeredAt: Instant): Boolean =
-    Using.resource(DriverManager.getConnection(cfg.url, cfg.username, cfg.password)): conn =>
-      record(conn, reg, messageId, registeredAt)
-
-  def record(
-      conn: Connection,
-      reg: Registration,
-      messageId: String,
-      registeredAt: Instant,
-  ): Boolean =
-    val sql =
-      """insert into registrations
-        |  (message_id, registered_at, first_name, last_name, zip_code, email,
-        |   strava_id, athlete_id, previous_mileage, team_captain)
-        |values (?, ?, ?, ?, ?, ?, ?, (select id from athletes where id = ?), ?, ?)
-        |on duplicate key update
-        |  registered_at = values(registered_at),
-        |  first_name = values(first_name),
-        |  last_name = values(last_name),
-        |  zip_code = values(zip_code),
-        |  email = values(email),
-        |  strava_id = values(strava_id),
-        |  athlete_id = values(athlete_id),
-        |  previous_mileage = values(previous_mileage),
-        |  team_captain = values(team_captain)""".stripMargin
-    Using.resource(conn.prepareStatement(sql)): st =>
-      st.setString(1, messageId)
-      st.setTimestamp(2, Timestamp.from(registeredAt))
-      st.setString(3, reg.firstName)
-      st.setString(4, reg.lastName)
-      st.setString(5, reg.zipCode)
-      st.setString(6, reg.email)
-      st.setString(7, reg.stravaId.map(_.toString).orNull)
-      reg.stravaId match
-        case Some(id) => st.setLong(8, id)
-        case None     => st.setNull(8, java.sql.Types.BIGINT)
-      st.setString(9, reg.previousMileage.orNull)
-      st.setBoolean(10, reg.teamCaptain)
-      // MySQL reports 1 for an insert and 2 for an update through this statement.
-      st.executeUpdate() == 1
-  end record
-end Db
+  def record(reg: Registration)(using DbTx): Boolean =
+    val linked = reg.copy(athleteId = reg.athleteId.filter(athletes.existsById))
+    val fresh  = !repo.existsById(linked.messageId)
+    if fresh then repo.insert(linked) else repo.update(linked)
+    fresh
+end Registrations

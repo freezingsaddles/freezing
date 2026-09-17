@@ -2,7 +2,9 @@ package org.freezingsaddles.registration
 
 import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
 import org.slf4j.MDC
-import java.time.Instant
+import com.augustnagro.magnum.transact
+import java.time.{Instant, LocalDateTime, ZoneOffset}
+import javax.sql.DataSource
 import scala.jdk.CollectionConverters.*
 
 private object Env:
@@ -34,7 +36,8 @@ class Lambda extends RequestHandler[java.util.Map[String, Object], String]:
   override def handleRequest(event: java.util.Map[String, Object], context: Context): String =
     MDC.put("AWSRequestId", context.getAwsRequestId)
     val ids     = Lambda.messageIds(event)
-    val results = ids.map(id => id -> Handler.handle(Aws.live, Env.bucket, Env.prefix + id, Env.db))
+    val results =
+      ids.map(id => id -> Handler.handle(Aws.live, Env.bucket, Env.prefix + id, Env.db.dataSource))
     results.foreach((id, r) => log.info(s"$id: ${r.fold(identity, identity)}"))
     // A record that cannot be stored is an error, so the invocation fails and
     // Lambda retries it; the S3 copy is still there for a human either way.
@@ -70,19 +73,20 @@ object Handler:
     * log. An email that is not a registration confirmation at all is a Right: the mailbox receives
     * what anyone sends it, and there is nothing to retry.
     */
-  def handle(aws: Aws, bucket: String, key: String, db: DbConfig): Either[String, String] =
+  def handle(aws: Aws, bucket: String, key: String, db: DataSource): Either[String, String] =
     val email = Email.parse(aws.readObject(bucket, key))
     email.html match
       case None       => Right(s"ignored: no HTML part in ${email.subject.trim}")
       case Some(html) =>
-        Registration.parse(html) match
+        Submission.parse(html) match
           case Left(reason) => Right(s"ignored: $reason (${email.subject.trim})")
-          case Right(reg)   =>
+          case Right(form)  =>
             val messageId = if email.messageId.nonEmpty then email.messageId else key
-            val inserted  = Db.record(db, reg, messageId, email.sent.getOrElse(Instant.now()))
+            val sent      = LocalDateTime.ofInstant(email.sent.getOrElse(Instant.now()), ZoneOffset.UTC)
+            val fresh     = transact(db)(Registrations.record(Registration(messageId, sent, form)))
             Right(
-              s"${if inserted then "recorded" else "refreshed"} ${reg.firstName} ${reg.lastName}" +
-                s" <${reg.email}> strava=${reg.stravaId.getOrElse("-")}"
+              s"${if fresh then "recorded" else "refreshed"} ${form.firstName} ${form.lastName}" +
+                s" <${form.email}> strava=${form.stravaId.getOrElse("-")}"
             )
     end match
   end handle
@@ -94,7 +98,7 @@ end Handler
   println(
     s"From: ${email.from}\nSubject: ${email.subject}\nMessage-Id: ${email.messageId}\nSent: ${email.sent}"
   )
-  email.html.map(Registration.parse) match
+  email.html.map(Submission.parse) match
     case None            => println("no HTML part")
     case Some(Left(err)) => println(s"not a registration: $err")
     case Some(Right(r))  => println(r)

@@ -3,8 +3,8 @@ package org.freezingsaddles.registration
 import org.jsoup.Jsoup
 import scala.jdk.CollectionConverters.*
 
-/** One submission of the WordPress registration form, as far as the database wants it. */
-case class Registration(
+/** One submission of the WordPress registration form, as the confirmation email reports it. */
+case class Submission(
     firstName: String,
     lastName: String,
     zipCode: String,
@@ -17,7 +17,7 @@ case class Registration(
     teamCaptain: Boolean,
 )
 
-object Registration:
+object Submission:
   /** The form's labels, exactly as the confirmation email prints them (the trailing colon is
     * stripped before matching, and whitespace collapsed).
     */
@@ -34,7 +34,7 @@ object Registration:
     * ignored, so the form can grow questions without breaking this; the rows this needs must be
     * present, blank or not, or it is not a registration email.
     */
-  def parse(html: String): Either[String, Registration] =
+  def parse(html: String): Either[String, Submission] =
     val answers                                         = fields(html)
     def required(label: String): Either[String, String] =
       answers.get(label).toRight(s"missing field: $label")
@@ -46,7 +46,7 @@ object Registration:
       strava    <- required(Label.stravaId)
       mileage   <- required(Label.previousMileage)
       captain   <- required(Label.teamCaptain)
-    yield Registration(
+    yield Submission(
       firstName = firstName,
       lastName = lastName,
       zipCode = zipCode,
@@ -74,4 +74,4 @@ object Registration:
 
   private def normalise(label: String): String =
     label.trim.stripSuffix(":").trim.replaceAll("\\s+", " ")
-end Registration
+end Submission

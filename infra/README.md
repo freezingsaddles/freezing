@@ -11,7 +11,7 @@ Two sbt builds, Scala 3:
 
 | Path | What it is |
 | --- | --- |
-| `.` | the Lambda: MIME parsing, form parsing, one JDBC insert |
+| `.` | the Lambda: MIME parsing, form parsing, one row through Magnum |
 | `cdk/` | the AWS CDK app that deploys it |
 
 ## How it works
@@ -23,8 +23,9 @@ Two sbt builds, Scala 3:
    reads the two-column table of label and answer. Only these are kept:
    first name, last name, zip code, e-mail, Strava user ID, previous year's
    mileage, and the team captain answer (blank or `Yes`).
-4. It upserts a row keyed on the email's `Message-Id`, so a redelivery or a
-   retry refreshes the row instead of duplicating it. `athlete_id` is set only
+4. It writes a row whose primary key is the email's `Message-Id`, in the
+   schema's habit of external keys over generated ones, so a redelivery or a
+   retry replaces the row instead of duplicating it. `athlete_id` is set only
    when an `athletes` row with that Strava id already exists; the raw value is
    kept in `strava_id` either way.
 
@@ -37,13 +38,15 @@ The table is created by the Python side: the `Registration` model and its
 alembic migration live in [packages/model](../packages/model). Run that
 migration before the first deploy.
 
-Plain JDBC rather than an effect system: one insert per email is not worth a
-connection pool, and every dependency is paid for again at each cold start.
+The database layer is [Magnum](https://github.com/AugustNagro/magnum): the
+`Registration` case class is the row, a derived repository does the insert or
+update, and the same repositories are there for the next Lambda that reads
+more than it writes. No effect system; Magnum runs on plain JDBC.
 
 ## Developing
 
     cd infra
-    sbt test                                   # unit tests, no AWS or database needed
+    sbt test                                   # no AWS needed; the repository tests run on in-process H2
     sbt "runMain org.freezingsaddles.registration.preview path/to/message.eml"
     sbt assembly                               # the Lambda jar the CDK app deploys
 

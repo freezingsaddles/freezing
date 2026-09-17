@@ -18,7 +18,7 @@ class RegistrationTest extends munit.FunSuite:
   )
 
   test("reads the sample confirmation"):
-    val reg = Registration.parse(html).toOption.get
+    val reg = Submission.parse(html).toOption.get
     assertEquals(reg.firstName, "Ann")
     assertEquals(reg.lastName, "Rider")
     assertEquals(reg.zipCode, "22201")
@@ -28,30 +28,30 @@ class RegistrationTest extends munit.FunSuite:
     assertEquals(reg.teamCaptain, false)
 
   test("yes means captain, anything else does not"):
-    assertEquals(Registration.parse(table(complete.toSeq*)).toOption.get.teamCaptain, true)
+    assertEquals(Submission.parse(table(complete.toSeq*)).toOption.get.teamCaptain, true)
     val no =
-      Registration.parse(table((complete + ("Are you willing to be a Team Captain?" -> "")).toSeq*))
+      Submission.parse(table((complete + ("Are you willing to be a Team Captain?" -> "")).toSeq*))
     assertEquals(no.toOption.get.teamCaptain, false)
 
   test("a strava id that is not a number is dropped, not a failure"):
-    val typo = Registration.parse(table((complete + ("Strava user ID" -> "my name")).toSeq*))
+    val typo = Submission.parse(table((complete + ("Strava user ID" -> "my name")).toSeq*))
     assertEquals(typo.toOption.get.stravaId, None)
     val url  =
-      Registration.parse(table((complete + ("Strava user ID" -> "strava.com/athletes/99")).toSeq*))
+      Submission.parse(table((complete + ("Strava user ID" -> "strava.com/athletes/99")).toSeq*))
     assertEquals(url.toOption.get.stravaId, Some(99L))
 
   test("mileage survives as typed"):
     assertEquals(
-      Registration.parse(table(complete.toSeq*)).toOption.get.previousMileage,
+      Submission.parse(table(complete.toSeq*)).toOption.get.previousMileage,
       Some("1200"),
     )
 
   test("a mail without the form fields is not a registration"):
-    assertEquals(Registration.parse("<p>Hello</p>"), Left("missing field: First Name"))
-    val partial = Registration.parse(table(("First Name" -> "Bo"), ("Last Name" -> "Pedals")))
+    assertEquals(Submission.parse("<p>Hello</p>"), Left("missing field: First Name"))
+    val partial = Submission.parse(table(("First Name" -> "Bo"), ("Last Name" -> "Pedals")))
     assertEquals(partial, Left("missing field: Zip Code"))
 
   test("labels tolerate whitespace and a stray space before the colon"):
-    val odd = Registration.fields("<table><tr><td>  Zip   Code :</td><td> 20001 </td></tr></table>")
+    val odd = Submission.fields("<table><tr><td>  Zip   Code :</td><td> 20001 </td></tr></table>")
     assertEquals(odd, Map("Zip Code" -> "20001"))
 end RegistrationTest

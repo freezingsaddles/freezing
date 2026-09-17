@@ -26,10 +26,10 @@ jobs:
       - uses: sbt/setup-sbt@82da71df4e122282484a99a8d70096bc2369dbd8 # v1.5.9
       - name: "Lambda: format check, tests, jar"
         working-directory: infra
-        run: sbt -batch "scalafmtCheckAll; test; assembly"
+        run: sbt --server --batch "scalafmtCheckAll; test; assembly"
       - name: "CDK: format check, compile"
         working-directory: infra/cdk
-        run: sbt -batch "scalafmtCheckAll; compile"
+        run: sbt --server --batch "scalafmtCheckAll; compile"
       - name: "CDK: synth"
         # Placeholder context: proves the stack renders, not that the account is configured.
         working-directory: infra/cdk
