@@ -1,0 +1,16 @@
+---
+name: Build
+
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-docker.yml
+    with:
+      tag: latest-actions-build
+      push: false

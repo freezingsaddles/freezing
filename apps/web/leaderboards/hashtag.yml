@@ -1,0 +1,384 @@
+---
+tags:
+  - tag: "420"
+    name: Expand Your Horizons
+    description: |
+      Ride to a cannabis dispensary and take a picture of it. Tag rides with <code>#420</code> (or whatever, man). Limit one dispensary per day. All participants must be 21 years old or older!
+    rank_by: miles
+
+  - tag: abc
+    name: Vehicle ABCs
+    description: |
+      find and photograph the vehicles WHILE on a bike ride. Use the hashtag <code>#abc</code> and post to the forum.
+    rank_by: rides
+
+  - tag: adulting
+    alt: freezingerrands
+    name: Errandeering
+    description: |
+      Pointless prize for doing stuff on your bike you might be tempted to do in your car.
+      Grocery store, post office, pharmacy dentist, manicurist, gym, farmers market, dry cleaning, bike shop, library, etc.
+      Commutes, coffee rides, kid pick up / drop off do not count.
+      Tag rides with <code>#adulting</code> or <code>#freezingerrands</code>.
+    rank_by: rides
+
+  - tag: beerneuring
+    name: Beerneuring
+    description: |
+      You must ride a bike (per contest rules – outdoors, no ELFs, etc) at least one mile to a brewing establishment and taste one beer that was brewed on site.
+      Tag your ride with with <code>#beerneuring</code>.
+    discord: 1447781269156135064
+    rank_by: rides
+    sponsors: [1873089]
+    min_miles: 1
+
+  - tag: biathlon
+    name: Biathlon
+    description: |
+      No not skiing plus target shooting - let's do a different kind of sports duo. Ride your bike to a WINTER sport - post the story here. Whoever has the best story of riding to ice skating or skiing or whatever will win some kind of prize. Maybe there will be more than one prize. We shall see.
+    rank_by: miles
+
+  - tag: bikeinfrastructure
+    name: Bike Infrastructure
+    description: |
+      Find publicly accessible cool infrastructure that makes our cycling lives easier. Tag with <code>#BikeInfrastructure</code>.
+    rank_by: rides
+
+  - tag: bikepacking
+    name: Bikepacking
+    description: |
+      <ul>
+      <li>Ride any bike that qualifies for Freezing Saddles</li>
+      <li>Carry your stuff on your bike or person (bags, baskets, backpacks, or get creative)</li>
+      <li>Sleep outdoors or in unheated rustic lodging</li>
+      <li>Use <code>#bikepacking</code> tag on Strava for the ride to your destination</li>
+      </ul>
+    discord: 1456035311028277399
+    rank_by: days
+    sponsors: [33937007]
+
+  - tag: bikeshare
+    alt: cabi
+    name: Sharing is Caring
+    description: |
+      Use a bikeshare bike and log the ride with <code>#bikeshare</code> on strava
+      Whoever gets the most mileage wins!
+      Any bike that actually requires pedaling counts.
+      Any bikeshare system is ok. Traveling to another city, maybe with better weather? Try out their bikes!
+    discord: 1449177006204915906
+    rank_by: miles
+    sponsors: [30367988]
+
+  - tag: bingo
+    name: Bicycle Bingo
+    description: |
+      Ride your bike and play Bingo! The hashtag to use is <code>#bingo</code>.
+    rank_by: days
+    discord: 1443983774185422849
+    sponsors: [3487165]
+    default_view: photos
+
+  - tag: bob
+    name: Baby on Board
+    description: |
+      Remember the ubiquitous yellow caution sign “Baby of Board” signs of the 1980s?  Well, this year, snap a photo each time to see a unique design/style of one during a ride, share it on your Strava ride and hashtag your Strava ride title with <code>#BoB</code>.
+    rank_by: rides
+
+  - tag: cabixxx
+    name: Capital Bikeshare Rides
+    description: |
+      Tag your rides on Capital Bikeshare (CaBi) with <code>#cabi</code> (eBike or red bike!) and whoever does the most miles will get a prize. The prize is likely to either be a CaBi embroidery or whatever I have in my bag at the final happy hour (up to and including trivial cash amounts or random stickers). Get riding!
+    rank_by: miles
+
+  - tag: calvinball
+    name: Calvinball
+    description: |
+      <p>There will be multiple Calvinballs thrown out into the wild for folks to find and hide. Please remember this is a “hot potato” game, not a “make this really hard to find” game.</p>
+      <p>The ball (shape may be a water bottle or similar–I will post pic of each Calvinball that's deployed so you know what you're looking for) needs to be placed in “public” areas. 
+      Do not put the ball on or adjacent to military or government installations (i.e., on the grounds at the Pentagon or outside the gate at Ft Myer is a no-no). Take a picture that
+      clearly shows where the ball is “hiding” so that seekers will have a good chance of finding it. Please place the ball during daylight hours to make the location clearer and don't
+      hold onto the ball for more than a few hours before redeploying it.</p>
+    discord: 1469393581382041730
+    rank_by: rides
+
+  - tag: civilwarforts
+    name: Civil War Forts
+    description: |
+      During the American Civil War (1861-1865) Washington was surrounded by a chain of fortifications. Mostly in DC and northern Virginia, I think maybe a couple in Maryland.
+      Your mission, should you choose to accept it, is to ride to as many of them as possible, take a photo of your bike there, and post the hashtag <code>#civilwarforts</code> on Strava.
+    rank_by: rides
+
+  - tag: deflated
+    name: Deflated Rides
+    description: |
+      Don’t be deflated this prize is for you!
+      Pointless prize is easy, you get a flat, hashtag the ride <code>#Deflated</code>, the person with
+      the most flats wins! Well, loses.
+    rank_by: rides
+
+  - tag: fire
+    name: Fire bad!
+    description: |
+      Ride your bike and take photo of the fire stations.
+    rank_by: rides
+
+  - tag: dirtybiker
+    name: Dirty Biker
+    description: |
+      Number of days with at least 1 off-road ride (<code>#dirtybiker</code>).
+    rank_by: days
+
+  - tag: donut
+    name: Doughnut Rides
+    description: Eat doughnuts, tag <code>#donut</code>, intrinsically win?
+    rank_by: rides
+
+  # This is a first cut of an implementation for this, to really hew to the rules would be much more
+  # complicated - involving excluding rides that are < 5 miles (per day maybe?) and geofencing rides to the DMV.
+  - tag: FirstTimeFS
+    name: First Time Riders
+    description: |
+      Ride your bike outside at least 5 miles every day from February 1 to the end of Freezing Saddles. Use the hashtag  <code>#FirstTimeFS</code> on each ride.
+    rank_by: rides
+
+  - tag: flag
+    name: Flag
+    description: |
+      Take a photo of a flag on your ride.
+    rank_by: rides
+
+  - tag: freezingerrands
+    name: Errandeering
+    description: |
+      Use your bike to run errands - not commuting, not fun stuff. Sometimes pronounced Errandaneuring.
+      Tag with <code>#FreezingErrands</code>.
+    rank_by: rides
+
+  - tag: fswormhole
+    name: Wormholes
+    description: |
+      Find clever connections between places or tears in spacetime (tagged with <code>#FSWormhole</code>).
+    rank_by: rides
+
+  - tag: gpsart
+    name: GPS Art
+    description: |
+      Record your bike GPS ART ride on STRAVA to make a winning picture. Tag your ride
+      <code>#gpsart</code>. Your ride needs to be public for anyone to see it. If you
+      want the art to show up here, post a screenshot of your map on your ride and tag the
+      photo <code>#gpsart</code> too.
+    sponsors: [3415618]
+    rank_by: rides
+
+  - tag: goldenspike
+    name: Golden Spike
+    description: |
+      Ride your bike to a metro or train station and post a photo.
+    rank_by: rides
+
+  - tag: groupridegroupie
+    name: Group Ride Groupie
+    description: |
+      The person who joins the most group rides.
+    rank_by: rides
+
+  - tag: grouprideguru
+    name: Group Ride Guru
+    description: |
+      The person who organizes and leads the most amount of Freezing Saddles group rides.
+    rank_by: rides
+
+  - tag: heroesworkhere
+    name: Heroes Work Here
+    description: |
+      Heroes can be anywhere -- a hospital, school, grocery store, or police station. Find a sign
+      that thanks them, take a picture, and tag your ride <code>#HeroesWorkHere</code>.
+    rank_by: rides
+
+  - tag: lakefinder
+    name: Lake Finder
+    description: |
+      Ride your bike a least a mile to any lake, pond or massive impounded body of water (loosely defined) that is freely accessible
+      to the public. Tag with <code>#LakeFinder</code>.
+    rank_by: rides
+
+  - tag: library
+    name: Library
+    description: |
+      According to multiple pages on the internet, February is National Library Lover's Month.
+      Since I agree that libraries are awesome, to celebrate, I'm sponsoring a related prize.
+      Beginning <strong>February 1</strong> (and through the end of Freezing Saddles), once per day, visit an
+      active public library, take a picture of said library, use hashtag <code>#library</code>
+      on your ride and photo, and win.  Each unique library only counts once.
+    discord: 1462202150632554730
+    rank_by: days
+    sponsors: [12125159]
+
+  - tag: lolfunny
+    alt: lolfunny26
+    name: LOL Funny
+    description: |
+      Ride 1+ miles and post a photo of something you find that is laugh-out-loud funny to YOU.
+      Tag your ride with hashtag <code>lolfunny</code> and add the photo to your ride in Strava.
+      If it's not obvious, add a description to the photo of what about it struck you as funny.
+    discord: 1457486832831959151
+    sponsors: [2831630]
+    rank_by: days
+    default_view: photos
+
+  - tag: londonbridge
+    name: London Bridge
+    description: |
+      Number of rides where you fell 😨🚲😱 (tagged with <code>#londonbridge</code>).
+    rank_by: rides
+
+  - tag: moremtb
+    name: More Mountain Biking
+    description: |
+      Ride at least 2 miles on any of the trails that MORE helps with, listed here:
+      <a href="https://more-mtb.org/collections/trails" target="_blank" rel="noreferrer">https://more-mtb.org/collections/trails</a>.
+      Yes, it can be part of bigger (road/gravel) ride, but at least 2 miles have to be on those MORE singletrack/trails.
+      Tag your ride with hashtag <code>moremtb</code>.
+      If you ride a trail that isn't in the MORE inventory, those won't count so please don't tag them.
+    extra_tab: MORE Map
+    extra_body: |
+      <iframe class="c3-wide my-3 my-lg-4" src="https://www.arcgis.com/apps/Embed/index.html?webmap=28848aa8c63f4780843f5a3ea358debd&extent=-78.5714,38.1209,-75.0255,39.8226&zoom=true&scale=true&disable_scroll=false&theme=light">
+      </iframe>
+    rank_by: days
+    discord: 1462977433585062023
+    sponsors: [190447]
+
+  - tag: oldGeorge
+    name: Old Georgetown Bike Lane
+    description: |
+      Ride some or all part from Cedar Lane to Pike & Rose in Bethesda - and tag your ride with <code>#oldGeorge</code> to show your support for the bike lane on that stretch of road.
+    rank_by: rides
+
+  - tag: parks
+    name: Park Finder
+    description: |
+      Ride a bike to a park, post the ride to Strava with <code>#parks</code> in the title. Each park is one point.
+      No daily limit, but you’ll have to break your ride into multiple Strava rides with <code>#parks</code>
+      in the title to tabulate correctly. Must be a unique park to qualify in the scoring–no repeats.
+    rank_by: rides
+
+  - tag: pizza
+    name: Pizzaneuring
+    description: |
+      Ride for pizza, eat pizza, and post a photo.
+    rank_by: rides
+
+  - tag: publicartfinder
+    name: Public Art Finder
+    description: |
+      Take a picture and upload your ride with hashtag <code>#publicartfinder</code>.
+    discord: 1446691565555814572
+    sponsors: [38633292]
+    rank_by: rides
+    default_view: photos
+    friendless: true
+
+  - tag: scavhunt
+    name: Photo Scavenger Hunt
+    description: |
+      Ride your bike to find the word of the day, photograph it, tag your ride <code>#scavhunt</code>
+      and add the photo to the ride in Strava. If you have multiple photos, tag just one of them
+      with <code>#scavhunt</code> in the photo description.
+    rank_by: days
+    default_view: photos
+    discord: 1455974154137239787
+    sponsors: [11555517, 4704298]
+    friendless: true
+
+  - tag: singlespeed
+    name: Singlespeed
+    description: |
+      Most singlespeed miles wins. Fixed gear counts, but isn't required. If your bike is cluttered with unnecessary gears, just don't shift the entire ride and it counts. Tag your rides <code>#singlespeed</code>.
+    sponsors: [516697]
+    discord: 1447780972480303255
+    rank_by: miles
+
+  - tag: socks
+    name: Socks
+    description: |
+      Show off your socks! Use the #SOCKS hashtag in your Strava titles, or drop photos in the linked forum thread.
+    rank_by: miles
+
+  - tag: stem
+    name: STEM
+    description: |
+      Ride your bike, at least a mile, to any site related to
+      Science, Technology, Engineering, or Mathematics (STEM) and take a picture with your bike.
+      Tag with <code>#STEM</code>.
+    rank_by: miles
+
+  - tag: thetacoride
+    name: The Taco Ride
+    description: |
+      Of course, you know there are lots of taco places in the DMV area. And there is no better way re-energize during a ride or end a long ride with some tacos! For this pointless prize, simply ride your bike at least 5 miles round trip and snap a pic of your bike in front of the establishment, along with a pic of your meal. <strong>A BONUS POINT WILL BE GIVEN FOR A VEGAN OR VEGGIE TACO!</strong>
+    rank_by: rides
+
+  - tag: tandemstyle
+    name: Tandem Style
+    description: |
+      If you see a tandem, snap a picture, put it in your Strava, and tag with <code>#tandemstyle</code>.
+      If you see Russ @DCA & Elizabeth I Like Wheels on Miss MoneyPenny, snap that picture for 5 points extra!
+    rank_by: rides
+
+  - tag: tandem
+    name: Tandem Rides
+    description: |
+      Ride your tandem bike and tag the ride with <code>#tandem</code>. The rider who has the most tandem rides wins. Bonus points awarded for rides with a blind or visually impaired stoker (tag <code>#tandemVI</code>) or with a partner age 15 or under (<code>#tandemKid</code>).
+    discord: 1446630946911686848
+    sponsors: [26341642, 17674988]
+    rank_by: rides
+
+  - tag: tandemVI
+    name: Tandem Rides - Visually Impaired
+    description: |
+      Ride your tandem bike and tag the ride with <code>#tandem</code>. The rider who has the most tandem rides wins. Bonus points awarded for rides with a blind or visually impaired stoker (tag <code>#tandemVI</code>) or with a partner age 15 or under (<code>#tandemKid</code>).
+    sponsors: [26341642, 17674988]
+    rank_by: rides
+
+  - tag: tandemKid
+    name: Tandem Kid
+    description: |
+      Ride your tandem bike and tag the ride with <code>#tandem</code>. The rider who has the most tandem rides wins. Bonus points awarded for rides with a blind or visually impaired stoker (tag <code>#tandemVI</code>) or with a partner age 15 or under (<code>#tandemKid</code>).
+    sponsors: [26341642, 17674988]
+    rank_by: rides
+
+  - tag: treats
+    name: Street Treats
+    description: |
+      Find a street treat out in the wild while riding your bike.
+    rank_by: rides
+
+  - tag: UnderCon
+    alt: under-construction
+    name: Under Construction
+    description: |
+      Post a picture taken while on a bike ride of new transportation infrastructure under construction.
+      Tag your ride with with <code>#UnderCon</code>.
+    discord: 1448069690436878568
+    rank_by: rides
+    sponsors: [7188282]
+    default_view: photos
+
+  - tag: withkid
+    name: Riding with Kids
+    description: |
+      For the Saddlero who rides the most miles accompanying kids who are riding under their own power.
+    sponsors: [1272438]
+
+  - tag: Yum
+    name: Yum
+    description: |
+      If you stop at a store, cafe, etc. to eat on a ride during BAFS:
+      <ol>
+      <li>Take a photo of what you eat</li>
+      <li>Add the photo to your Strava ride</li>
+      <li>Include <code>#Yum</code> in your Strava ride title</li>
+      </ol>
+    discord: 1456702503981814042
+    rank_by: days
+    sponsors: [380419]

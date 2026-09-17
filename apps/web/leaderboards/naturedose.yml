@@ -1,0 +1,58 @@
+---
+title: NatureDose
+description: |
+  Number of minutes spent in nature, as measured by
+  <a href="https://www.naturequant.com/naturedose/" target="_blank" rel="noreferrer">NatureDose®</a>.
+discord: 1449054511459991653
+sponsors: [516697]
+fields:
+  - name: athlete_id
+    visible: false
+  - name: athlete_name
+    label: Rider
+    type: athlete
+  - name: nature_rides
+    label: Nature Rides
+    type: number
+  - name: nature_minutes_tm
+    label: Nature Time
+    formatx: "{nature_m_tm:0}h {nature_s_tm:0}m"
+    rank_by: true
+    type: number
+query: |
+  with nature_rides as (
+    select
+      R.id,
+      R.athlete_id,
+      R.elapsed_time,
+      R.moving_time,
+      least(
+        cast(
+          regexp_substr(R.description, '(?<=NatureDose. of )[0-9]+(?= minutes)')
+          as unsigned
+        ),
+        floor(R.moving_time / 60)
+      ) as nature_minutes_tm
+    from
+      rides R
+    where
+      R.description like '%NatureDose%'
+  )
+  select
+    A.id as athlete_id,
+    A.display_name as athlete_name,
+    count(R.id) as nature_rides,
+    sum(R.nature_minutes_tm) as nature_minutes_tm,
+    floor(sum(R.nature_minutes_tm) / 60) as nature_m_tm,
+    sum(R.nature_minutes_tm) % 60 as nature_s_tm
+  from
+    athletes A join
+    nature_rides R on R.athlete_id = A.id
+  where
+    R.elapsed_time < R.moving_time * 1.25
+  group by
+    A.id
+  having
+    nature_minutes_tm is not null
+  order by
+    nature_minutes_tm desc

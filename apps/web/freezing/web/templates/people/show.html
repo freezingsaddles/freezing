@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block head %}
+    <style>
+  .btn-impersonate {
+    color: #ffffff;
+    background-color: #022ca2;
+    border-color: #3c3ca2;
+  }
+
+  .btn-impersonate:hover,
+  .btn-impersonate:focus,
+  .btn-impersonate:active,
+  .btn-impersonate.active,
+  .open .dropdown-toggle.btn-impersonate {
+    color: #ffffff;
+    background-color: #100640;
+    border-color: #3c3ca2;
+  }
+
+  .btn-impersonate:active,
+  .btn-impersonate.active,
+  .open .dropdown-toggle.btn-impersonate {
+    background-image: none;
+  }
+
+  .btn-impersonate.disabled,
+  .btn-impersonate[disabled],
+  fieldset[disabled] .btn-impersonate,
+  .btn-impersonate.disabled:hover,
+  .btn-impersonate[disabled]:hover,
+  fieldset[disabled] .btn-impersonate:hover,
+  .btn-impersonate.disabled:focus,
+  .btn-impersonate[disabled]:focus,
+  fieldset[disabled] .btn-impersonate:focus,
+  .btn-impersonate.disabled:active,
+  .btn-impersonate[disabled]:active,
+  fieldset[disabled] .btn-impersonate:active,
+  .btn-impersonate.disabled.active,
+  .btn-impersonate[disabled].active,
+  fieldset[disabled] .btn-impersonate.active {
+    background-color: #022ca2;
+    border-color: #fc3ca2;
+  }
+
+  .btn-impersonate .badge {
+    color: #022ca2;
+    background-color: #ffffff;
+  }
+
+  .border-collapse {
+    border-collapse: collapse;
+    td {
+      border: 1px solid var(--bs-border-color);
+      &.border-none {
+        border: none;
+      }
+    }
+  }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="card flex-row align-items-center">
+        {# djlint:off H006 #}
+        <img class="user-profile"
+             src="{{ '/img/logo-blue.png' if not data.user.profile_photo else data.user.profile_photo }}"
+             alt="photo of {{ data.user.display_name }}" />
+        {# djlint:on #}
+        <div class="d-flex flex-column ms-3">
+            <h5 class="card-title">
+                {{ data.user.display_name }}
+            </h5>
+            <h6 class="card-subtitle text-body-secondary mb-3">
+                <a class="hover-underline" href="/teams/{{ data.team.id }}">{{ data.team.name }}</a>
+            </h6>
+            <div class="d-flex">
+                <a class="btn btn-strava btn-sm"
+                   rel="noreferrer"
+                   target="_blank"
+                   href="https://www.strava.com/athletes/{{ data.user.id }}">View on Strava</a>
+                {% if data.environment == 'localdev' %}
+                    <a class="btn btn-impersonate btn-sm ms-3"
+                       href="/authorization?athlete_id={{ data.user.id }}">🕵 Impersonate 👀</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="mt-3 mt-lg-4 d-grid grid-gap-3 grid-gap-lg-4 grid-lg-2">
+        <div>
+            <h5 class="ps-2">
+                Ride Statistics
+            </h5>
+            <ul class="list-group">
+                <li class="list-group-item">
+                    Total Rides: <span class="float-end">{{ data.totalrides }}</span>
+                </li>
+                <li class="list-group-item">
+                    Total Mileage:
+                    <span class="float-end">{{ data.totaldist | round(2) }}</span>
+                </li>
+                <li class="list-group-item">
+                    Average Ride:
+                    <span class="float-end">
+                        {% if data.totalrides > 0 %}
+                            {{ (data.totaldist / data.totalrides) |
+                            round(2) }}
+                        {% else %}
+                            –
+                        {% endif %}
+                    </span>
+                </li>
+                <li class="list-group-item">
+                    Rides This Week: <span class="float-end">{{ data.weekrides }}</span>
+                </li>
+                <li class="list-group-item">
+                    Mileage This Week:
+                    <span class="float-end">{{ data.weektotal | round(2) }}</span>
+                </li>
+                <li class="list-group-item">
+                    Average Ride This Week:
+                    <span class="float-end">
+                        {% if data.weekrides > 0 %}
+                            {{ (data.weektotal / data.weekrides) |
+                            round(2) }}
+                        {% else %}
+                            –
+                        {% endif %}
+                    </span>
+                </li>
+                <li class="list-group-item">
+                    Rides Today: <span class="float-end">{{ data.todayrides }}</span>
+                </li>
+                <li class="list-group-item">
+                    Mileage Today:
+                    <span class="float-end">{{ data.todaydist | round(2) }}</span>
+                </li>
+                <li class="list-group-item">
+                    Average Ride Today:
+                    <span class="float-end">
+                        {% if data.todayrides > 0 %}
+                            {{ (data.todaydist / data.todayrides) |
+                            round(2) }}
+                        {% else %}
+                            –
+                        {% endif %}
+                    </span>
+                </li>
+            </ul>
+        </div>
+        <div>
+            {% if session.athlete_id == data.user.id %}
+                <a class="float-end hover-underline me-2" href="/tribes/my">Edit</a>
+            {% endif %}
+            <h5 class="ps-2">
+                Bike Tribes
+            </h5>
+            <ul class="list-group">
+                {% for group in data.tribal_groups %}
+                    <li class="list-group-item">
+                        {{ group.name }}
+                        {% if group.name in data.my_tribes %}
+                            <a href="/tribes/individual?{{ group.id }}={{ data.my_tribes[group.name] | urlencode }}"
+                               class="float-end hover-underline">{{ data.my_tribes[group.name] }}</a>
+                        {% else %}
+                            <span class="float-end">–</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <h5 class="ps-2 mt-3 mt-lg-4">
+        Ride Mosaic
+    </h5>
+    <div>
+        <table class="table w-100 border-collapse">
+            {% for day in range(0,7) %}
+                <tr>
+                    {% for week in range(0,data.weeks) %}
+                        {% set date = week * 7 + day %}
+                        <td style="background-color: {{ data.mosaic[date] or 'transparent' }}"
+                            {% if date < data.first_day or date > data.last_day %} class="border-none" {% endif %}>
+                            &nbsp;
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% endblock %}

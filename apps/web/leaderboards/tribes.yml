@@ -1,0 +1,29 @@
+---
+tribal_groups:
+  - name: Which side of the river?
+    id: side
+    tribes:
+      - The right side
+      - The wrong side
+  - name: Your handlebars...
+    id: bars
+    tribes:
+      - Dropped
+      - Flat
+  - name: Foot down...
+    id: foot
+    tribes:
+      - Lefty
+      - Righty
+      - Track stand
+  - name: Better frostbite than bar mitts...
+    id: mitts
+    tribes:
+      - Am I right?
+      - Fingers so toasty
+  - name: Gender
+    id: gender
+    tribes:
+      - Female
+      - Male
+      - Nonbinary

@@ -1,0 +1,66 @@
+---
+name: Build Deploy and Test Latest
+
+on:
+  push:
+    branches:
+      - 'main'
+
+permissions:
+  contents: read
+
+jobs:
+
+  build:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-docker.yml
+    concurrency: build-deploy-and-test
+    with:
+      tag: latest
+      push: true
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  deploy:
+    permissions:
+      contents: read
+    environment: production
+    concurrency: build-deploy-and-test
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: install
+        uses: appleboy/ssh-action@25ce8cbbcb08177468c7ff7ec5cbfa236f9341e1 # v1.1.0
+        with:
+          host: ${{ vars.HOST }}
+          username: ${{ vars.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ vars.PORT }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          script: |
+            set -euo pipefail
+            cd /opt/compose
+            docker compose pull freezing-web
+            docker compose up -d freezing-web
+            docker image prune -f
+      - name: wait
+        uses: iFaxity/wait-on-action@a7d13170ec542bdca4ef8ac4b15e9c6aa00a6866 # v1.2.1
+        with:
+          resource: https-get://freezingsaddles.org
+          timeout: 5000
+
+  test:
+    permissions:
+      contents: read
+    concurrency: build-deploy-and-test
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: test-wget-spider
+        run: "URL=https://freezingsaddles.org test/wget-spider.sh"

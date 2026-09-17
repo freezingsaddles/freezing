@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block head %}
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+          integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+          crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+            integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+            crossorigin=""></script>
+    <link rel="stylesheet"
+          href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css"
+          integrity="sha256-qx5w1Z7EBGW65+cDDaLzzPKBM/1QLmK9WY7vut/XpzI="
+          crossorigin="" />
+    <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"
+            integrity="sha256-RamwepGJzlYFTGIKlHzPQeKR5YyV6bYVM7dAqqZe5cs="
+            crossorigin=""></script>
+    <!-- https://github.com/maplibre/maplibre-gl-leaflet -->
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"
+            integrity="sha256-Hmz4yz61/ZCYeaob82o4P7UGyaWy27+rq85lopTdH8s="
+            crossorigin=""></script>
+    <!-- https://github.com/elmarquis/Leaflet.GestureHandling -->
+    <link rel="stylesheet" href="/css/leaflet-gesture-handling.min.css" />
+    <script src="/js/leaflet-gesture-handling.min.js"></script>
+    <script src="/js/ride-map.js"></script>
+{% endblock %}
+{% block title %}
+    {{ title }}
+{% endblock %}
+{% block content %}
+    <h2 class="mb-3">
+        {{ title }}
+    </h2>
+    <p>
+        {{ description | safe }}
+    </p>
+    {% if discord %}
+        <p>
+            See:
+            <a href="https://discord.com/channels/1443244420358213643/{{ discord }}"
+               target="_blank"
+               rel="noreferrer">Discord Channel</a>
+        </p>
+    {% endif %}
+    {% if sponsors %}
+        <p>
+            Sponsored by
+            {% for sp in sponsors %}
+                {# djlint:off #}<em><a href="{{ sp.url }}">{{ sp.name }}</a></em
+                >{% if loop.last %}.{% else %}, {% endif %}{# djlint:on #}
+            {% endfor %}
+        </p>
+    {% else %}
+        <p class="text-muted">
+            This ride has no sponsor and is completely pointless.
+        </p>
+    {% endif %}
+    {% if rides %}
+        <div role="tabpanel"  class="mt-lg-4 mb-lg-3">
+            <ul class="nav nav-tabs mb-0" role="tablist">
+                <li role="presentation" class="nav-item">
+                    <a href="#leaderboard"
+                       class="nav-link active"
+                       aria-controls="leaderboard"
+                       role="tab"
+                       data-bs-toggle="tab">Leaderboard</a>
+                </li>
+                <li role="presentation" class="nav-item">
+                    <a href="#map"
+                       id="map-link"
+                       class="nav-link"
+                       aria-controls="map"
+                       role="tab"
+                       data-bs-toggle="tab">Ride Map</a>
+                </li>
+            </ul>
+            <div class="tab-content">
+                <div role="tabpanel"
+                     class="tab-pane active py-2 leaderboard-overflow"
+                     id="leaderboard">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th class="number rank">
+                                    Rank
+                                </th>
+                                {% for field in fields %}
+                                    {% if field.visible %}
+                                        <th class="{{ field.type }}">
+                                            {{ field.label or field.name }}
+                                        </th>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in data %}
+                                <tr class="{{ row.athlete_id | myself }}">
+                                    <td class="number rank">
+                                        {{ row.rank }}
+                                    </td>
+                                    {% for field in fields %}
+                                        {% if field.visible %}
+                                            <td class="{{ field.type }}">
+                                                {{ row[field.name] | safe }}
+                                            </td>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div role="tabpanel" class="tab-pane c3-wide my-3 my-lg-4" id="map">
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <ul class="nav nav-tabs mt-lg-4">
+            <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="">Leaderboard</a>
+            </li>
+        </ul>
+        <div class="leaderboard-overflow mt-2">
+            <table class="table table-condensed">
+                <thead>
+                    <tr>
+                        <th class="number rank">
+                            Rank
+                        </th>
+                        {% for field in fields %}
+                            {% if field.visible %}
+                                <th class="{{ field.type }}">
+                                    {{ field.label or field.name }}
+                                </th>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                        <tr class="{{ row.athlete_id | myself }}">
+                            <td class="number rank">
+                                {{ row.rank }}
+                            </td>
+                            {% for field in fields %}
+                                {% if field.visible %}
+                                    <td class="{{ field.type }}">
+                                        {{ row[field.name] | safe }}
+                                    </td>
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block foot %}
+    {% if rides %}
+        <script type="text/javascript">
+  $(function() {
+    $('#map-link').one('click', () => {
+      create_ride_map('map', '/api/all/trackmap.json?rides={{rides}}', null, true);
+    });
+  });
+        </script>
+    {% endif %}
+{% endblock %}

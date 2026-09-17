@@ -1,0 +1,33 @@
+---
+title: Kidical Rides & Miles
+description: |
+  For the Saddlero who carries or tows kids the farthest.
+sponsors: [1272438]
+fields:
+  - name: athlete_id
+    visible: false
+  - name: athlete_name
+    label: Rider
+    type: athlete
+  - name: kidical_miles
+    label: Kidical Miles
+    rank_by: true
+    type: number
+    format: "{0:.1f} mi"
+  - name: kidical_rides
+    label: Kidical Rides
+    type: number
+  - name: ride_ids
+    visible: false
+query: |
+  select
+    A.id as athlete_id,
+    A.display_name as athlete_name,
+    count(R.id) as kidical_rides,
+    sum(R.distance) as kidical_miles,
+    group_concat(hex(R.id)) as ride_ids
+  from athletes A
+    join rides R on R.athlete_id = A.id
+  where R.name like '%#kidical%'
+  group by A.id, A.display_name
+  order by kidical_miles desc, kidical_rides desc

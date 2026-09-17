@@ -1,0 +1,27 @@
+---
+title: Shortest Rides
+description: Rider average distance per ride, minimum ten days with a ride.
+fields:
+  - name: athlete_id
+    visible: false
+  - name: athlete_name
+    label: Rider
+    type: athlete
+  - name: dist
+    label: Average Distance
+    rank_by: true
+    type: number
+  - name: num_ride_days
+    label: Num Ride Days
+    type: number
+query: |
+  select
+          a.id as athlete_id,
+          a.display_name as athlete_name,
+          avg(r.distance) as dist,
+          count(distinct(date(r.start_date))) as num_ride_days
+  from athletes a
+  join rides r ON r.athlete_id = a.id
+  group by a.id, a.display_name
+  having num_ride_days >= 10
+  order by dist

@@ -1,0 +1,78 @@
+---
+title: Doom Patrol
+description: |
+  <a href="https://waba.org/2026/02/13/federal-meddling-on-15th-street/" target="_blank" rel="nofollow"><strong>Federal meddling on 15th Street</strong></a>
+  <p>
+  Your task is to ride <a href="https://www.strava.com/segments/40946952" target="_blank" rel="nofollow">up</a> and
+   <a href="https://www.strava.com/segments/40946977" target="_blank" rel="nofollow">down</a> 15th
+  Street between the Jefferson Memorial &amp; Constitution Ave.
+  If you see trucks or construction equipment, pull up and call Elizabeth (see the
+  <a href="https://wabadc.my.salesforce-sites.com/GW_Volunteers__VolunteersJobListingFS?CampaignID=701Rm00000z39jcIAA" target="_blank" rel="nofollow">sign-up form</a>)
+  so WABA can start their legal response.
+  <p>
+  Hopefully it's just a quiet, pleasant bike ride. Ride safe, follow traffic laws,
+  and don't do anything you're not comfortable with.
+  <p>
+  Patrol runs from 2/19 through either the end of BAFS or the start of lane removal work, whichever comes first.
+fields:
+  - name: athlete_id
+    visible: false
+  - name: athlete_name
+    label: Rider
+    type: athlete
+  - name: total_rides
+    label: Rides
+    rank_by: true
+    type: number
+    format: "{0:.0f}"
+  - name: total_time
+    label: Time Spent
+    type: number
+    formatx: "{hours:0}h {minutes:0}m"
+  - name: ride_ids
+    visible: false
+query: |
+  with segment_rides as (
+    select
+      A.id as athlete_id,
+      A.display_name as athlete_name,
+      R.id as ride_id,
+      R.moving_time,
+      count(case when E.segment_id = 40946952 then 1 end) as ups,
+      count(case when E.segment_id = 40946977 then 1 end) as downs
+    from
+      athletes A
+    inner join
+      rides R on R.athlete_id = A.id
+    inner join
+      ride_efforts E on E.ride_id = R.id
+    where
+      (E.segment_id = 40946952 or E.segment_id = 40946977)
+      and date(convert_tz(R.start_date, R.timezone, 'America/New_York')) >= '2026-02-19'
+   group by
+      athlete_id, athlete_name, ride_id
+  ),
+  patrol_rides as (
+    select
+      athlete_id,
+      athlete_name,
+      group_concat(hex(ride_id)) as ride_ids,
+      sum(least(ups, downs)) as total_rides,
+      sum(moving_time) as total_time
+    from
+      segment_rides
+    where
+      ups > 0 and downs > 0
+    group by
+      athlete_id, athlete_name
+  )
+  select
+    athlete_id,
+    athlete_name, ride_ids,
+    total_rides,
+    total_time,
+    floor(total_time / 3600) as hours,
+    floor(total_time / 60) % 60 as minutes
+  from patrol_rides
+  order by
+    total_rides desc, athlete_name asc

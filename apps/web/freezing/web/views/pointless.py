@@ -1,0 +1,640 @@
+import base64
+import gzip
+import math
+import operator
+from datetime import datetime, timezone
+
+from flask import Blueprint, abort, redirect, render_template, request, session
+from freezing.model import meta
+from freezing.model.orm import Athlete
+from sqlalchemy import text
+
+from freezing.web.autolog import log
+from freezing.web.config import config
+from freezing.web.exc import ObjectNotFound
+from freezing.web.utils.genericboard import format_rows, load_board, load_board_and_data
+from freezing.web.utils.hashboard import load_hashtag
+from freezing.web.utils.segboard import load_segment
+
+blueprint = Blueprint("pointless", __name__)
+
+
+@blueprint.route("/generic/<leaderboard>")
+def generic(leaderboard):
+    try:
+        board, data = load_board_and_data(leaderboard)
+    except ObjectNotFound:
+        abort(404)
+    else:
+        sponsors = (
+            [_load_sponsor(sponsor) for sponsor in board.sponsors]
+            if board.sponsors
+            else None
+        )
+        rides = None
+        if any(f.name == "ride_ids" for f in board.fields):
+            length = len(data)
+            while not rides:
+                # hex|join|utf-8|gzip|base64|utf-8 :strong:
+                ride_ids = ",".join([d["ride_ids"] for d in data[:length]])
+                rides = base64.b64encode(
+                    gzip.compress(ride_ids.encode("utf-8")), b"-_"
+                ).decode("utf-8")
+                log.info(
+                    f"Compressed {ride_ids.count(',')} rides from {len(ride_ids)} to {len(rides)} chars"
+                )
+                # some piece of infrastructure craps out at 40xx chars
+                if len(rides) > 4000:
+                    log.info(f"Ride IDs too long ({len(rides)} chars), shrinking")
+                    rides = None
+                    length = length // 2
+
+        return render_template(
+            "pointless/generic.html",
+            fields=board.fields,
+            title=board.title,
+            description=board.description,
+            sponsors=sponsors,
+            show_rides=[f for f in board.fields if f.name == "ride_ids"],
+            url=board.url,
+            discord=board.discord,
+            data=data,
+            rides=rides,
+        )
+
+
+@blueprint.route("/points_per_mile")
+def points_per_mile():
+    """
+    Note: set num_days to the minimum number of ride days to be eligible for the prize.
+    This was 33 in 2017, 36 in 2018, and 40 in 2019.
+
+    (@hozn noted: I didn't pay enough attention to determine if this is something we can calculate.)
+    """
+    num_days = 40
+    query = text("""
+        select
+            A.id as athlete_id,
+            A.display_name as athlete_name,
+            sum(B.distance) as dist,
+            sum(B.points) as pnts,
+            count(B.athlete_id) as ridedays
+        from athletes A join daily_scores B on A.id = B.athlete_id group by athlete_id;
+    """)
+    ppm = [
+        (
+            x._mapping["athlete_id"],
+            x._mapping["athlete_name"],
+            x._mapping["pnts"],
+            x._mapping["dist"],
+            (x._mapping["pnts"] / x._mapping["dist"]) if x._mapping["dist"] > 0 else 0,
+            x._mapping["ridedays"],
+        )
+        for x in meta.scoped_session().execute(query).fetchall()
+    ]
+    ppm.sort(key=lambda tup: tup[3], reverse=True)
+    return render_template(
+        "pointless/points_per_mile.html", data={"riders": ppm, "days": num_days}
+    )
+
+
+def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
+    """
+    orderby 'miles', 'rides' or 'days'
+    """
+    sess = meta.scoped_session()
+    rank_by = "hashtag_miles"
+    if orderby == "days":
+        rank_by = "hashtag_days"
+    elif orderby == "rides":
+        rank_by = "hashtag_rides"
+    q = text(f"""
+        with hash_rides as (
+            select
+                R.id,
+                R.athlete_id,
+                R.distance,
+                date(convert_tz(R.start_date, R.timezone, :tz)) as start_date
+            from
+                rides R
+            where
+                R.distance >= :min_miles and
+                (
+                    R.name like concat('%', '#', :hashtag, '%') or
+                    R.name like concat('%', '#', :alttag, '%')
+                )
+        ), daily_rides as (
+            select
+                H.athlete_id,
+                sum(H.distance) as distance,
+                count(*) as rides
+            from hash_rides H
+            group by H.athlete_id, H.start_date
+        ), htdata as (
+            select
+                A.id,
+                A.display_name as athlete_name,
+                sum(R.rides) as hashtag_rides,
+                sum(R.distance) as hashtag_miles,
+                count(*) as hashtag_days
+            from
+                athletes A join
+                daily_rides R on R.athlete_id = A.id join
+                teams T on T.id = A.team_id
+            where
+                not :friendless or not T.leaderboard_exclude
+            group by
+                A.id, A.display_name
+        )
+        select
+            H.*,
+            rank() over (order by H.{rank_by} desc) as hashtag_rank
+        from
+            htdata H
+        order by
+            H.{rank_by} desc, lower(H.athlete_name) asc
+        """).bindparams(
+        tz=config.TIMEZONE,
+        hashtag=hashtag,
+        alttag=alttag or hashtag,
+        min_miles=min_miles or 0.0,
+        friendless=friendless or False,
+    )
+    retval = [
+        (
+            x._mapping["id"],
+            x._mapping["athlete_name"],
+            x._mapping["hashtag_rides"],
+            x._mapping["hashtag_miles"],
+            x._mapping["hashtag_days"],
+            x._mapping["hashtag_rank"],
+        )
+        for x in sess.execute(q).fetchall()
+    ]
+    return {"tdata": retval}
+
+
+def _get_phototag_tdata(request, hashtag):
+    page = int(request.args.get("page", 1))
+    if page < 1:
+        page = 1
+    date = request.args.get("date")
+    mine = request.args.get("mine") == "true"
+    myself = session.get("athlete_id") if mine else None
+
+    page_size = 24
+    offset = page_size * (page - 1)
+    limit = page_size
+
+    # clunky query so if a tagged ride has tagged photos then include
+    # those, else include its primary photo.
+    with_union_photos = """
+        with tagged_rides as (
+            select
+                R.id AS ride_id,
+                R.name,
+                R.athlete_id,
+                convert_tz(R.start_date, R.timezone, :tz) AS start_date,
+                A.display_name
+            from
+                rides R join athletes A on A.id = R.athlete_id
+            where
+                R.name like :tag and
+                (:myself is null or A.id = :myself) and
+                (:date is null or date(convert_tz(R.start_date, R.timezone, :tz)) = :date)
+        ), primary_photos as (
+            select
+                P.id, P.caption, P.img_l, R.*
+            from
+                tagged_rides R join
+                ride_photos P ON P.ride_id = R.ride_id
+            where
+                P.primary
+        ), tagged_photos as (
+            select
+                P.id, P.caption, P.img_l, R.*
+            from
+                tagged_rides R join
+                ride_photos P ON P.ride_id = R.ride_id
+            where
+                P.caption like '%#%'
+        ), union_photos as (
+            select
+                P.*
+            from
+                tagged_photos P
+            where
+                lower(P.caption) like :tag
+            union all
+            select
+                P.*
+            from
+                primary_photos P
+            where
+                P.ride_id not in (select ride_id from tagged_photos)
+        )
+        """
+
+    total_q = text(f"""
+        {with_union_photos}
+        select
+            count(P.id)
+        from
+            union_photos P
+        """).bindparams(
+        tz=config.TIMEZONE, tag=f"%#{hashtag}%", date=date, myself=myself
+    )
+    num_photos = meta.scoped_session().execute(total_q).scalar_one()
+
+    photo_q = text(f"""
+        {with_union_photos}
+        select
+            P.*
+        from
+            union_photos P
+        order by
+            P.start_date desc,
+            P.id
+        limit :limit
+        offset :offset
+        """).bindparams(
+        tz=config.TIMEZONE,
+        tag=f"%#{hashtag.lower()}%",
+        date=date,
+        myself=myself,
+        offset=offset,
+        limit=limit,
+    )
+    photos = meta.scoped_session().execute(photo_q)
+
+    if num_photos < offset:
+        page = 1
+
+    total_pages = int(math.ceil((1.0 * num_photos) / page_size))
+
+    if page > total_pages:
+        page = total_pages
+
+    return {
+        "photos": [photo for photo in photos],
+        "page": page,
+        "total_pages": total_pages,
+        "date": datetime.fromisoformat(date) if date else "",
+        "datestr": date,
+        "mine": mine,
+    }
+
+
+def _load_sponsor(sponsor: int):
+    person = meta.scoped_session().get(Athlete, sponsor)
+    return (
+        {"name": person.display_name, "url": f"/people/{sponsor}"}
+        if person
+        else {"name": "Unknown", "url": "#"}
+    )
+
+
+@blueprint.route("/hashtag/<string:hashtag>")
+def hashtag_leaderboard(hashtag):
+    meta = load_hashtag(hashtag)
+    ht = meta.tag if meta else hashtag
+    rank_by = meta.rank_by if meta else "miles"
+    default_view = meta.default_view if meta else None
+    view = request.args.get("view", default_view or "leaderboard")
+    sponsors = (
+        [_load_sponsor(sponsor) for sponsor in meta.sponsors]
+        if meta and meta.sponsors
+        else None
+    )
+    banned = []
+    if meta and meta.sponsors:
+        banned.extend(meta.sponsors)
+    if meta and meta.banned:
+        banned.extend(meta.banned)
+
+    args = {}
+    if view == "leaderboard":
+        args = _get_hashtag_tdata(
+            hashtag=ht,
+            alttag=meta.alt if meta else None,
+            orderby=rank_by,
+            friendless=meta.friendless if meta else None,
+            min_miles=meta.min_miles if meta else None,
+        )
+    elif view == "photos":
+        args = _get_phototag_tdata(request=request, hashtag=ht)
+
+    return render_template(
+        "pointless/hashtag.html",
+        **{
+            "hashtag": f"#{ht}",
+            "hashtag_notag": ht,
+            "meta": meta,
+            "view": view,
+            "sponsors": sponsors,
+            "banned": banned,
+            **args,
+        },
+    )
+
+
+# Junk but someone posted the wrong url everywhere
+@blueprint.route("/phototag/<string:hashtag>")
+def phototag_leaderboard(hashtag):
+    return redirect(f"/pointless/hashtag/{hashtag}?view=photos")
+
+
+def _get_segment_tdata(segment):
+    sess = meta.scoped_session()
+    q = text("""
+        select
+            A.id,
+            A.display_name      as athlete_name,
+            E.segment_name      as segment_name,
+            count(E.id)         as segment_rides,
+            sum(E.elapsed_time) as total_time
+        from
+            athletes A join
+            rides R on R.athlete_id = A.id join
+            ride_efforts E on E.ride_id = R.id
+        where
+            E.segment_id = :segment
+        group by
+            A.id, A.display_name, E.segment_name;
+        """)
+    rs = sess.execute(q, params=dict(segment=segment))
+    retval = [
+        (
+            x._mapping["id"],
+            x._mapping["athlete_name"],
+            x._mapping["segment_name"],
+            x._mapping["segment_rides"],
+            x._mapping["total_time"],
+        )
+        for x in rs.fetchall()
+    ]
+    return sorted(retval, key=operator.itemgetter(3), reverse=True)
+
+
+@blueprint.route("/segment/<int:segment>")
+def segment_leaderboard(segment):
+    meta = load_segment(segment)
+    tdata = _get_segment_tdata(
+        segment=segment,
+    )
+    sponsors = (
+        [_load_sponsor(sponsor) for sponsor in meta.sponsors]
+        if meta and meta.sponsors
+        else None
+    )
+    banned = []
+    if meta and meta.sponsors:
+        banned.extend(meta.sponsors)
+    if meta and meta.banned:
+        banned.extend(meta.banned)
+    return render_template(
+        "pointless/segment.html",
+        data={
+            "tdata": tdata,
+            "segment_id": segment,
+            "segment_name": (
+                meta.segment_name
+                if meta
+                else tdata[0][2] if tdata else "Unknown Segment"
+            ),
+        },
+        meta=meta,
+        sponsors=sponsors,
+        banned=banned,
+    )
+
+
+@blueprint.route("/kidsathlon")
+def kidsathlon():
+    q = text("""
+        select
+        A.id as athlete_id,
+        A.display_name as athlete_name,
+        sum(case when (upper(R.name) like '%#KIDICAL%' and upper(R.name) like '%#WITHKID%') then R.distance else 0 end) as miles_both,
+        sum(case when (upper(R.name) like '%#KIDICAL%' and upper(R.name) not like '%#WITHKID%')then R.distance else 0 end) as kidical,
+        sum(case when (upper(R.name) like '%#WITHKID%' and upper(R.name) not like '%#KIDICAL%') then R.distance else 0 end) as withkid
+        from lbd_athletes A
+        join rides R on R.athlete_id = A.id
+        where (upper(R.name) like '%#KIDICAL%' or upper(R.name) like '%#WITHKID%')
+        group by A.id, A.display_name
+    """)
+    data = []
+    for x in meta.scoped_session().execute(q).fetchall():
+        miles_both = float(x._mapping["miles_both"])
+        kidical = miles_both + float(x._mapping["kidical"])
+        withkid = miles_both + float(x._mapping["withkid"])
+        if kidical > 0 and withkid > 0:
+            kidsathlon = kidical + withkid - miles_both
+        else:
+            kidsathlon = float(0)
+        data.append(
+            (
+                x._mapping["athlete_id"],
+                x._mapping["athlete_name"],
+                kidical,
+                withkid,
+                kidsathlon,
+            )
+        )
+    return render_template(
+        "pointless/kidsathlon.html",
+        data={"tdata": sorted(data, key=lambda v: v[4], reverse=True)},
+    )
+
+
+# to make a dict look more like a sqlalchemy 2.0 row
+class FakeRow:
+    def __init__(self, mapping):
+        self._mapping = mapping
+
+
+@blueprint.route("/multisegment/<string:leaderboard>")
+def multisegment(leaderboard):
+    board = load_board(leaderboard)
+    data = load_multisegment_board_data(board)
+    data.sort(key=lambda d: (-d["segment_rides"], d["athlete_name"]))
+    formatted = format_rows([FakeRow(d) for d in data], board)
+    return render_template(
+        "pointless/generic.html",
+        fields=board.fields,
+        title=board.title,
+        description=board.description,
+        url=board.url,
+        discord=board.discord,
+        data=formatted,
+    )
+
+
+@blueprint.route("/arlington")
+def arlington():
+    def combine(cw, ccw):
+        # if you have ridden no segments of ccw this will report cw as worst but that's okay in my book
+        cw_worse = (ccw is None) or (
+            cw is not None and cw["segment_rides"] < ccw["segment_rides"]
+        )
+        return {
+            "athlete_id": cw["athlete_id"] if cw else ccw["athlete_id"],
+            "athlete_name": cw["athlete_name"] if cw else ccw["athlete_name"],
+            "segment_id": cw["segment_id"] if cw_worse else ccw["segment_id"],
+            "segment_name": cw["segment_name"] if cw_worse else ccw["segment_name"],
+            "segment_rides": (cw["segment_rides"] if cw else 0)
+            + (ccw["segment_rides"] if ccw else 0),
+        }
+
+    board = load_board("arlington")
+    data_cw = {
+        d["athlete_id"]: d
+        for d in load_multisegment_board_data(load_board("arlington-cw"))
+    }
+    data_ccw = {
+        d["athlete_id"]: d
+        for d in load_multisegment_board_data(load_board("arlington-ccw"))
+    }
+    data = [
+        combine(data_cw.get(id), data_ccw.get(id))
+        for id in set(data_cw.keys()).union(data_ccw.keys())
+    ]
+    data.sort(key=lambda d: (-d["segment_rides"], d["athlete_name"]))
+    formatted = format_rows([FakeRow(d) for d in data], board)
+    sponsors = (
+        [_load_sponsor(sponsor) for sponsor in board.sponsors]
+        if board.sponsors
+        else None
+    )
+    return render_template(
+        "pointless/generic.html",
+        fields=board.fields,
+        title=board.title,
+        description=board.description,
+        sponsors=sponsors,
+        url=board.url,
+        discord=board.discord,
+        data=formatted,
+    )
+
+
+def load_multisegment_board_data(board):
+    # include anyone who has ridden on any segment, but count as zero any segment they've missed
+    rides = meta.scoped_session().execute(text(board.query)).fetchall()
+    # segment_id -> segment_name
+    segments = {
+        ride._mapping["segment_id"]: ride._mapping["segment_name"] for ride in rides
+    }
+    # athlete_id -> athlete_name
+    athletes = {
+        ride._mapping["athlete_id"]: ride._mapping["athlete_name"] for ride in rides
+    }
+    # (athlete_id, segment_id) -> segment_rides
+    segment_rides = {
+        (ride._mapping["athlete_id"], ride._mapping["segment_id"]): ride._mapping[
+            "segment_rides"
+        ]
+        for ride in rides
+    }
+    # athlete_id -> segment_id
+    worst_segments = {
+        id: min(segments.keys(), key=lambda s: segment_rides.get((id, s), 0))
+        for id in athletes.keys()
+    }
+    data = [
+        {
+            "athlete_id": athlete_id,
+            "athlete_name": athletes[athlete_id],
+            "segment_id": segment,
+            "segment_name": segments[segment],
+            "segment_rides": segment_rides.get((athlete_id, segment), 0),
+        }
+        for athlete_id, segment in worst_segments.items()
+    ]
+    return data
+
+
+@blueprint.route("/daily_variance")
+def daily_variance():
+    q = text("""
+        select a.display_name as name, vbd.* from variance_by_day vbd, lbd_athletes a where vbd.athlete_id=a.id
+    """)
+    days_left = (
+        config.END_DATE - datetime.now(timezone.utc)
+    ).days  # how many days left in the competition
+    if days_left < 0:
+        days_left = 0
+    min_days = 50  # minimum number of ride days to qualify, Chris inititally said 2/3 and this is a nice round number close to 2/3
+    data = []
+    for x in meta.scoped_session().execute(q).fetchall():
+        days_raw = [
+            x._mapping["mon_var_pop"],
+            x._mapping["tue_var_pop"],
+            x._mapping["wed_var_pop"],
+            x._mapping["thu_var_pop"],
+            x._mapping["fri_var_pop"],
+            x._mapping["sat_var_pop"],
+            x._mapping["sun_var_pop"],
+        ]
+        days = [x for x in days_raw if x is not None]
+        avg = round(sum(days) / len(days), 2)
+        qualified = (
+            x._mapping["ride_days"] + days_left >= min_days
+        )  # Either you've ridden enough days or you still can ride enough days
+        if qualified and float(x._mapping["ride_days"]) > 0:
+            qualified = float(x._mapping["total_miles"]) / float(
+                x._mapping["ride_days"]
+            ) > float(
+                2.00
+            )  # you're averaging more than 2 miles per day you ride
+        days_clean = [round(x, 2) if x is not None else "-" for x in days_raw]
+        data.append(
+            (
+                x._mapping["athlete_id"],
+                x._mapping["name"],
+                x._mapping["ride_days"],
+                round(x._mapping["total_miles"], 1),
+                qualified,
+                avg,
+            )
+            + tuple(days_clean)
+        )
+    return render_template(
+        "pointless/daily_variance.html", data={"tdata": data, "min_days": min_days}
+    )
+
+
+@blueprint.route("/civilwarhistory")
+def civilwarhistory():
+    q = text("""
+        select
+        A.id as athlete_id,
+        A.display_name as athlete_name,
+        sum(case when (upper(R.name) like '%#CIVILWARMARKER%') then 1 else 0 end) as markers,
+        sum(case when (upper(R.name) like '%#CIVILWARSTREET%') then 1 else 0 end) as streets
+        from lbd_athletes A
+        join rides R on R.athlete_id = A.id
+        where (upper(R.name) like '%#CIVILWARMARKER%' or upper(R.name) like '%#CIVILWARSTREET%')
+        group by A.id, A.display_name
+    """)
+
+    data = []
+    for x in meta.scoped_session().execute(q).fetchall():
+        markers = x._mapping["markers"]
+        streets = x._mapping["streets"]
+        total = (markers * 5) + (streets * 2)
+        data.append(
+            (
+                x._mapping["athlete_id"],
+                x._mapping["athlete_name"],
+                markers,
+                markers * 5,
+                streets,
+                streets * 2,
+                total,
+            )
+        )
+    return render_template(
+        "pointless/civilwarhistory.html",
+        data={"tdata": sorted(data, key=lambda v: v[6], reverse=True)},
+    )

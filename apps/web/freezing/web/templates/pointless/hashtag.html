@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block head %}
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+          integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+          crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+            integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+            crossorigin=""></script>
+    <link rel="stylesheet"
+          href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css"
+          integrity="sha256-qx5w1Z7EBGW65+cDDaLzzPKBM/1QLmK9WY7vut/XpzI="
+          crossorigin="" />
+    <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"
+            integrity="sha256-RamwepGJzlYFTGIKlHzPQeKR5YyV6bYVM7dAqqZe5cs="
+            crossorigin=""></script>
+    <!-- https://github.com/maplibre/maplibre-gl-leaflet -->
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"
+            integrity="sha256-Hmz4yz61/ZCYeaob82o4P7UGyaWy27+rq85lopTdH8s="
+            crossorigin=""></script>
+    <!-- https://github.com/elmarquis/Leaflet.GestureHandling -->
+    <link rel="stylesheet" href="/css/leaflet-gesture-handling.min.css" />
+    <script src="/js/leaflet-gesture-handling.min.js"></script>
+    <script src="/js/ride-map.js"></script>
+{% endblock %}
+{% block title %}
+    {{ meta.name if meta else hashtag + " Ride
+    Miles" }}
+{% endblock %}
+{% block content %}
+    <h2 class="mb-3">
+        {{ meta.name if meta else hashtag + " Ride Miles" }}
+    </h2>
+    {% if meta %}
+        <p>
+            {{ meta.description | safe }}
+        </p>
+        {% if meta.discord %}
+            <p>
+                See:
+                <a href="https://discord.com/channels/1443244420358213643/{{ meta.discord }}"
+                   target="_blank"
+                   rel="noreferrer">Discord Channel</a>
+            </p>
+        {% endif %}
+        {% if sponsors %}
+            <p>
+                Sponsored by
+                {% for sp in sponsors %}
+                    {# djlint:off #}<em><a href="{{ sp.url }}">{{ sp.name }}</a></em
+                    >{% if loop.last %}.{% else %}, {% endif %}{# djlint:on #}
+                {% endfor %}
+            </p>
+        {% else %}
+            <p class="text-muted">
+                This ride has no sponsor and is completely pointless.
+            </p>
+        {% endif %}
+    {% else %}
+        <p>
+            Leaderboard for all rides hashtagged <code>{{ hashtag }}</code>
+        </p>
+        <p>
+            To see your own, simply go edit your URL bar and replace
+            <strong>{{ hashtag_notag }}</strong> with whatever you want. Only letters and
+            numbers are allowed, and it is not case sensitive (so ilovekittens and
+            ILoveKittens will generate <em>the same</em> results).
+        </p>
+    {% endif %}
+    <ul class="nav nav-tabs mt-lg-4 mb-0">
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if view == 'leaderboard' }}"
+               aria-current="{{'page' if view == 'leaderboard' else 'false'}}"
+               href="{{ hashtag_notag }}?view=leaderboard">Leaderboard</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if view == 'photos' }}"
+               aria-current="{{'page' if view == 'photos' else 'false'}}"
+               href="{{ hashtag_notag }}?view=photos">Photos</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if view == 'map' }}"
+               aria-current="{{'page' if view == 'map' else 'false'}}"
+               href="{{ hashtag_notag }}?view=map">Ride Map</a>
+        </li>
+        {% if meta.extra_tab %}
+            <li class="nav-item">
+                <a class="nav-link {{ 'active' if view == 'extra' }}"
+                   aria-current="{{'page' if view == 'extra' else 'false'}}"
+                   href="{{ hashtag_notag }}?view=extra">{{ meta.extra_tab }}</a>
+            </li>
+        {% endif %}
+    </ul>
+    {% if view == 'leaderboard' %}
+        <div class="leaderboard-overflow mt-2">
+            <table class="table table-condensed">
+                <tr>
+                    <th class="number rank">
+                        Rank
+                    </th>
+                    <th>
+                        Rider
+                    </th>
+                    {% if meta and meta.rank_by == 'days' %}
+                        <th class="number">
+                            Ride Days
+                        </th>
+                    {% else %}
+                        <th class="number">
+                            Rides
+                        </th>
+                    {% endif %}
+                    <th class="number">
+                        Distance
+                    </th>
+                </tr>
+                {% for a, b, c, d, e, f in tdata %}
+                    <tr class="{{ a | myself }}">
+                        <td class="number rank">
+                            {{ f }}
+                        </td>
+                        <td>
+                            {% if a in banned %}
+                                <a href="/people/{{ a }}" class="hover-underline text-muted">{{ b }} <em>(ineligible)</em></a>
+                            {% else %}
+                                <a href="/people/{{ a }}" class="hover-underline">{{ b }}</a>
+                            {% endif %}
+                        </td>
+                        <td class="number">
+                            {{ e if meta and meta.rank_by == 'days' else c }}
+                        </td>
+                        <td class="number">
+                            {{ d | round(1) }} mi
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% elif view == 'photos' %}
+        {% if photos %}
+            <div class="photo-grid my-3 my-lg-4 gap-lg-4 gallery-wrapper">
+                {% for photo in photos %}
+                    <a
+                        href="{{ photo.img_l }}"
+                        data-toggle="lightbox"
+                        data-gallery="multiimages"
+                        class="photo-thumbnail"
+                        data-title="{{ photo.name }}"
+                        data-parent=".gallery-wrapper"
+                        {# djlint:off #}
+                        data-info='{{ photo.caption or "" | safe }}'
+                        data-footer='Taken on {{photo.start_date.strftime("%-m/%-d")}} by <a href="/people/{{ photo.athlete_id }}" class="hover-underline">{{ photo.display_name }}</a>'
+                        style="background-image: url('{{ photo.img_l }}'), url('/img/logo-blue.png');"
+                        {# djlint:on #}
+                        >
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="my-4 text-muted alert alert-info">
+                No photos found.
+            </div>
+        {% endif %}
+        <div class="d-flex flex-column-reverse flex-lg-row gap-3 justify-content-between align-items-center">
+            <div class="photo-how-button">
+                <button class="btn btn-secondary btn-sm"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapseHow"
+                        aria-expanded="false"
+                        aria-controls="collapseExample">
+                    How does the photo board work?
+                </button>
+            </div>
+            {# djlint:off H023#}
+            <ul class="pagination mb-0">
+                <li class="page-item {% if page < 2 %}disabled{% endif %}">
+                    <a class="page-link"
+                       href="{{ hashtag_notag }}?view=photos&page={{ page-1 }}{% if datestr %}&date={{ datestr }}{% endif %}{% if mine %}&mine=true{% endif %}"><span aria-hidden="true">&larr;</span> Newer</a>
+                </li>
+                <li class="page-item disabled">
+                    <a class="page-link">Page {{ page }} of {{ total_pages }}</a>
+                </li>
+                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                    <a class="page-link"
+                       href="{{ hashtag_notag }}?view=photos&page={{ page+1 }}{% if datestr %}&date={{ datestr }}{% endif %}{% if mine %}&mine=true{% endif %}">Older <span aria-hidden="true">&rarr;</span></a>
+                </li>
+            </ul>
+            {# djlint:on #}
+            <div class="photo-date-picker">
+                {% if g.logged_in %}
+                    <label>
+                        My photos
+                        <input type="checkbox"
+                               id="my-photos"
+                               class="ms-1"
+                               {{ 'checked' if mine else '' }} />
+                    </label>
+                {% endif %}
+                <input id="date-picker" type="date" value="{{ datestr or '' }}" />
+            </div>
+        </div>
+        <div id="collapseHow" class="collapse alert alert-light mt-3 mt-lg-4">
+            <ul class="mb-0 ps-3">
+                <li>
+                    If you post just one photo on your ride, tag your ride by putting
+                    <code>{{ hashtag }}</code> in the ride <em>title</em>, and the photo will
+                    show up here.
+                </li>
+                <li>
+                    If you post multiple photos then tag <em>both</em> your ride
+                    <em>and</em> the photo(s) you want to show up, using the photo
+                    <em>description</em>
+                    field.
+                    <ul>
+                        <li>
+                            For example, you might tag your ride
+                            <code>{{ hashtag }} #zombie</code> and then tag one photo
+                            <code>{{ hashtag }}</code> and another <code>#zombie</code>.
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    To tag a photo, do the following:
+                    <ul>
+                        <li>
+                            In Strava, after you have added the photo(s) and saved your ride,
+                            click on the photo.
+                        </li>
+                        <li>
+                            If you don't see three horizontal dots <strong>⋯</strong> at the
+                            top-right then click on the photo again.
+                        </li>
+                        <li>
+                            Click on the three horizontal dots, click
+                            <em>Add Description</em>
+                            and enter the hashtag there, along with any other description.
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    If you tag a photo and don't tag your ride, your photo will
+                    <em>not</em> show up.
+                </li>
+                <li>
+                    Sometimes it can take a few hours for photo tags to sync.
+                    <ul>
+                        <li>
+                            To hurry things up, go to <a href="/my/rides">My Rides</a> and click
+                            <em>Refetch Photos</em> for the ride in question.
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    {% elif view == 'map' %}
+        <div class="c3-wide my-3 my-lg-4" id="map">
+        </div>
+    {% elif view == 'extra' %}
+        {{ meta.extra_body | safe }}
+    {% endif %}
+{% endblock %}
+{% block foot %}
+    {% if view == 'map' %}
+        <script type="text/javascript">
+  $(function () {
+    create_ride_map(
+      "map",
+      "/api/all/trackmap.json?hashtag={{hashtag_notag}}",
+      null,
+      true
+    );
+  });
+        </script>
+    {% elif view == 'photos' %}
+        <script type="text/javascript">
+  function onUpdate() {
+    const date = $("#date-picker").val();
+    const mine = $("#my-photos")[0]?.checked;
+    const params = [
+      "view=photos",
+      date ? `date=${date}` : null,
+      mine ? "mine=true" : null,
+    ]
+      .filter(Boolean)
+      .join("&");
+    document.location.search = params ? `?${params}` : "";
+  }
+  $("#date-picker").on("change", onUpdate);
+  $("#my-photos").on("change", onUpdate);
+        </script>
+    {% endif %}
+{% endblock %}

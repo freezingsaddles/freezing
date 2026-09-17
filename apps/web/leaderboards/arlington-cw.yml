@@ -1,0 +1,35 @@
+---
+title: Clockwise Loopy for Arlington
+description: |
+  Number of clockwise rides of the Arlington loop (ArLoopCW1 through ArLoopCW8).
+  Part of <a href="../arlington">Loopy for Arlington</a>.
+fields:
+  - name: athlete_id
+    visible: false
+  - name: athlete_name
+    label: Rider
+    type: athlete
+  - name: segment_name
+    label: Least-Ridden Segment
+    format: '<a href="https://www.strava.com/segments/{segment_id}" class="hover-underline">{segment_name}</a>'
+  - name: segment_rides
+    label: Loop Rides
+    rank_by: true
+    type: number
+query: |
+  select
+    A.id as athlete_id,
+    A.display_name as athlete_name,
+    E.segment_id,
+    E.segment_name,
+    count(E.id) as segment_rides
+  from
+    athletes A join
+    rides R on R.athlete_id = A.id join
+    ride_efforts E on E.ride_id = R.id
+  where
+    E.segment_id in (22395425, 13943716, 13943733, 13943744, 13943752, 13943762, 22382566, 13943773)
+  group by
+    A.id,
+    E.segment_id,
+    E.segment_name

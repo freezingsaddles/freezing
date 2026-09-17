@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+    <h2 class="mb-3">
+        Ride Days by Team
+    </h2>
+    <table class="table table-condensed">
+        <tr>
+            <th class="number rank">
+                Rank
+            </th>
+            <th>
+                Team
+            </th>
+            <th class="number">
+                Ride Days
+            </th>
+        </tr>
+        {% for id, a, b in team_riders %}
+            <tr>
+                <td class="number rank">
+                    {{ loop.index }}
+                </td>
+                <td>
+                    <a href="/teams/{{ id }}" class="hover-underline">{{ a }}</a>
+                </td>
+                <td class="number">
+                    {{ b }}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
