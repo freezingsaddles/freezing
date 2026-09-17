@@ -17,6 +17,7 @@ class HashtagBoardTag(BaseMessage):
     sponsors: List[int] | None = None
     banned: List[int] | None = None  # banned for prior win
     discord: int | None = None
+    freezebot: bool | None = None  # post tagged photos to the discord channel
     rank_by = None
     default_view = None
     extra_tab = None
@@ -35,6 +36,7 @@ class HashtagBoardTagSchema(BaseSchema):
     sponsors = fields.List(fields.Int())
     banned = fields.List(fields.Int())
     discord = fields.Int()
+    freezebot = fields.Bool()
     rank_by = fields.Str()
     default_view = fields.Str()
     extra_tab = fields.Str()

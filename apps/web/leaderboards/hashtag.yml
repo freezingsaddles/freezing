@@ -75,6 +75,7 @@ tags:
       Ride your bike and play Bingo! The hashtag to use is <code>#bingo</code>.
     rank_by: days
     discord: 1443983774185422849
+    freezebot: true
     sponsors: [3487165]
     default_view: photos
 
@@ -222,6 +223,7 @@ tags:
       Tag your ride with hashtag <code>lolfunny</code> and add the photo to your ride in Strava.
       If it's not obvious, add a description to the photo of what about it struck you as funny.
     discord: 1457486832831959151
+    freezebot: true
     sponsors: [2831630]
     rank_by: days
     default_view: photos
@@ -273,6 +275,7 @@ tags:
     description: |
       Take a picture and upload your ride with hashtag <code>#publicartfinder</code>.
     discord: 1446691565555814572
+    freezebot: true
     sponsors: [38633292]
     rank_by: rides
     default_view: photos
@@ -287,6 +290,7 @@ tags:
     rank_by: days
     default_view: photos
     discord: 1455974154137239787
+    freezebot: true
     sponsors: [11555517, 4704298]
     friendless: true
 
@@ -360,6 +364,7 @@ tags:
       Post a picture taken while on a bike ride of new transportation infrastructure under construction.
       Tag your ride with with <code>#UnderCon</code>.
     discord: 1448069690436878568
+    freezebot: true
     rank_by: rides
     sponsors: [7188282]
     default_view: photos

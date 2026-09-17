@@ -38,11 +38,13 @@ jobs:
           echo "$changed"
           apps=""
           if [ "$changed" = "ALL" ] || echo "$changed" | grep -q -E '^(packages/|pyproject\.toml$|uv\.lock$|\.python-version$|\.github/workflows/(deploy|build-docker)\.yml$)'; then
-            apps="web sync nq"
+            apps="web sync nq freezebot"
           else
-            for app in web sync nq; do
+            for app in web sync nq freezebot; do
               if echo "$changed" | grep -q "^apps/$app/"; then apps="$apps $app"; fi
             done
+            # Freezebot's image carries the web app's hashtag.yml, so that changing rebuilds it.
+            if echo "$changed" | grep -q "^apps/web/leaderboards/" && ! echo "$apps" | grep -q freezebot; then apps="$apps freezebot"; fi
           fi
           # An empty list must come out as [] and not [""], or the matrix runs with no app.
           json="$(printf '%s\n' $apps | jq -R . | jq -s -c 'map(select(length > 0))')"
