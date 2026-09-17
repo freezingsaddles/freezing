@@ -1,0 +1,95 @@
+[project]
+name = "freezing-sync"
+version = "1.6.0"
+description = "Freezing Saddles activity and metadata sync."
+authors = [
+    {name = "Hans Lellelid", email = "hans@xmpl.org"},
+    {name = "Merlin Hughes"},
+    {name = "Richard Bullington-McGuire", email = "richard.bullington.mcguire@gmail.com"},
+]
+maintainers = [
+    {name = "Richard Bullington-McGuire", email = "richard.bullington.mcguire@gmail.com"},
+]
+license = {text = "Apache License (2.0)"}
+dependencies = [
+    "APScheduler==3.11.3",
+    "GeoAlchemy2==0.18.1",
+    "PyMySQL==1.1.2",
+    "SQLAlchemy==2.0.52",
+    "colorlog==6.12.0",
+    "datadog==0.53.0",
+    "envparse==0.2.0",
+    "freezing-model @ https://github.com/freezingsaddles/freezing-model/archive/0.13.0.tar.gz",
+    "greenstalk==2.1.1",
+    "instagram==1.3.4",
+    "pytz==2026.3.post1",
+    "requests==2.33.1",
+    "stravalib==2.4",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Games",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black==26.5.1",
+    "flake8==7.3.0",
+    "flake8-pyproject==1.2.4",
+    "isort==9.0.1",
+    "pre-commit==4.6.2",
+    "pytest==9.1.1",
+    "uppd==1.6.0",
+]
+
+[project.entry-points.console_scripts]
+freezing-sync = "freezing.sync.run:main"
+freezing-sync-activities = "freezing.sync.cli.sync_activities:main"
+freezing-sync-athletes = "freezing.sync.cli.sync_athletes:main"
+freezing-sync-detail = "freezing.sync.cli.sync_details:main"
+freezing-sync-photos = "freezing.sync.cli.sync_photos:main"
+freezing-sync-streams = "freezing.sync.cli.sync_streams:main"
+freezing-sync-weather = "freezing.sync.cli.sync_weather:main"
+
+[tool.isort]
+profile = "black"
+
+[tool.flake8]
+# Thanks https://www.reddit.com/r/learnpython/comments/rr6y69/comment/hqeqt68/?utm_source=share&utm_medium=web2x&context=3
+ignore = [
+    "E203",
+    "E501",
+    "W503",
+]
+max-line-length = 88
+max-complexity = 39
+extend-ignore = "E203"
+inline-quotes = "double"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["freezing"]
+namespaces = true
+
+[tool.djlint]
+line_break_after_multiline_tag=true
+max_line_length=88
+
+[tool.pymarkdown]
+plugins.md013.enabled = false
+extensions.front-matter.enabled = true
+
+[tool.pytest.ini_options]
+pythonpath = "."
+addopts = [
+    "--import-mode=importlib",
+]
+markers = [
+    "live: marks tests that make real network calls to Strava API (deselect with '-m \"not live\"')",
+]
