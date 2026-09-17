@@ -46,7 +46,7 @@ Next, you need to ensure you have a working MySQL database.
 
 ### Quick development setup using Docker
 
-This project has a built-in Docker Compose file that can be used to set up a MySQL database for development, _and_ a test web application. This is the easiest way to get started.
+This project has a built-in Docker Compose file that can be used to set up a MySQL database for development, *and* a test web application. This is the easiest way to get started.
 
 ```bash
 (env) shell$ docker-compose up -d
@@ -64,7 +64,7 @@ With this Docker Composed setup, the app does not automatically reload when you 
 
 If you want to stop the containers, you can do so with `docker-compose down`.
 
-It's possible to use both the containerized `freezing-server` application _and_ the local development server at the same time, they use different ports.
+It's possible to use both the containerized `freezing-server` application *and* the local development server at the same time, they use different ports.
 
 ### Database setup
 
@@ -76,7 +76,7 @@ These days, @obscurerichard hosts the production site on AWS, where we have a ch
 
 #### Alternative: using the freezing-compose orchestrated MySQL Database
 
-You could _instead_ use the MySQL server defined in [freezing-compose](https://github.com/freezingsaddles/freezing-compose) via `docker-compose-dev` as the MySQL database, but you only need to do that if you are testing out container orchestration in a development environment.
+You could *instead* use the MySQL server defined in [freezing-compose](https://github.com/freezingsaddles/freezing-compose) via `docker-compose-dev` as the MySQL database, but you only need to do that if you are testing out container orchestration in a development environment.
 
 #### Alternative: manual database setup
 
@@ -112,7 +112,7 @@ This component is designed to run as a container and should be configured with e
 * `START_DATE`: The beginning of the competition.
 * `END_DATE`: The end of the competition.
 
-Changing _all_ these values is not necessary for a basic development setup. However, you should ensure these items are set appropriately:
+Changing *all* these values is not necessary for a basic development setup. However, you should ensure these items are set appropriately:
 
 * The team IDs for the competition, `MAIN_TEAM`, `TEAMS` and any `OBSERVER_TEAMS`, if you are loading an archived database.
 * `SQLALCHEMY_URL` database credentials, if you are are using something other than the default Docker Compose setup.
@@ -156,14 +156,14 @@ To get `freezing-web` to permanently use the `freezing-model` changes you will h
 
 The `freezing-web` code is intended to be [PEP-8](https://www.python.org/dev/peps/pep-0008/) compliant. Code formatting is done with [black](https://black.readthedocs.io/en/stable/), [isort](https://pycqa.github.io/isort/) and [djlint](https://www.djlint.com/) and can be linted with [flake8](http://flake8.pycqa.org/en/latest/). See the [.flake8](.flake8) file and install the test dependencies to get these tools (`pip install -r '.[dev]'`).
 
-To run _all_ the linters and formatters, use the following commands:
+To run *all* the linters and formatters, use the following commands:
 
 ```bash
 bin/lint.sh
 bin/fmt.sh
 ```
 
-This project also has _optional_ support for [pre-commit](https://pre-commit.org) to run these checks automatically before you commit. To install pre-commit, run `pip install pre-commit` and then `pre-commit install` in the root of the repository.
+This project also has *optional* support for [pre-commit](https://pre-commit.org) to run these checks automatically before you commit. To install pre-commit, run `pip install pre-commit` and then `pre-commit install` in the root of the repository.
 
 ### Stravalib 2.x Upgrade Notes
 
@@ -181,7 +181,7 @@ with the related containers.
 ### Beginning of year procedures
 
 * Ensure that someone creates a new Strava main group. Usually the person running the sign-up process does this. [Search for "Freezing"](https://www.strava.com/clubs/search?utf8=%E2%9C%93&text=freezing&location=&%5Bcountry%5D=&%5Bstate%5D=&%5Bcity%5D=&%5Blat_lng%5D=&sport_type=cycling&club_type=all) and you may be surprised to see it has already been created!
-* Get the numeric club ID from the URL of the Strava _Recent Activity_ page for the club.
+* Get the numeric club ID from the URL of the Strava *Recent Activity* page for the club.
 * Gain access to the production server via SSH
 * Ensure you have MySQL client access to the production database, either through SSH port forwarding or by running a MySQL client through docker on the production server, or some other means.
 * Make a backup of the database:
@@ -238,7 +238,7 @@ Athletes will get assigned to their correct teams as soon as they join exactly o
 
 It is convenient to dump and restore the database onto a local development environment, and it may be necessary from time to time to restore a database dump in production.
 
-When restoring the database, you should do so as the MySQL root user, or if you don't have access to the real MySQL root user, as the highest privilege user you have access to. Some systems, such as AWS RDS, do not give full MySQL root access but they _do_ have an administrative user.
+When restoring the database, you should do so as the MySQL root user, or if you don't have access to the real MySQL root user, as the highest privilege user you have access to. Some systems, such as AWS RDS, do not give full MySQL root access but they *do* have an administrative user.
 
 It would be a good idea to first drop the database, then recreate it along with the freezing user, before restoring the backup.
 
