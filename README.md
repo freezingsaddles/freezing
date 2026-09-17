@@ -15,6 +15,7 @@ repositories, whose histories are preserved here.
 | `docker/beanstalkd` | the beanstalkd queue image |
 | `deploy` | docker compose files and server scripts |
 | `infra` | Scala CDK app and Lambda that record registration emails in the database |
+| `teams` | Scala team solver that assigns teams from historical performance data |
 
 ## Developing
 
@@ -33,6 +34,9 @@ Each app has its own `README.md` with runtime configuration details.
 Dependency versions are pinned by `uv.lock`; the apps declare compatible
 ranges, the model declares the ranges it supports, and dependabot updates the
 lock. Dev tools are pinned in the root `pyproject.toml` dev group.
+
+Scala Steward keeps the sbt builds' dependencies current, the way dependabot
+does for the Python side.
 
 ## Building images
 

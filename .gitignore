@@ -31,13 +31,11 @@ env/
 *.iml
 .DS_Store
 
-# Scala / sbt / CDK under infra/
-infra/**/target/
-infra/**/.bsp/
-infra/**/.bloop/
-infra/**/.metals/
+# Scala / sbt (teams/, infra/) and the CDK app
+**/target/
+**/.bsp/
+**/.bloop/
+**/.metals/
 infra/cdk/node_modules/
 infra/cdk/cdk.out/
 infra/cdk/cdk.context.json
-.bsp/
-.metals/
