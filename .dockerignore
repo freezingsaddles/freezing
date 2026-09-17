@@ -1,6 +1,12 @@
-.git
-.github
-.venv
+# Allowlist: nothing enters the build context except what the Dockerfiles COPY,
+# so a new top-level directory is excluded by default rather than needing a line.
+*
+!pyproject.toml
+!uv.lock
+!.python-version
+!packages/
+!apps/
+# ...minus the junk that lives under those.
 **/__pycache__
 **/*.pyc
 **/*.egg-info
@@ -8,6 +14,3 @@
 **/data/
 **/*.cfg
 !**/example.cfg
-deploy/
-docker/
-infra/
