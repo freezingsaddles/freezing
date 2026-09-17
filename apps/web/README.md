@@ -4,21 +4,23 @@ This is the web component for the Freezing Saddles (aka BikeArlington Freezing S
 
 **NOTE:** This application conists of multiple components that work together (designed to run as Docker containers).
 
-1. [freezing-web](https://github.com/freezingsaddles/freezing-web) - The website for viewing leaderboards
-1. [freezing-model](https://github.com/freezingsaddles/freezing-model) - A library of shared database and messaging classes.
-1. [freezing-sync](https://github.com/freezingsaddles/freezing-sync) - The component that syncs ride data from Strava.
-1. [freezing-nq](https://github.com/freezingsaddles/freezing-nq) - The component that receives webhooks and queues them up for syncing.
+1. [web](.) - The website for viewing leaderboards (this directory)
+1. [model](../../packages/model) - A library of shared database and messaging classes.
+1. [common](../../packages/common) - Rules shared by the apps that are not part of the model.
+1. [sync](../sync) - The component that syncs ride data from Strava.
+1. [nq](../nq) - The component that receives webhooks and queues them up for syncing.
+
+They live together in this repository; see the [top-level README](../../README.md)
+for the layout and the shared tooling.
 
 ## Development setup
 
 ### Dependencies
 
-* [Python 3.10+](https://www.python.org/downloads/release/python-3100/)
-* [pip](https://pypi.org/project/pip/)
-* [Python virtual environments (venv)](https://docs.python.org/3/library/venv.html)
+* [uv](https://docs.astral.sh/uv/), which installs the pinned Python version itself
 * [MySQL 8.0+](https://dev.mysql.com/doc/relnotes/mysql/8.0/en/)
 
-We recommend that for ease of development and debugging, that you install Python 3.10 and pip directly on your workstation. This is tested to work on macOS Sonoma 14.1.2 (23B92) &amp; Sequoia 15.1.1 (24B91), on multiple Linux distributions, and on Windows 10 or 11. While this will work on Windows, most of the advice below relates to running this on a UNIX-like operating system, such as macOS or Ubuntu. Pull requests to improve cross-platform documentation are welcome.
+This is tested to work on macOS, on multiple Linux distributions, and on Windows 10 or 11. While this will work on Windows, most of the advice below relates to running this on a UNIX-like operating system, such as macOS or Ubuntu. Pull requests to improve cross-platform documentation are welcome.
 
 ### Optional Dependencies
 
@@ -26,19 +28,19 @@ We *strongly recommend* that you also install [Docker](https://www.docker.com/) 
 
 ## Installation
 
-Here are some instructions for setting up a development environment, using Python virtual environments:
+Install the whole workspace from the repository root, then work from this directory:
 
-(If you are running in Windows, run `env/Scripts/activate` instead of `source env/bin/activate`.)
+(If you are running in Windows, run `.venv/Scripts/activate` instead of `source .venv/bin/activate`.)
 
 ```bash
-shell$ git clone https://github.com/freezingsaddles/freezing-web
-shell$ cd freezing-web
-shell$ python3 -m venv env
-shell$ source env/bin/activate
-(env) shell$ pip install -e '.[dev]'
+shell$ git clone https://github.com/freezingsaddles/freezing
+shell$ cd freezing
+shell$ uv sync --all-packages --all-extras
+shell$ source .venv/bin/activate
+(env) shell$ cd apps/web
 ```
 
-We will assume for all subsequent shell examples that you are running in the freezing-web activated virtualenv.  (This is denoted by using the "(env) shell$" prefix before shell commands.) Activate the virtualenv when you open a new shell with `source env/bin/activate`.
+We will assume for all subsequent shell examples that you are in `apps/web` with the workspace virtualenv activated.  (This is denoted by using the "(env) shell$" prefix before shell commands.) Activate the virtualenv when you open a new shell with `source .venv/bin/activate` at the repository root.
 
 At this point, you should have all the dependencies installed.
 
@@ -49,20 +51,20 @@ Next, you need to ensure you have a working MySQL database.
 This project has a built-in Docker Compose file that can be used to set up a MySQL database for development, *and* a test web application. This is the easiest way to get started.
 
 ```bash
-(env) shell$ docker-compose up -d
+(env) shell$ docker compose up -d
 ```
 
-It will take about 15-30 seconds to start the first time. You can see the logs with the command `docker-compose logs -f`.
+It will take about 15-30 seconds to start the first time. You can see the logs with the command `docker compose logs -f`.
 
 When it starts up, you can view the Docker version of the Freezing saddles app at [http://127.0.0.1:8000/](http://127.0.0.1:8000/) - it will have an empty database that has been initialized with the schema.
 
 With this Docker Composed setup, the app does not automatically reload when you make changes to the source code, but you can rebuild and redploy it with this command:
 
 ```bash
-(env) shell$ docker-compose up -d --build && docker-compose logs -f
+(env) shell$ docker compose up -d --build && docker compose logs -f
 ```
 
-If you want to stop the containers, you can do so with `docker-compose down`.
+If you want to stop the containers, you can do so with `docker compose down`.
 
 It's possible to use both the containerized `freezing-server` application *and* the local development server at the same time, they use different ports.
 
@@ -76,7 +78,7 @@ These days, @obscurerichard hosts the production site on AWS, where we have a ch
 
 #### Alternative: using the freezing-compose orchestrated MySQL Database
 
-You could *instead* use the MySQL server defined in [freezing-compose](https://github.com/freezingsaddles/freezing-compose) via `docker-compose-dev` as the MySQL database, but you only need to do that if you are testing out container orchestration in a development environment.
+You could *instead* use the MySQL server defined in [deploy](../../deploy) via `docker-compose-dev` as the MySQL database, but you only need to do that if you are testing out container orchestration in a development environment.
 
 #### Alternative: manual database setup
 
@@ -98,7 +100,7 @@ This is designed to work with configuration files that are shell environment fil
 
 There is a sample file (`example.cfg`) that you can reference.  You need to set an environment variable called `APP_SETTINGS` to the path to the file you wish to use when you start `freezing-server`.
 
-Edit the file to change the value of `SECRET_KEY`, and set competition dates. Good date ranges are either the range for a prior year's competition, for testing with an archived database dump, or a 3 month range that includes the current date, for testing in conjunction with fresh data downloaded with [freezing-sync])https://github.com/freezingsaddles/freezing-sync)
+Edit the file to change the value of `SECRET_KEY`, and set competition dates. Good date ranges are either the range for a prior year's competition, for testing with an archived database dump, or a 3 month range that includes the current date, for testing in conjunction with fresh data downloaded with [sync](../sync).
 
 This component is designed to run as a container and should be configured with environment variables for:
 
@@ -133,37 +135,26 @@ Doing this will start the server on port 5000. You can access the site at [http:
 
 On macOS you may have issues because AirPlay steals port 5000. To disable this, search in Settings for `airplay` and turn off `AirPlay Receiver`. Or else switch out the development port.
 
-### Development setup to work with `freezing-model`
+### Making changes to the model
 
-During development, you may find you need to make changes to the database. Because this suite of projects uses SQLAlchemy and Alembic, and multiple projects depend on the model, it is in a [separate git repo](https://github.com/freezingsaddles/freezing-model).
-
-This an easy pattern to use to make changes to the project `freezing-model` that this depends on, without having to push tags to the repository. Let's assume you have activated the `freezing-web` virtual environment per the setup instructions above. Then try this:
-
-```bash
-(env) shell$ # Assuming you aleready have a working .venv that is activated for freezing-web
-(env) shell$ cd ..
-(env) shell$ git clone https://github.com/freezingsaddles/freezing-model
-(env) shell$ cd freezing-model
-(env) shell$ pip install -e '.[dev]'
-(env) shell$ cd -
-```
-
-Now freezing-model is symlinked in, so you can make changes and add migrations to it.
-
-To get `freezing-web` to permanently use the `freezing-model` changes you will have to tag the `freezing-model` repository with a new version number (don't forget to update its `pyproject.toml` also) and update the tag in [freezing-web/pyproject.toml](pyproject.toml) to match the tag number. It's ok to make a pull request in `freezing-model` and bump the version after merging `master` into your branch.
+The database model and its Alembic migrations live in
+[packages/model](../../packages/model), a workspace member installed alongside
+this app. Edit it directly; a model change and the web code that uses it go in
+the same pull request. See its [README](../../packages/model/README.md) for how
+to write a migration.
 
 ### Coding standards
 
-The `freezing-web` code is intended to be [PEP-8](https://www.python.org/dev/peps/pep-0008/) compliant. Code formatting is done with [black](https://black.readthedocs.io/en/stable/), [isort](https://pycqa.github.io/isort/) and [djlint](https://www.djlint.com/) and can be linted with [flake8](http://flake8.pycqa.org/en/latest/). See the [.flake8](.flake8) file and install the test dependencies to get these tools (`pip install -r '.[dev]'`).
-
-To run *all* the linters and formatters, use the following commands:
+The code is intended to be [PEP-8](https://www.python.org/dev/peps/pep-0008/) compliant. Code formatting is done with [black](https://black.readthedocs.io/en/stable/) and [isort](https://pycqa.github.io/isort/), templates with [djlint](https://www.djlint.com/), and it can be linted with [flake8](http://flake8.pycqa.org/en/latest/). The tools and their configuration are shared by the whole workspace; run them from the repository root:
 
 ```bash
-bin/lint.sh
-bin/fmt.sh
+(env) shell$ cd ../..
+(env) shell$ black --check .
+(env) shell$ isort --check-only .
+(env) shell$ flake8 .
+(env) shell$ djlint --check apps/web/freezing/web/templates
+(env) shell$ pymarkdown scan apps/web
 ```
-
-This project also has *optional* support for [pre-commit](https://pre-commit.org) to run these checks automatically before you commit. To install pre-commit, run `pip install pre-commit` and then `pre-commit install` in the root of the repository.
 
 ### Stravalib 2.x Upgrade Notes
 
@@ -175,8 +166,9 @@ Migration impact here was minimal: only dependency pin updated and an outdated d
 
 ## Production deployment
 
-See [freezing-compose](https://github.com/freezingsaddles/freezing-compose) for a guide to deploying this in production along
-with the related containers.
+The image is built from the repository root with
+`docker build -f apps/web/Dockerfile .`. See [deploy](../../deploy) for a guide
+to deploying this in production along with the related containers.
 
 ### Beginning of year procedures
 
@@ -209,7 +201,7 @@ cp .env $HOME/backups/.env-$(date +'%Y-%m-%d')
 vim /opt/compose/.env
 ```
 
-* Delete all the data in the following MySQL tables: (see [freezing/sql/year-start.sql](https://github.com/freezingsaddles/freezing-web/blob/main/freezing/sql/year-start.sql))
+* Delete all the data in the following MySQL tables: (see [freezing/sql/year-start.sql](freezing/sql/year-start.sql))
   * athletes
   * rides
   * ride_efforts
@@ -381,7 +373,8 @@ mysql> select a.name, sum(ds.distance), sum(ds.points) from daily_scores ds inne
 To scan for common security problems in the code, this uses [Bandit](https://bandit.readthedocs.io/en/latest/). To run the security linter, use this command:
 
 ```bash
-bandit -s B101 -r freezing tests
+(env) shell$ cd ../..
+(env) shell$ bandit -s B101 -r packages apps
 ```
 
 This is integrated in GitHub Actions with the [PyCQA/bandit-action](https://github.com/PyCQA/bandit-action) which integrates with [GitHub Advanced Security](https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/about-github-code-scanning).
@@ -393,8 +386,9 @@ Best security practices recommend [pinning versions of GitHub actions used in wo
 To make this easy, we use [mheap/pin-github-action](https://github.com/mheap/pin-github-action) via Docker to pin the versions of actions used in the workflows.
 
 ```bash
-alias pin-github-action='docker run --rm -v $(pwd):/workflows -e GITHUB_TOKEN mheap/pin-github-action'
-pin-github-action .github/workflows
+(env) shell$ cd ../..
+(env) shell$ alias pin-github-action='docker run --rm -v $(pwd):/workflows -e GITHUB_TOKEN mheap/pin-github-action'
+(env) shell$ pin-github-action .github/workflows
 ```
 
 ## Legal
@@ -409,4 +403,4 @@ This software is a community-driven effort, and as such the contributions are ow
 * Copyright 2020 Adrian Porter
 * Copyright 2020 Joe Tatsuko
 
-This software is licensed under the [Apache 2.0 license](LICENSE), with some marked portions available under compatible licenses (such as the [MIT-licensed `test/wget-spider.sh`].)
+This software is licensed under the [Apache 2.0 license](../../LICENSE), with some marked portions available under compatible licenses (such as the [MIT-licensed `test/wget-spider.sh`].)

@@ -21,7 +21,10 @@ services:
       MYSQL_USER: ${MYSQL_USER:-freezing}
 
   freezing-web:
-    build: ./
+    build:
+      # The image needs the whole workspace (packages/model, uv.lock) as context.
+      context: ../..
+      dockerfile: apps/web/Dockerfile
     container_name: freezing-web-dev
     depends_on:
       - freezing-db

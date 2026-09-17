@@ -9,4 +9,4 @@ This software is a community-driven effort, and as such the contributions are ow
 Copyright 2018 Hans Lellelid <br/>
 Copyright 2024 Richard Bullington-McGuire
 
-This software is licensed under the [Apache 2.0 license](LICENSE).
+This software is licensed under the [Apache 2.0 license](../../LICENSE).
