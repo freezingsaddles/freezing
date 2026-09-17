@@ -10,9 +10,7 @@
             Log in to join tribes
         {% endif %}
     </span>
-    <h2 class="mb-3">
-        Individual Points ({{ tribe }})
-    </h2>
+    <h2 class="mb-3">Individual Points ({{ tribe }})</h2>
     <ol>
         {% for indiv_row in indiv_rows %}
             <li class="{{ 'large' if loop.index <= 10 else '' }} {{ indiv_row._mapping['athlete_id'] | myself }}">
@@ -21,8 +19,8 @@
                 –
                 <strong>{{ indiv_row._mapping['total_score']|round|int|groupnum }}</strong>
                 points ({{ indiv_row._mapping['days_ridden'] }} day{{
-                indiv_row._mapping['days_ridden']|ess }}, {{
-                indiv_row._mapping['total_distance']|round|int|groupnum }} miles) –
+                    indiv_row._mapping['days_ridden']|ess }}, {{
+                    indiv_row._mapping['total_distance']|round|int|groupnum }} miles) –
                 <a href="/teams/{{ indiv_row._mapping['team_id'] }}"
                    class="hover-underline">{{ indiv_row._mapping['team_name'] }}</a>
             </li>

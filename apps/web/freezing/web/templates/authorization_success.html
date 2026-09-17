@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>
-        Authorization Results
-    </h1>
+    <h1>Authorization Results</h1>
     <p>
         <strong>Welcome, {{ athlete.firstname }}.</strong>
     </p>
@@ -80,7 +78,9 @@
             {% endif %}
             <li>
                 Join the
-                <a rel="noreferrer" target="_blank" href="{{ discord_invitation }}">Freezing Saddles Discord Server</a>
+                <a rel="noreferrer"
+                   target="_blank"
+                   href="{{ discord_invitation }}">Freezing Saddles Discord Server</a>
                 where rides and some pointless prizes are organized.
             </li>
             <li>
@@ -90,5 +90,5 @@
                 View your <a href="{{ rides_url }}">personal rides page</a>.
             </li>
         {% endif %}
-    {% endblock %}
+{% endblock %}
 </ul>

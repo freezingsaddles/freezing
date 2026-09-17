@@ -2,7 +2,7 @@
 {% block content %}
     <div class="jumbotron">
         <h1>
-            {% if request.path == '/discord' %}
+            {% if request.path == "/discord" %}
                 Discord Invitation
             {% elif after_competition_start %}
                 Login
@@ -11,7 +11,7 @@
             {% endif %}
         </h1>
         <p class="lead">
-            {% if request.path == '/discord' %}
+            {% if request.path == "/discord" %}
                 Please log in by clicking "Connect with Strava" below, then you will see the Discord
                 invitation link in the instructions.
             {% else %}
@@ -24,7 +24,10 @@
         </p>
         <p>
             <div class="form-check">
-                <input class="form-check-input" type="radio" name="scope" id="public-scope">
+                <input class="form-check-input"
+                       type="radio"
+                       name="scope"
+                       id="public-scope">
                 <label for="public-scope" class="form-check-label">
                     Only allow Freezing Saddles to read my public activities.
                 </label>
@@ -61,7 +64,7 @@
     </div>
 {% endblock %}
 {% block foot %}
-    <script type="text/javascript">
+    <script>
 $(document).ready(function() {
 	$("#private-scope").click(() => $("#connect-strava").attr('href', "{{ private_authorize_url }}"));
 	$("#public-scope").click(() => $("#connect-strava").attr('href', "{{ public_authorize_url }}"));

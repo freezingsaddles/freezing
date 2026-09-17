@@ -25,9 +25,7 @@
     </style>
 {% endblock %}
 {% block content %}
-    <h2 class="mb-3">
-        Team Leaderboard (Text)
-    </h2>
+    <h2 class="mb-3">Team Leaderboard (Text)</h2>
     <p>
         This leaderboard is also available as a <a href="/leaderboard/team">chart version</a>.
         <button class="btn btn-primary btn-sm ms-2" id="show_hide_people">
@@ -56,7 +54,7 @@
     </ol>
 {% endblock %}
 {% block foot %}
-    <script type="text/javascript">
+    <script>
 $( "#show_hide_people" ).click(function() {
 $(".people-list").toggleClass("expanded");
 });

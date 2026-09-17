@@ -5,9 +5,7 @@
 {% block content %}
     <div class="row">
         <div class="col-md-12">
-            <h1>
-                Least Daily Variance
-            </h1>
+            <h1>Least Daily Variance</h1>
         </div>
     </div>
     <div class="row">
@@ -37,39 +35,17 @@
             <table id="variance" class="table table-striped">
                 <thead>
                     <tr>
-                        <th>
-                            Rider
-                        </th>
-                        <th class="number">
-                            Ride Days
-                        </th>
-                        <th class="number">
-                            Total Distance
-                        </th>
-                        <th class="number">
-                            Average Variance
-                        </th>
-                        <th class="number">
-                            Monday Variance
-                        </th>
-                        <th class="number">
-                            Tuesday Variance
-                        </th>
-                        <th class="number">
-                            Wednesday Variance
-                        </th>
-                        <th class="number">
-                            Thursday Variance
-                        </th>
-                        <th class="number">
-                            Friday Variance
-                        </th>
-                        <th class="number">
-                            Saturday Variance
-                        </th>
-                        <th class="number">
-                            Sunday Variance
-                        </th>
+                        <th>Rider</th>
+                        <th class="number">Ride Days</th>
+                        <th class="number">Total Distance</th>
+                        <th class="number">Average Variance</th>
+                        <th class="number">Monday Variance</th>
+                        <th class="number">Tuesday Variance</th>
+                        <th class="number">Wednesday Variance</th>
+                        <th class="number">Thursday Variance</th>
+                        <th class="number">Friday Variance</th>
+                        <th class="number">Saturday Variance</th>
+                        <th class="number">Sunday Variance</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -79,36 +55,18 @@
                                 <a href="/people/{{ a }}"
                                    {% if not can_win %}class="hover-underline text-danger"{% else %}class="hover-underline"{% endif %}>{{ b }}</a>
                             </td>
-                            <td class="number">
-                                {{ c }}
-                            </td>
-                            <td class="number">
-                                {{ dist }}
-                            </td>
+                            <td class="number">{{ c }}</td>
+                            <td class="number">{{ dist }}</td>
                             <td class="number">
                                 <b>{{ d }}</b>
                             </td>
-                            <td class="number">
-                                {{ e }}
-                            </td>
-                            <td class="number">
-                                {{ f }}
-                            </td>
-                            <td class="number">
-                                {{ g }}
-                            </td>
-                            <td class="number">
-                                {{ h }}
-                            </td>
-                            <td class="number">
-                                {{ i }}
-                            </td>
-                            <td class="number">
-                                {{ j }}
-                            </td>
-                            <td class="number">
-                                {{ k }}
-                            </td>
+                            <td class="number">{{ e }}</td>
+                            <td class="number">{{ f }}</td>
+                            <td class="number">{{ g }}</td>
+                            <td class="number">{{ h }}</td>
+                            <td class="number">{{ i }}</td>
+                            <td class="number">{{ j }}</td>
+                            <td class="number">{{ k }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -117,11 +75,10 @@
     </div>
 {% endblock %}
 {% block foot %}
-    <script type="text/javascript"
-            src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
     <link rel="stylesheet"
           href="https://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css">
-    <script type="text/javascript">
+    <script>
 $(document).ready(function(){
     $('#variance').dataTable({
 		"order": [[ 3, "asc" ]],

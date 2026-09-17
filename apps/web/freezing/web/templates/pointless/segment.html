@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% block title %}
     {{ meta.name if meta else
-    data.segment_name + " Rides" }}
+        data.segment_name + " Rides" }}
 {% endblock %}
 {% block content %}
-    <h2 class="mb-3">
-        {{ meta.name if meta else data.segment_name + " Rides" }}
-    </h2>
+    <h2 class="mb-3">{{ meta.name if meta else data.segment_name + " Rides" }}</h2>
     <p>
         Leaderboard for all rides of the
         <a href="https://www.strava.com/segments/{{ data.segment_id }}">{{ data.segment_name }}</a>
@@ -14,9 +12,7 @@
     </p>
     {% if meta %}
         {% if meta.description %}
-            <p>
-                {{ meta.description | safe }}
-            </p>
+            <p>{{ meta.description | safe }}</p>
         {% endif %}
         {% if meta.discord %}
             <p>
@@ -36,9 +32,7 @@
                 {% endfor %}
             </p>
         {% else %}
-            <p class="text-muted">
-                This ride has no sponsor and is completely pointless.
-            </p>
+            <p class="text-muted">This ride has no sponsor and is completely pointless.</p>
         {% endif %}
     {% else %}
         <p>
@@ -57,37 +51,25 @@
     <div class="leaderboard-overflow mt-2">
         <table class="table table-condensed">
             <tr>
-                <th class="number rank">
-                    Rank
-                </th>
-                <th>
-                    Rider
-                </th>
-                <th class="number">
-                    Rides
-                </th>
-                <th class="number">
-                    Average Time
-                </th>
+                <th class="number rank">Rank</th>
+                <th>Rider</th>
+                <th class="number">Rides</th>
+                <th class="number">Average Time</th>
             </tr>
             {% for a, b, c, d, e in data.tdata %}
                 <tr>
-                    <td class="number rank">
-                        {{ loop.index }}
-                    </td>
+                    <td class="number rank">{{ loop.index }}</td>
                     <td>
                         {% if a in banned %}
-                            <a href="/people/{{ a }}" class="hover-underline text-muted">{{ b }} <em>(ineligible)</em></a>
+                            <a href="/people/{{ a }}"
+                               class="hover-underline text-muted">{{ b }} <em>(ineligible)</em></a>
                         {% else %}
-                            <a href="/people/{{ a }}" class="hover-underline">{{ b }}</a>
+                            <a href="/people/{{ a }}"
+                               class="hover-underline">{{ b }}</a>
                         {% endif %}
                     </td>
-                    <td class="number">
-                        {{ d }}
-                    </td>
-                    <td class="number">
-                        {{(e / d / 60) | int}}m {{((e / d) % 60) | int}}s
-                    </td>
+                    <td class="number">{{ d }}</td>
+                    <td class="number">{{(e / d / 60) | int}}m {{((e / d) % 60) | int}}s</td>
                 </tr>
             {% endfor %}
         </table>

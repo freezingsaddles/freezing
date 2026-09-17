@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2 class="mb-3">
-        Team Sleaze
-    </h2>
+    <h2 class="mb-3">Team Sleaze</h2>
     <p>
         Now, you know it's up to you whether or not you want to just do the bare minimum. People can go for a bike ride anywhere, okay? They do Freezing Saddles for the camaraderie and the soul-crushing cold.
     </p>
@@ -11,27 +9,17 @@
     </p>
     <table class="table table-condensed">
         <tr>
-            <th class="number rank">
-                Rank
-            </th>
-            <th>
-                Team
-            </th>
-            <th class="number">
-                Sleaze Rides
-            </th>
+            <th class="number rank">Rank</th>
+            <th>Team</th>
+            <th class="number">Sleaze Rides</th>
         </tr>
         {% for id, a, b in team_sleaze %}
             <tr>
-                <td class="number rank">
-                    {{ loop.index }}
-                </td>
+                <td class="number rank">{{ loop.index }}</td>
                 <td>
                     <a href="/teams/{{ id }}" class="hover-underline">{{ a }}</a>
                 </td>
-                <td class="number">
-                    {{ b }}
-                </td>
+                <td class="number">{{ b }}</td>
             </tr>
         {% endfor %}
     </table>

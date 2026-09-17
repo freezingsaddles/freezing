@@ -12,9 +12,7 @@
     {% endif %}
     {% if step == "intro" %}
         <div class="card mb-3 my-lg-4 p-4 px-lg-5">
-            <h3 class="mb-3">
-                Register for Freezing Saddles {{ end_date.year }}
-            </h3>
+            <h3 class="mb-3">Register for Freezing Saddles {{ end_date.year }}</h3>
             <p>
                 Freezing Saddles is a winter riding competition for cyclists in the
                 general DC area.
@@ -59,7 +57,8 @@
                     If that sounds like fun to you, then welcome!
                 </strong>
             </p>
-            <a class="btn btn-primary mb-1" href="/register?step=login">Start Registration</a>
+            <a class="btn btn-primary mb-1"
+               href="/register?step=login">Start Registration</a>
         </div>
     {% elif step == "login" %}
         <div class="card mb-3 my-lg-4 p-4 px-lg-5">
@@ -73,7 +72,10 @@
                     will also log you into the Freezing Saddles site.
                 </div>
                 <div class="form-check mt-3">
-                    <input class="form-check-input" type="radio" name="scope" id="public-scope" />
+                    <input class="form-check-input"
+                           type="radio"
+                           name="scope"
+                           id="public-scope" />
                     <label for="public-scope" class="form-check-label">
                         Only allow Freezing Saddles to read my public activities.
                     </label>
@@ -112,14 +114,10 @@
                     <li>
                         Congratulations! You have successfully connected your Strava account <strong>{{ athlete.name }}</strong>.
                         <ul>
-                            <li>
-                                If you need to use a different account, select Logout from the top-right menu.
-                            </li>
+                            <li>If you need to use a different account, select Logout from the top-right menu.</li>
                         </ul>
                     </li>
-                    <li>
-                        You can now continue to the next step.
-                    </li>
+                    <li>You can now continue to the next step.</li>
                 </ul>
                 <a class="btn btn-primary mb-1" href="/register?step=club">Next</a>
             {% endif %}
@@ -129,7 +127,8 @@
             <strong>Uh-oh, something went wrong!</strong>
             <br />
             You should be logged in at this point. Please check
-            your browser privacy settings and <a class="text-dark" href="/register">try registering again</a>,
+            your browser privacy settings and <a class="text-dark"
+    href="/register">try registering again</a>,
             or
             <a rel="noreferrer"
                target="_blank"
@@ -157,9 +156,7 @@
                 <a class="btn btn-primary mb-1" href="/register?step=form">Next</a>
             {% else %}
                 <ul>
-                    <li>
-                        The next step is to join the Freezing Saddles {{ end_date.year }} Strava club.
-                    </li>
+                    <li>The next step is to join the Freezing Saddles {{ end_date.year }} Strava club.</li>
                     <li>
                         Please click on the <em>Freezing Saddles {{ end_date.year }}</em> button below.
                         <br />
@@ -177,9 +174,7 @@
                         button below to refresh this page.
                     </li>
                     <ul>
-                        <li>
-                            It can sometimes take a few minutes for the club membership to propagate.
-                        </li>
+                        <li>It can sometimes take a few minutes for the club membership to propagate.</li>
                         <li>
                             If things aren't working, use the top-right menu to log out and <a href="/register">try registering again</a>,
                             or
@@ -189,7 +184,8 @@
                         </li>
                     </ul>
                 </ul>
-                <a class="btn btn-primary mb-1" href="/register?step=club&refresh=true">Refresh</a>
+                <a class="btn btn-primary mb-1"
+                   href="/register?step=club&refresh=true">Refresh</a>
             {% endif %}
         </div>
     {% elif step == "form" %}
@@ -223,16 +219,10 @@
         </div>
     {% elif step == "complete" %}
         <div class="card mb-3 my-lg-4 p-4 px-lg-5">
-            <h3 class="mb-3">
-                Registration Complete
-            </h3>
+            <h3 class="mb-3">Registration Complete</h3>
             <ul>
-                <li>
-                    Congratulations! Your registration is complete.
-                </li>
-                <li>
-                    You may now return to the home page and await the start of the competition.
-                </li>
+                <li>Congratulations! Your registration is complete.</li>
+                <li>You may now return to the home page and await the start of the competition.</li>
                 <li>
                     If you need to change your registration, or have any questions, please
                     <a rel="noreferrer"
