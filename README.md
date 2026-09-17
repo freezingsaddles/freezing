@@ -14,6 +14,7 @@ repositories, whose histories are preserved here.
 | `apps/nq` | Strava webhook receiver that enqueues work for sync |
 | `docker/beanstalkd` | the beanstalkd queue image |
 | `deploy` | docker compose files and server scripts |
+| `teams` | Scala team solver that assigns teams from historical performance data |
 
 ## Developing
 
@@ -28,7 +29,10 @@ is no separate model release.
     cd apps/sync && APP_SETTINGS=example.cfg uv run pytest -m "not live"
     cd apps/nq && uv run pytest
 
-Each app has its own `README.md` with runtime configuration details.
+Each app has its own `README.md` with runtime configuration details. The
+`teams` directory is Scala and sbt rather than Python; see its
+[README](teams/README.md). Scala Steward keeps the sbt builds' dependencies
+current, the way dependabot does for the Python side.
 
 Dependency versions are pinned by `uv.lock`; the apps declare compatible
 ranges, the model declares the ranges it supports, and dependabot updates the

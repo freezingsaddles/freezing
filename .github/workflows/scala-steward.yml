@@ -1,0 +1,38 @@
+---
+name: Scala Steward
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 0'
+
+permissions:
+  contents: read
+
+jobs:
+  scala-steward:
+    name: Scala Steward
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      # The newest JDK any of the builds wants; the others compile on it too.
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: sbt/setup-sbt@82da71df4e122282484a99a8d70096bc2369dbd8 # v1.5.9
+      - name: Launch Scala Steward
+        uses: scala-steward-org/scala-steward-action@6162b21b93d4be314a61ce0462fd026630132fee # v2.96.0
+        with:
+          # The Freezing Saddles GitHub App, installed on the org. Its ids are not
+          # secrets; only its private key is.
+          github-app-id: ${{ vars.SCALA_STEWARD_APP_ID }}
+          github-app-installation-id: ${{ vars.SCALA_STEWARD_INSTALLATION_ID }}
+          github-app-key: ${{ secrets.SCALA_STEWARD_APP_PRIVATE_KEY }}
+          # Every sbt build in the repository, as owner/repo:subdirectory.
+          repos: |
+            - freezingsaddles/freezing:teams
+            - freezingsaddles/freezing:infra
+            - freezingsaddles/freezing:infra/cdk
