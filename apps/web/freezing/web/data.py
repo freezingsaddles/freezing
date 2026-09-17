@@ -6,7 +6,6 @@ from __future__ import division, unicode_literals
 
 from freezing.model import meta
 from freezing.model.orm import Athlete, Team
-
 from freezing.web import config
 from freezing.web.exc import MultipleTeamsError, NoTeamsError
 

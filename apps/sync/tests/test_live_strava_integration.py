@@ -17,12 +17,12 @@ import os
 from unittest.mock import patch
 
 import pytest
-from freezing.model import init_model, meta
-from freezing.model.orm import Athlete
 from stravalib import unit_helper
 from stravalib.client import Client
 from stravalib.model import DetailedActivity, Stream
 
+from freezing.model import init_model, meta
+from freezing.model.orm import Athlete
 from freezing.sync.config import Config
 from freezing.sync.data import StravaClientForAthlete
 

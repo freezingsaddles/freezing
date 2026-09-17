@@ -1,9 +1,9 @@
-from freezing.model import meta, orm
-from freezing.model.orm import Ride, RidePhoto
 from sqlalchemy import and_
 from stravalib.client import BatchedResultsIterator
 from stravalib.model import ActivityPhoto
 
+from freezing.model import meta, orm
+from freezing.model.orm import Ride, RidePhoto
 from freezing.sync.data import StravaClientForAthlete
 
 from . import BaseSync

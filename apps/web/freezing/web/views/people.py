@@ -2,11 +2,11 @@ from datetime import datetime, timedelta
 from math import ceil
 
 from flask import Blueprint, abort, render_template
-from freezing.model import meta
-from freezing.model.orm import Athlete, Team
 from pytz import timezone, utc
 from sqlalchemy import text
 
+from freezing.model import meta
+from freezing.model.orm import Athlete, Team
 from freezing.web import config
 from freezing.web.utils.tribes import load_tribes, query_tribes
 

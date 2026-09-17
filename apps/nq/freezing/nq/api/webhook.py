@@ -1,6 +1,7 @@
 import json
 
 import falcon
+
 from freezing.model.msg.mq import ActivityUpdate, ActivityUpdateSchema, DefinedTubes
 from freezing.model.msg.strava import (
     ObjectType,
@@ -9,7 +10,6 @@ from freezing.model.msg.strava import (
     SubscriptionUpdate,
     SubscriptionUpdateSchema,
 )
-
 from freezing.nq.autolog import log
 from freezing.nq.config import config
 from freezing.nq.publish import ActivityPublisher

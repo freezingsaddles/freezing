@@ -5,10 +5,10 @@ import operator
 from datetime import datetime, timezone
 
 from flask import Blueprint, abort, redirect, render_template, request, session
-from freezing.model import meta
-from freezing.model.orm import Athlete
 from sqlalchemy import text
 
+from freezing.model import meta
+from freezing.model.orm import Athlete
 from freezing.web.autolog import log
 from freezing.web.config import config
 from freezing.web.exc import ObjectNotFound

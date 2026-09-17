@@ -4,8 +4,6 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 
 import arrow
-from freezing.model import meta
-from freezing.model.orm import Athlete, Ride, RideEffort, RideError, RideGeo, RidePhoto
 from geoalchemy2.elements import WKTElement
 from sqlalchemy import and_, func, text
 from sqlalchemy.orm import Session, joinedload
@@ -14,6 +12,8 @@ from stravalib.client import BatchedResultsIterator
 from stravalib.exc import AccessUnauthorized, Fault, ObjectNotFound
 from stravalib.model import ActivityPhotoPrimary, DetailedActivity, SummaryActivity
 
+from freezing.model import meta
+from freezing.model.orm import Athlete, Ride, RideEffort, RideError, RideGeo, RidePhoto
 from freezing.sync.config import config, statsd
 from freezing.sync.exc import (
     ActivityNotFound,
