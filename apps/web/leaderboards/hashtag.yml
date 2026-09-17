@@ -75,7 +75,6 @@ tags:
       Ride your bike and play Bingo! The hashtag to use is <code>#bingo</code>.
     rank_by: days
     discord: 1443983774185422849
-    freezebot: true
     sponsors: [3487165]
     default_view: photos
 
@@ -275,7 +274,6 @@ tags:
     description: |
       Take a picture and upload your ride with hashtag <code>#publicartfinder</code>.
     discord: 1446691565555814572
-    freezebot: true
     sponsors: [38633292]
     rank_by: rides
     default_view: photos
@@ -290,7 +288,6 @@ tags:
     rank_by: days
     default_view: photos
     discord: 1455974154137239787
-    freezebot: true
     sponsors: [11555517, 4704298]
     friendless: true
 
@@ -364,7 +361,6 @@ tags:
       Post a picture taken while on a bike ride of new transportation infrastructure under construction.
       Tag your ride with with <code>#UnderCon</code>.
     discord: 1448069690436878568
-    freezebot: true
     rank_by: rides
     sponsors: [7188282]
     default_view: photos
