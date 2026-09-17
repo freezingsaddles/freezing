@@ -10,3 +10,4 @@
 !**/example.cfg
 deploy/
 docker/
+infra/

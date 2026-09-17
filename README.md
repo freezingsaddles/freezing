@@ -14,6 +14,7 @@ repositories, whose histories are preserved here.
 | `apps/nq` | Strava webhook receiver that enqueues work for sync |
 | `docker/beanstalkd` | the beanstalkd queue image |
 | `deploy` | docker compose files and server scripts |
+| `infra` | Scala CDK app and Lambda that record registration emails in the database |
 
 ## Developing
 
@@ -28,7 +29,9 @@ is no separate model release.
     cd apps/sync && APP_SETTINGS=example.cfg uv run pytest -m "not live"
     cd apps/nq && uv run pytest
 
-Each app has its own `README.md` with runtime configuration details.
+Each app has its own `README.md` with runtime configuration details. The
+`infra` directory is Scala and sbt rather than Python; see its
+[README](infra/README.md).
 
 Dependency versions are pinned by `uv.lock`; the apps declare compatible
 ranges, the model declares the ranges it supports, and dependabot updates the

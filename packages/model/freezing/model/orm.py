@@ -83,6 +83,40 @@ class Athlete(StravaEntity):
     )
 
 
+class Registration(Base):
+    """One submission of the WordPress registration form, as recorded from its confirmation email.
+
+    Written by the registration receiver in infra/ (a Lambda behind SES), never by the Python
+    apps. The athlete link is only set when the athletes row already existed at the time the email
+    arrived; the raw Strava id the person typed is kept in strava_id regardless.
+    """
+
+    __tablename__ = "registrations"
+    __table_args__ = {
+        "mysql_engine": "InnoDB",
+        "mysql_charset": "utf8mb4",
+    }
+
+    # The email's Message-Id, in the schema's habit of external keys over generated ones; the
+    # receiver upserts on it so a redelivered email is the same row again.
+    message_id = Column(String(255), primary_key=True)
+    registered_at = Column(DateTime, nullable=False)
+    first_name = Column(String(255), nullable=False)
+    last_name = Column(String(255), nullable=False)
+    zip_code = Column(String(32), nullable=False)
+    email = Column(String(255), nullable=False)
+    strava_id = Column(String(64), nullable=True)
+    athlete_id = Column(
+        BigInteger, ForeignKey("athletes.id", ondelete="set null"), nullable=True
+    )
+    previous_mileage = Column(String(255), nullable=True)
+    team_captain = Column(Boolean, nullable=False, default=False)
+
+    athlete = orm.relationship(
+        "Athlete", backref=orm.backref("registrations", lazy="dynamic")
+    )
+
+
 class RideError(StravaEntity):
     """ """
 
