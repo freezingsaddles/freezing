@@ -1,0 +1,44 @@
+---
+name: Scala CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  checks: write        # for test results
+  pull-requests: write # for test results
+  contents: write      # for sbt-dependency-submission
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 25
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'temurin'
+        cache: 'sbt'
+
+    - name: Set up SBT
+      uses: sbt/setup-sbt@v1
+
+    - name: Run tests
+      run: sbt --server --batch test
+
+    - name: Publish test results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        files: |
+          target/out/**/test-reports/*.xml
+
+    - name: Upload dependency graph
+      uses: scalacenter/sbt-dependency-submission@v3
