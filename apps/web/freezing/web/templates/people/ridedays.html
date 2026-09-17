@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2 class="mb-3">
-        Every Day Riders - Day {{ num_days }}
-    </h2>
+    <h2 class="mb-3">Every Day Riders - Day {{ num_days }}</h2>
     {% if all_done %}
         <p>
             <strong>The competiton for this year is complete after {{ num_days }} days of riding!</strong>
@@ -27,23 +25,16 @@
     {% if not all_done %}
         <p>
             If your name is <span class="text-warning">yellow</span> or <span class="text-danger">red</span>, either you haven't ridden enough (see
-            <a href="https://www.velominati.com/the-rules/#5" rel="noreferrer">Rule 5</a>) or you need to upload your rides.
+            <a href="https://www.velominati.com/the-rules/#5"
+               rel="noreferrer">Rule 5</a>) or you need to upload your rides.
         </p>
     {% endif %}
     <table class="table table-condensed">
         <tr>
-            <th class="number rank">
-                Days
-            </th>
-            <th>
-                Rider
-            </th>
-            <th class="number">
-                Miles
-            </th>
-            <th class="emoji">
-                Every Day Rider?
-            </th>
+            <th class="number rank">Days</th>
+            <th>Rider</th>
+            <th class="number">Miles</th>
+            <th class="emoji">Every Day Rider?</th>
         </tr>
         {% for a, b, c, d, e in ride_days %}
             {% if c >= num_days %}
@@ -54,15 +45,12 @@
                 {% set class = "text-danger" %}
             {% endif %}
             <tr class="{{ a | myself }}">
-                <td class="number rank">
-                    {{ c }}
-                </td>
+                <td class="number rank">{{ c }}</td>
                 <td>
-                    <a href="/people/{{ a }}" class="{{ class }} hover-underline">{{ b }}</a>
+                    <a href="/people/{{ a }}"
+                       class="{{ class }} hover-underline">{{ b }}</a>
                 </td>
-                <td class="number">
-                    {{ d | round(1) }}
-                </td>
+                <td class="number">{{ d | round(1) }}</td>
                 <td class="emoji">
                     {% if c >= num_days %}
                         🏆

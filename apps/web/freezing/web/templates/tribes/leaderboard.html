@@ -7,22 +7,18 @@
             Log in to join tribes
         {% endif %}
     </span>
-    <h2 class="mb-3">
-        Bike Tribes
-    </h2>
+    <h2 class="mb-3">Bike Tribes</h2>
     {% for group in tribal_groups %}
-        <h4>
-            {{ group.name }}
-        </h4>
+        <h4>{{ group.name }}</h4>
         {# djlint:off H021,H023 #}
         <div style="margin: 15px 25px 30px 25px">
             {% for tribe in group.tribes %}
                 <h5>
                     {% if tribe == my_tribes[group.name] %}
                         {% if stats[(group.name, tribe)]["points"] >= maxima[group.name]["points"] %}
-                            &#128513;
+                            😁
                         {% else %}
-                            &#128148;
+                            💔
                         {% endif %}
                     {% endif %}
                     <a href="/tribes/individual?{{ group.id }}={{ tribe | urlencode }}"

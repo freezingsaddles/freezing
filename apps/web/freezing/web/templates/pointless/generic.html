@@ -27,12 +27,8 @@
     {{ title }}
 {% endblock %}
 {% block content %}
-    <h2 class="mb-3">
-        {{ title }}
-    </h2>
-    <p>
-        {{ description | safe }}
-    </p>
+    <h2 class="mb-3">{{ title }}</h2>
+    <p>{{ description | safe }}</p>
     {% if discord %}
         <p>
             See:
@@ -50,9 +46,7 @@
             {% endfor %}
         </p>
     {% else %}
-        <p class="text-muted">
-            This ride has no sponsor and is completely pointless.
-        </p>
+        <p class="text-muted">This ride has no sponsor and is completely pointless.</p>
     {% endif %}
     {% if rides %}
         <div role="tabpanel"  class="mt-lg-4 mb-lg-3">
@@ -80,14 +74,10 @@
                     <table class="table table-condensed">
                         <thead>
                             <tr>
-                                <th class="number rank">
-                                    Rank
-                                </th>
+                                <th class="number rank">Rank</th>
                                 {% for field in fields %}
                                     {% if field.visible %}
-                                        <th class="{{ field.type }}">
-                                            {{ field.label or field.name }}
-                                        </th>
+                                        <th class="{{ field.type }}">{{ field.label or field.name }}</th>
                                     {% endif %}
                                 {% endfor %}
                             </tr>
@@ -95,14 +85,10 @@
                         <tbody>
                             {% for row in data %}
                                 <tr class="{{ row.athlete_id | myself }}">
-                                    <td class="number rank">
-                                        {{ row.rank }}
-                                    </td>
+                                    <td class="number rank">{{ row.rank }}</td>
                                     {% for field in fields %}
                                         {% if field.visible %}
-                                            <td class="{{ field.type }}">
-                                                {{ row[field.name] | safe }}
-                                            </td>
+                                            <td class="{{ field.type }}">{{ row[field.name] | safe }}</td>
                                         {% endif %}
                                     {% endfor %}
                                 </tr>
@@ -110,8 +96,7 @@
                         </tbody>
                     </table>
                 </div>
-                <div role="tabpanel" class="tab-pane c3-wide my-3 my-lg-4" id="map">
-                </div>
+                <div role="tabpanel" class="tab-pane c3-wide my-3 my-lg-4" id="map"></div>
             </div>
         </div>
     {% else %}
@@ -124,14 +109,10 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
-                        <th class="number rank">
-                            Rank
-                        </th>
+                        <th class="number rank">Rank</th>
                         {% for field in fields %}
                             {% if field.visible %}
-                                <th class="{{ field.type }}">
-                                    {{ field.label or field.name }}
-                                </th>
+                                <th class="{{ field.type }}">{{ field.label or field.name }}</th>
                             {% endif %}
                         {% endfor %}
                     </tr>
@@ -139,14 +120,10 @@
                 <tbody>
                     {% for row in data %}
                         <tr class="{{ row.athlete_id | myself }}">
-                            <td class="number rank">
-                                {{ row.rank }}
-                            </td>
+                            <td class="number rank">{{ row.rank }}</td>
                             {% for field in fields %}
                                 {% if field.visible %}
-                                    <td class="{{ field.type }}">
-                                        {{ row[field.name] | safe }}
-                                    </td>
+                                    <td class="{{ field.type }}">{{ row[field.name] | safe }}</td>
                                 {% endif %}
                             {% endfor %}
                         </tr>
@@ -158,7 +135,7 @@
 {% endblock %}
 {% block foot %}
     {% if rides %}
-        <script type="text/javascript">
+        <script>
   $(function() {
     $('#map-link').one('click', () => {
       create_ride_map('map', '/api/all/trackmap.json?rides={{rides}}', null, true);

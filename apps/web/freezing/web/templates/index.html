@@ -119,7 +119,7 @@
 {% endblock %}
 {% block content %}
     <div id="sect-main" class="card mb-3 my-lg-4 bg-light">
-        <div class="p-4 px-lg-5 d-flex flex-column flex-lg-row align-items-center ">
+        <div class="p-4 px-lg-5 d-flex flex-column flex-lg-row align-items-center">
             <div class="d-flex flex-column align-items-center me-lg-5">
                 <img src="/img/logo-blue.png"
                      height="160"
@@ -127,12 +127,8 @@
                      alt="Snowflake made of bike chain parts" />
             </div>
             <div class="d-flex flex-column align-items-center align-items-lg-stretch text-center text-lg-start flex-grow-1 minw-0">
-                <h1>
-                    Freezing Saddles
-                </h1>
-                <h3>
-                    Ride bike. Earn points.
-                </h3>
+                <h1>Freezing Saddles</h1>
+                <h3>Ride bike. Earn points.</h3>
                 <div class="text-muted">
                     The official leaderboard and data analysis charts for the {{ competition_title }}
                     competition.
@@ -143,14 +139,10 @@
     {% if "register" in request.args %}
         <div id="sect-reg"
              class="card mb-3 my-lg-4 bg-light p-3 px-lg-4 text-center">
-            <h4>
-                {{ end_date.year }} Registration is Now Open!
-            </h4>
+            <h4>{{ end_date.year }} Registration is Now Open!</h4>
             <a class="btn btn-primary register-btn mx-auto mt-3 mb-3"
                href="/register">
-                <div>
-                    Register Now
-                </div>
+                <div>Register Now</div>
             </a>
             <div class="text-muted mt-2">
                 You have until December 24<sup>th</sup> to register for this year's competition!
@@ -176,15 +168,16 @@
             <span class="sprout">🌱</span>
         </div>
     {% endif %}
-    {% if g.logged_in and yourself.total_days < 15 and not request.cookies.get('discord-invite') %}
+    {% if g.logged_in and yourself.total_days < 15 and not request.cookies.get("discord-invite") %}
         <div id="discord-invite"
              class="mb-3 mb-lg-4 alert alert-success text-center">
-            <button class="btn btn-close" id="discord-invite-close" aria-label="Close">
-            </button>
+            <button class="btn btn-close" id="discord-invite-close" aria-label="Close"></button>
             <strong>We're on Discord!</strong>
             <br />
             Freezing Saddles is using Discord to organize some group rides and pointless prizes.
-            <a rel="noreferrer" target="_blank" href="{{ discord_invitation }}">Join our Discord Server</a> to stay in touch.
+            <a rel="noreferrer"
+               target="_blank"
+               href="{{ discord_invitation }}">Join our Discord Server</a> to stay in touch.
         </div>
     {% endif %}
     {% if not bafs_is_live %}
@@ -198,7 +191,8 @@
             {% if yourself.missed_yesterday %}
                 <div class="mb-3 mb-lg-4 py-2 alert alert-danger text-center">
                     <strong>You didn't ride yesterday!</strong> If you can, it's important to ride every
-                    day. Even just <a style="color: inherit" href="/leaderboard/indiv_sleaze">one mile</a> will help your team!
+                    day. Even just <a style="color: inherit"
+    href="/leaderboard/indiv_sleaze">one mile</a> will help your team!
                 </div>
             {% elif yourself.hour >= 12 %}
                 <div class="mb-3 mb-lg-4 py-2 alert alert-info text-center">
@@ -228,38 +222,28 @@
                 <div class="d-grid grid-2 grid-gap-3 grid-gap-lg-4 front-page-counts">
                     <div class="d-flex align-items-stretch card bg-light stats-card">
                         <div class="text-black vertical-header">
-                            <a class="tag-link block-link" href="/people/">{{ year }}</a>
+                            <a class="tag-link block-link"
+                               href="/people/">{{ year }}</a>
                         </div>
                         <div class="d-flex flex-column flex-grow-1 text-nowrap text-center px-3 py-2">
-                            <div>
-                                {{ total_rides|groupnum }} ride{{ total_rides|ess }}
-                            </div>
+                            <div>{{ total_rides|groupnum }} ride{{ total_rides|ess }}</div>
                             <span class="stat-divider horizontal my-1"></span>
-                            <div>
-                                {{ total_hours|groupnum }} hour{{ total_hours|ess }}
-                            </div>
+                            <div>{{ total_hours|groupnum }} hour{{ total_hours|ess }}</div>
                             <span class="stat-divider horizontal my-1"></span>
-                            <div>
-                                {{ total_miles|groupnum }} mile{{ total_miles|ess }}
-                            </div>
+                            <div>{{ total_miles|groupnum }} mile{{ total_miles|ess }}</div>
                         </div>
                     </div>
                     <div class="d-flex align-items-stretch card bg-light stats-card">
                         <div class="text-black vertical-header">
-                            <a class="tag-link block-link" href="/people/ridedays">today</a>
+                            <a class="tag-link block-link"
+                               href="/people/ridedays">today</a>
                         </div>
                         <div class="d-flex flex-column flex-grow-1 text-nowrap text-center px-3 py-2">
-                            <div>
-                                {{ today_riders }} rider{{ today_riders|ess }}
-                            </div>
+                            <div>{{ today_riders }} rider{{ today_riders|ess }}</div>
                             <span class="stat-divider horizontal my-1"></span>
-                            <div>
-                                {{ today_hours|groupnum }} hour{{ today_hours|ess }}
-                            </div>
+                            <div>{{ today_hours|groupnum }} hour{{ today_hours|ess }}</div>
                             <span class="stat-divider horizontal my-1"></span>
-                            <div>
-                                {{ today_miles|groupnum }} mile{{ today_miles|ess }}
-                            </div>
+                            <div>{{ today_miles|groupnum }} mile{{ today_miles|ess }}</div>
                         </div>
                     </div>
                 </div>
@@ -267,9 +251,7 @@
                     <div class="card bg-light hour-card">
                         <div class="hour-datum">
                             <span class="hour-icon">🥶</span>
-                            <div class="hour-number">
-                                {{ sub_freezing_hours|groupnum }}
-                            </div>
+                            <div class="hour-number">{{ sub_freezing_hours|groupnum }}</div>
                         </div>
                         <div class="text-center text-muted text-truncate hour-label">
                             hour{{ sub_freezing_hours|ess }} below freezing
@@ -278,9 +260,7 @@
                     <div class="card bg-light hour-card">
                         <div class="hour-datum">
                             <span class="hour-icon">☔</span>
-                            <div class="hour-number">
-                                {{ rain_hours|groupnum }}
-                            </div>
+                            <div class="hour-number">{{ rain_hours|groupnum }}</div>
                         </div>
                         <div class="text-center text-muted text-truncate hour-label">
                             hour{{ rain_hours|ess }} in the rain
@@ -289,9 +269,7 @@
                     <div class="card bg-light hour-card">
                         <div class="hour-datum">
                             <span class="hour-icon">☃️</span>
-                            <div class="hour-number">
-                                {{ snow_hours|groupnum }}
-                            </div>
+                            <div class="hour-number">{{ snow_hours|groupnum }}</div>
                         </div>
                         <div class="text-center text-muted text-truncate hour-label">
                             hour{{ snow_hours|ess }} in the snow
@@ -351,33 +329,25 @@
                                         </a>
                                         {% if team_count and yourself.team_rank %}
                                             <span class="stat-divider vertical mb-2 mx-md-3"></span>
-                                            <a class="tag-link" href="/leaderboard/team_text" title="Team rank">
+                                            <a class="tag-link"
+                                               href="/leaderboard/team_text"
+                                               title="Team rank">
                                                 👥 {{ yourself.team_rank }}<sup>{{ yourself.team_rank|ord }}</sup>
                                             </a>
                                         {% endif %}
                                     </div>
                                 {% else %}
-                                    <div class="text-muted">
-                                        –
-                                    </div>
+                                    <div class="text-muted">–</div>
                                 {% endif %}
                                 <span class="stat-divider horizontal my-1"></span>
-                                <div>
-                                    {{ yourself.hours|groupnum }} hour{{ yourself.hours|ess }}
-                                </div>
+                                <div>{{ yourself.hours|groupnum }} hour{{ yourself.hours|ess }}</div>
                                 <span class="stat-divider horizontal my-1"></span>
-                                <div>
-                                    {{ yourself.miles|groupnum }} mile{{ yourself.miles|ess }}
-                                </div>
+                                <div>{{ yourself.miles|groupnum }} mile{{ yourself.miles|ess }}</div>
                             </div>
                             <div class="d-flex flex-column justify-content-center flex-grow-1 text-nowrap text-center px-3 py-2">
-                                <div>
-                                    {{ yourself.rides }} ride{{ yourself.rides|ess }}
-                                </div>
+                                <div>{{ yourself.rides }} ride{{ yourself.rides|ess }}</div>
                                 <span class="stat-divider horizontal my-1"></span>
-                                <div>
-                                    {{ yourself.days }} day{{ yourself.days|ess }}
-                                </div>
+                                <div>{{ yourself.days }} day{{ yourself.days|ess }}</div>
                                 <span class="stat-divider horizontal my-1"></span>
                                 <div>
                                     {% if yourself.every_day %}
@@ -421,8 +391,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <div class="pt-3 pt-lg-4">
-            </div>
+            <div class="pt-3 pt-lg-4"></div>
         {% endif %}
         {% if photos %}
             <div id="sect-photos" class="mb-3 mb-lg-4 photo-grid gap-lg-4">
@@ -434,16 +403,12 @@
                             <br>
                         Photos</a>
                     {% else %}
-                        <a href="{{ photo.img_l }}" data-toggle="lightbox" data-gallery="multiimages"
-                            class="photo-thumbnail"
-                            data-title="{{ photo.ride.name }}"
-                            data-parent="#sect-photos"
+                        <a href="{{ photo.img_l }}" data-toggle="lightbox" data-gallery="multiimages" class="photo-thumbnail" data-title="{{ photo.ride.name }}" data-parent="#sect-photos"
                             {# djlint:off #}
                             data-info='{{ photo.caption or "" | safe }}'
                             data-footer='Taken by <a href="/people/{{ photo.ride.athlete.id }}" class="hover-underline">{{ photo.ride.athlete.display_name }}</a>'
                             style="background-image: url('{{ photo.img_l }}'), url('/img/logo-blue.png');">
-                            {# djlint:on #}
-                        </a>
+                            {# djlint:on #} </a>
                     {% endif %}
                 {% endfor %}
             </div>
@@ -482,8 +447,7 @@
     </script>
     {% if bafs_is_over and bafs_days_over < 14 %}
         <!-- show some snow for two weeks -->
-        <div id="snow-animation-container">
-        </div>
+        <div id="snow-animation-container"></div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/1.20.3/TweenMax.min.js"
                 integrity="sha512-B8ruywf8mKA4fm0K8SrrNhO5DTokuipFEo7rEnI0RVTt9p29MJKfg8TfOVwMAFZxgI+zOF4iwOA/ByvyJ/sslw=="
                 crossorigin="anonymous"

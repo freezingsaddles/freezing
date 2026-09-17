@@ -1,11 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-    <h2 class="mb-3">
-        Kidsathlon
-    </h2>
-    <p class="lead">
-        Leaderboard for Kidsathlon
-    </p>
+    <h2 class="mb-3">Kidsathlon</h2>
+    <p class="lead">Leaderboard for Kidsathlon</p>
     <p>
         Your Kidsathlon score is miles <code>#withkid</code> plus miles <code>#kidical</code>, provided both are non-zero. If you've only done one or the other, you get no kidsathlon score. Sorry.
     </p>
@@ -13,27 +9,15 @@
         <div class="card-body py-1">
             <table class="table table-condensed">
                 <tr>
-                    <th class="number rank">
-                        Rank
-                    </th>
-                    <th>
-                        Rider
-                    </th>
-                    <th class="number">
-                        Kidical
-                    </th>
-                    <th class="number">
-                        Withkid
-                    </th>
-                    <th class="number">
-                        Kidsathlon Score
-                    </th>
+                    <th class="number rank">Rank</th>
+                    <th>Rider</th>
+                    <th class="number">Kidical</th>
+                    <th class="number">Withkid</th>
+                    <th class="number">Kidsathlon Score</th>
                 </tr>
                 {% for a, b, c, d, e in data.tdata %}
                     <tr>
-                        <td class="number rank">
-                            {{ loop.index }}
-                        </td>
+                        <td class="number rank">{{ loop.index }}</td>
                         <td>
                             <a href="/people/{{ a }}">
                                 {% if a==1873089 %}
@@ -41,15 +25,9 @@
                                 {% endif %}
                             {{ b }}</a>
                         </td>
-                        <td class="number">
-                            {{ c| round(1) }}
-                        </td>
-                        <td class="number">
-                            {{ d| round(1) }}
-                        </td>
-                        <td class="number">
-                            {{ e| round(1) }}
-                        </td>
+                        <td class="number">{{ c| round(1) }}</td>
+                        <td class="number">{{ d| round(1) }}</td>
+                        <td class="number">{{ e| round(1) }}</td>
                     </tr>
                 {% endfor %}
             </table>

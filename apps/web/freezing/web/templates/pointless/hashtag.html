@@ -25,16 +25,12 @@
 {% endblock %}
 {% block title %}
     {{ meta.name if meta else hashtag + " Ride
-    Miles" }}
+        Miles" }}
 {% endblock %}
 {% block content %}
-    <h2 class="mb-3">
-        {{ meta.name if meta else hashtag + " Ride Miles" }}
-    </h2>
+    <h2 class="mb-3">{{ meta.name if meta else hashtag + " Ride Miles" }}</h2>
     {% if meta %}
-        <p>
-            {{ meta.description | safe }}
-        </p>
+        <p>{{ meta.description | safe }}</p>
         {% if meta.discord %}
             <p>
                 See:
@@ -52,9 +48,7 @@
                 {% endfor %}
             </p>
         {% else %}
-            <p class="text-muted">
-                This ride has no sponsor and is completely pointless.
-            </p>
+            <p class="text-muted">This ride has no sponsor and is completely pointless.</p>
         {% endif %}
     {% else %}
         <p>
@@ -91,75 +85,57 @@
             </li>
         {% endif %}
     </ul>
-    {% if view == 'leaderboard' %}
+    {% if view == "leaderboard" %}
         <div class="leaderboard-overflow mt-2">
             <table class="table table-condensed">
                 <tr>
-                    <th class="number rank">
-                        Rank
-                    </th>
-                    <th>
-                        Rider
-                    </th>
-                    {% if meta and meta.rank_by == 'days' %}
-                        <th class="number">
-                            Ride Days
-                        </th>
+                    <th class="number rank">Rank</th>
+                    <th>Rider</th>
+                    {% if meta and meta.rank_by == "days" %}
+                        <th class="number">Ride Days</th>
                     {% else %}
-                        <th class="number">
-                            Rides
-                        </th>
+                        <th class="number">Rides</th>
                     {% endif %}
-                    <th class="number">
-                        Distance
-                    </th>
+                    <th class="number">Distance</th>
                 </tr>
                 {% for a, b, c, d, e, f in tdata %}
                     <tr class="{{ a | myself }}">
-                        <td class="number rank">
-                            {{ f }}
-                        </td>
+                        <td class="number rank">{{ f }}</td>
                         <td>
                             {% if a in banned %}
-                                <a href="/people/{{ a }}" class="hover-underline text-muted">{{ b }} <em>(ineligible)</em></a>
+                                <a href="/people/{{ a }}"
+                                   class="hover-underline text-muted">{{ b }} <em>(ineligible)</em></a>
                             {% else %}
-                                <a href="/people/{{ a }}" class="hover-underline">{{ b }}</a>
+                                <a href="/people/{{ a }}"
+                                   class="hover-underline">{{ b }}</a>
                             {% endif %}
                         </td>
-                        <td class="number">
-                            {{ e if meta and meta.rank_by == 'days' else c }}
-                        </td>
-                        <td class="number">
-                            {{ d | round(1) }} mi
-                        </td>
+                        <td class="number">{{ e if meta and meta.rank_by == 'days' else c }}</td>
+                        <td class="number">{{ d | round(1) }} mi</td>
                     </tr>
                 {% endfor %}
             </table>
         </div>
-    {% elif view == 'photos' %}
+    {% elif view == "photos" %}
         {% if photos %}
             <div class="photo-grid my-3 my-lg-4 gap-lg-4 gallery-wrapper">
                 {% for photo in photos %}
-                    <a
-                        href="{{ photo.img_l }}"
-                        data-toggle="lightbox"
-                        data-gallery="multiimages"
-                        class="photo-thumbnail"
-                        data-title="{{ photo.name }}"
-                        data-parent=".gallery-wrapper"
+                    <a href="{{ photo.img_l }}"
+                       data-toggle="lightbox"
+                       data-gallery="multiimages"
+                       class="photo-thumbnail"
+                       data-title="{{ photo.name }}"
+                       data-parent=".gallery-wrapper"
+
                         {# djlint:off #}
                         data-info='{{ photo.caption or "" | safe }}'
                         data-footer='Taken on {{photo.start_date.strftime("%-m/%-d")}} by <a href="/people/{{ photo.athlete_id }}" class="hover-underline">{{ photo.display_name }}</a>'
                         style="background-image: url('{{ photo.img_l }}'), url('/img/logo-blue.png');"
-                        {# djlint:on #}
-                        >
-                    </a>
+                        {# djlint:on #}></a>
                 {% endfor %}
             </div>
         {% else %}
-            <div class="my-4 text-muted alert alert-info">
-                No photos found.
-            </div>
+            <div class="my-4 text-muted alert alert-info">No photos found.</div>
         {% endif %}
         <div class="d-flex flex-column-reverse flex-lg-row gap-3 justify-content-between align-items-center">
             <div class="photo-how-button">
@@ -176,14 +152,14 @@
             <ul class="pagination mb-0">
                 <li class="page-item {% if page < 2 %}disabled{% endif %}">
                     <a class="page-link"
-                       href="{{ hashtag_notag }}?view=photos&page={{ page-1 }}{% if datestr %}&date={{ datestr }}{% endif %}{% if mine %}&mine=true{% endif %}"><span aria-hidden="true">&larr;</span> Newer</a>
+                       href="{{ hashtag_notag }}?view=photos&page={{ page-1 }}{% if datestr %}&date={{ datestr }}{% endif %}{% if mine %}&mine=true{% endif %}"><span aria-hidden="true">←</span> Newer</a>
                 </li>
                 <li class="page-item disabled">
                     <a class="page-link">Page {{ page }} of {{ total_pages }}</a>
                 </li>
                 <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
                     <a class="page-link"
-                       href="{{ hashtag_notag }}?view=photos&page={{ page+1 }}{% if datestr %}&date={{ datestr }}{% endif %}{% if mine %}&mine=true{% endif %}">Older <span aria-hidden="true">&rarr;</span></a>
+                       href="{{ hashtag_notag }}?view=photos&page={{ page+1 }}{% if datestr %}&date={{ datestr }}{% endif %}{% if mine %}&mine=true{% endif %}">Older <span aria-hidden="true">→</span></a>
                 </li>
             </ul>
             {# djlint:on #}
@@ -253,16 +229,15 @@
                 </li>
             </ul>
         </div>
-    {% elif view == 'map' %}
-        <div class="c3-wide my-3 my-lg-4" id="map">
-        </div>
-    {% elif view == 'extra' %}
+    {% elif view == "map" %}
+        <div class="c3-wide my-3 my-lg-4" id="map"></div>
+    {% elif view == "extra" %}
         {{ meta.extra_body | safe }}
     {% endif %}
 {% endblock %}
 {% block foot %}
-    {% if view == 'map' %}
-        <script type="text/javascript">
+    {% if view == "map" %}
+        <script>
   $(function () {
     create_ride_map(
       "map",
@@ -272,8 +247,8 @@
     );
   });
         </script>
-    {% elif view == 'photos' %}
-        <script type="text/javascript">
+    {% elif view == "photos" %}
+        <script>
   function onUpdate() {
     const date = $("#date-picker").val();
     const mine = $("#my-photos")[0]?.checked;

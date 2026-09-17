@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.js"
             integrity="sha384-xOzJ6ocROuPNeY/PUgXyXgiPyvvePCiWVkKXro4Lb1gWoGJOtrJw+zrpf3NBx1B5"
             crossorigin="anonymous"></script>
-    <script type="text/javascript">
+    <script>
       var chart;
 	  function drawChart(api_method, label) {
 		  $.ajax({
@@ -81,26 +81,16 @@
     </script>
 {% endblock %}
 {% block content %}
-    <h2 class="mb-3">
-        Team Leaderboards
-    </h2>
+    <h2 class="mb-3">Team Leaderboards</h2>
     <form action="#" id="choose_api" class="d-flex">
         <select class="form-select" name="api_method" id="api_method">
-            <option value="team_elev_gain" selected="selected">
-                Elevation Gain
-            </option>
-            <option value="team_moving_time">
-                Time in the Saddle
-            </option>
+            <option value="team_elev_gain" selected="selected">Elevation Gain</option>
+            <option value="team_moving_time">Time in the Saddle</option>
             <option value="team_number_sleaze_days">
                 Number of Sleaze (at least 1 mile, less than 2 miles) Days
             </option>
-            <option value="team_avg_speed">
-                Average Speed
-            </option>
-            <option value="team_segment/1081507">
-                Hains Point Laps
-            </option>
+            <option value="team_avg_speed">Average Speed</option>
+            <option value="team_segment/1081507">Hains Point Laps</option>
         </select>
         <button class="btn btn-primary flex-shrink-0 ms-1" onclick="redraw();">
             Draw Chart
@@ -110,6 +100,5 @@
         <strong id="title"></strong>
     </div>
     <!--Div that will hold our leaderboard chart-->
-    <div id="chart_team_leaderboard" style="width:100%">
-    </div>
+    <div id="chart_team_leaderboard" style="width:100%"></div>
 {% endblock %}

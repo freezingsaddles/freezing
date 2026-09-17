@@ -3,9 +3,7 @@
     <span class="float-end mt-1">
         <a href="/people/{{ session.athlete_id }}">Cancel</a>
     </span>
-    <h2 class="mb-3">
-        My Tribes
-    </h2>
+    <h2 class="mb-3">My Tribes</h2>
     <p>
         Your selections will be visible to others on your profile page, and
         you will show up on the corresponding
@@ -14,27 +12,18 @@
     </p>
     <form method="post">
         {% for group in tribal_groups %}
-            <h4>
-                {{ group.name }}
-            </h4>
+            <h4>{{ group.name }}</h4>
             <select name="{{ group.id }}" class="form-control big-bottom">
-                <option>
-                </option>
+                <option></option>
                 {% for tribe in group.tribes %}
                     {% if tribe == my_tribes[group.name] %}
-                        <option selected>
-                            {{ tribe }}
-                        </option>
+                        <option selected>{{ tribe }}</option>
                     {% else %}
-                        <option>
-                            {{ tribe }}
-                        </option>
+                        <option>{{ tribe }}</option>
                     {% endif %}
                 {% endfor %}
             </select>
         {% endfor %}
-        <button type="submit" class="btn btn-primary px-4">
-            Submit
-        </button>
+        <button type="submit" class="btn btn-primary px-4">Submit</button>
     </form>
 {% endblock %}

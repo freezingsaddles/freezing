@@ -64,14 +64,12 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
               rel="stylesheet" />
-        {% block head %}
-        {% endblock %}
+        {% block head %}{% endblock %}
     </head>
     <body class="{{'logged-in' if g.logged_in else ''}}">
-        {% block beforenav %}
-        {% endblock %}
-        {% include 'base_navbar.html' %}
-        {% if g.no_team and not request.cookies.get('team-warning') %}
+        {% block beforenav %}{% endblock %}
+        {% include "base_navbar.html" %}
+        {% if g.no_team and not request.cookies.get("team-warning") %}
             <div class="modal fade"
                  id="noTeamModal"
                  tabindex="-1"
@@ -80,14 +78,14 @@
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h1 class="modal-title fs-5 ps-2 text-warning" id="noTeamModalLabel">
+                            <h1 class="modal-title fs-5 ps-2 text-warning"
+                                id="noTeamModalLabel">
                                 Not on the leaderboard?
                             </h1>
                             <button type="button"
                                     class="btn-close"
                                     data-bs-dismiss="modal"
-                                    aria-label="Close">
-                            </button>
+                                    aria-label="Close"></button>
                         </div>
                         <div class="modal-body text-warning">
                             If you are an active participant you must now join your competition
@@ -103,10 +101,9 @@
             </div>
         {% endif %}
         <div class="container mt-3 mt-lg-4 overflow-hidden content-block">
-            {% block content %}
-            {% endblock %}
+            {% block content %}{% endblock %}
         </div>
-        {% include 'base_footer.html' %}
+        {% include "base_footer.html" %}
         <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.2/jquery.min.js"
                 integrity="sha512-Znnj7n0C0Xz1tdk6ih39WPm3kSCTZEKnX/7WaNbySW7GFbwSjO5r9/uOAGLMbgv6llI1GdghC7xdaQsFUStM1w=="
@@ -118,9 +115,8 @@
                 referrerpolicy="no-referrer"></script>
         <script src="/js/ekko-lightbox-min.js?2"></script>
         <script src="/js/base.js"></script>
-        {% block foot %}
-        {% endblock %}
-        {% if g.no_team and not request.cookies.get('team-warning') %}
+        {% block foot %}{% endblock %}
+        {% if g.no_team and not request.cookies.get("team-warning") %}
             <script>
                   $(document).ready(() =>
                         setTimeout(() => {
