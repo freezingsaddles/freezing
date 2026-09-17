@@ -44,7 +44,8 @@ jobs:
               if echo "$changed" | grep -q "^apps/$app/"; then apps="$apps $app"; fi
             done
           fi
-          json="$(echo "$apps" | xargs -n1 | jq -R . | jq -s -c .)"
+          # An empty list must come out as [] and not [""], or the matrix runs with no app.
+          json="$(printf '%s\n' $apps | jq -R . | jq -s -c 'map(select(length > 0))')"
           echo "apps=$json" >> "$GITHUB_OUTPUT"
           echo "Building: $json"
 
