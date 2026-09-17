@@ -1,10 +1,4 @@
-class NoTeamsError(RuntimeError):
-    pass
-
-
-class MultipleTeamsError(RuntimeError):
-    def __init__(self, teams):
-        self.teams = teams
+from freezing.common.teams import MultipleTeamsError, NoTeamsError  # noqa: F401
 
 
 class ConfigurationError(RuntimeError):

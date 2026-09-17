@@ -8,6 +8,7 @@ repositories, whose histories are preserved here.
 | Path | What it is |
 | --- | --- |
 | `packages/model` | shared SQLAlchemy models, migrations and message schemas |
+| `packages/common` | rules shared by the apps that are not part of the model, such as team matching |
 | `apps/web` | the Flask website |
 | `apps/sync` | Strava activity, athlete and weather sync worker |
 | `apps/nq` | Strava webhook receiver that enqueues work for sync |
@@ -23,6 +24,7 @@ is no separate model release.
 
     uv sync --all-packages --all-extras   # one virtualenv for everything
     uv run black --check .                 # formatting, isort and flake8 the same way
+    cd packages/common && uv run pytest
     cd apps/sync && APP_SETTINGS=example.cfg uv run pytest -m "not live"
     cd apps/nq && uv run pytest
 

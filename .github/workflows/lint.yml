@@ -31,7 +31,7 @@ jobs:
         run: uv run --no-sync flake8 .
       - name: fawltydeps
         run: |
-          for member in packages/model apps/web apps/sync apps/nq; do
+          for member in packages/model packages/common apps/web apps/sync apps/nq; do
             echo "::group::$member"
             (cd "$member" && uv run --no-sync fawltydeps --pyenv "$GITHUB_WORKSPACE/.venv")
             echo "::endgroup::"

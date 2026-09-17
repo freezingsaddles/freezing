@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "freezing-common"
+version = "0.1.0"
+description = "code shared by the Freezing Saddles apps that does not belong in the data model"
+readme = "README.md"
+license = {text = "Apache License (2.0)"}
+requires-python = ">=3.10"
+dependencies = [
+    "freezing-model",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["freezing*"]
+namespaces = true
+
+[tool.uv.sources]
+freezing-model = { workspace = true }
+
+[tool.fawltydeps]
+# freezing-model is a namespace package fawltydeps cannot map to its imports.
+ignore_unused = ["freezing-model"]
+# pytest comes from the workspace dev group
+ignore_undeclared = ["pytest"]

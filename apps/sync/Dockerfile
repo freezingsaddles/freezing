@@ -7,12 +7,14 @@ WORKDIR /app
 # Dependencies first so they cache independently of app source changes.
 COPY pyproject.toml uv.lock .python-version ./
 COPY packages/model/pyproject.toml packages/model/
+COPY packages/common/pyproject.toml packages/common/
 COPY apps/web/pyproject.toml apps/web/
 COPY apps/sync/pyproject.toml apps/sync/
 COPY apps/nq/pyproject.toml apps/nq/
 RUN uv sync --frozen --no-dev --no-install-workspace --package freezing-sync
 
 COPY packages/model packages/model
+COPY packages/common packages/common
 COPY apps/sync apps/sync
 RUN uv sync --frozen --no-dev --no-editable --package freezing-sync
 
