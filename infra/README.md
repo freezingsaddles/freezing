@@ -1,7 +1,7 @@
 # Registration receiver
 
 Registration for Freezing Saddles ends on a WordPress site whose form emails a
-confirmation to the registrant and to `admin@register.freezingsaddles.org`.
+confirmation to the registrant and to `register@inbox.freezingsaddles.org`.
 This receives that copy through Amazon SES, reads the form's answers out of the
 HTML and records them in the `registrations` table of the main database, so
 the people running the competition can see who registered without reading a
@@ -16,7 +16,9 @@ Two sbt builds, Scala 3:
 
 ## How it works
 
-1. An MX record on `register.freezingsaddles.org` points at SES inbound.
+1. An MX record on `inbox.freezingsaddles.org` points at SES inbound. Mail
+   gets its own subdomain because `register.freezingsaddles.org` is the
+   registration website.
 2. An SES receipt rule for the recipient writes the raw message to an S3
    bucket and invokes the Lambda with the message id.
 3. The Lambda fetches the message, walks its MIME parts to the HTML one, and
@@ -58,40 +60,65 @@ Formatting is `scalafmt` in both builds (`sbt scalafmtAll`); the config is
 
 ## Deploying
 
-Before the first deploy, by hand:
+Pushes to `main` that touch `infra/` deploy through
+[infra-deploy.yml](../.github/workflows/infra-deploy.yml): build the jar, assume
+an AWS role over OIDC, `cdk deploy`. Configuration is repository variables and
+one secret in the `production` environment:
 
-- A MySQL user that can insert into `registrations` and select from
-  `athletes`, and its password in an SSM SecureString parameter (standard
-  parameters are free; CloudFormation cannot create a SecureString itself):
+| Name | Value |
+| --- | --- |
+| `INFRA_DEPLOY_ROLE_ARN` | the IAM role below |
+| `INFRA_HOSTED_ZONE_ID`, `INFRA_ZONE_NAME` | `Z2KDHVD1WMJEDS`, `freezingsaddles.org` |
+| `INFRA_RECIPIENT` | `register@inbox.freezingsaddles.org` |
+| `INFRA_DB_HOST`, `INFRA_DB_PORT`, `INFRA_DB_NAME`, `INFRA_DB_USER` | the RDS endpoint, `3306`, `freezing`, `freezing` |
+| `INFRA_VPC_ID`, `INFRA_DB_SECURITY_GROUP_ID` | `vpc-fb440f81` and the group on the RDS instance |
+| `INFRA_DB_PASSWORD` (secret, `production` environment) | the `freezing` user's password |
 
-      aws ssm put-parameter --name /freezing/registration/db-password \
-        --type SecureString --value '...'
+The password goes straight into the function's environment: encrypted at rest,
+visible only to people who can read the function's configuration, the same
+trust as the `.env` on the host, and free. The stack also accepts
+`-c dbPasswordParam=...` naming an SSM SecureString instead, which keeps it out
+of the environment but inside a VPC needs an SSM interface endpoint that is
+billed hourly.
 
-  The host, port, database and user name are ordinary environment variables
-  set from CDK context, the same values the Python apps read from their
-  config file.
+One-time setup in the account:
 
-- Reachability. The production database is private, in `vpc-fb440f81`, so pass
-  `-c vpcId=vpc-fb440f81` and `-c dbSecurityGroupId=sg-...` (the group on the
-  RDS instance). The stack runs the function inside that VPC in its own
-  security group, adds the ingress rule for it to the database's group, and
-  adds the free S3 gateway endpoint it needs to fetch the mail. Without these
-  the function runs outside any VPC, which only works for a publicly reachable
-  database.
+- `cdk bootstrap aws://299196842131/us-east-1`, once, from anywhere with
+  admin credentials.
+- An IAM role for GitHub with this trust policy subject (the ids are the
+  org's and the repo's, so renames do not break it):
 
-Then, with credentials for the account that holds the Route 53 zone and the
-database:
+      repo:freezingsaddles@35430981/freezing@1373805993:ref:refs/heads/main
+
+  against the account's `token.actions.githubusercontent.com` OIDC provider,
+  and this permission policy, which is all a CDK deploy needs because the
+  bootstrap roles do the work:
+
+      {"Version": "2012-10-17", "Statement": [
+        {"Effect": "Allow", "Action": "sts:AssumeRole",
+         "Resource": "arn:aws:iam::299196842131:role/cdk-hnb659fds-*-role-299196842131-us-east-1"},
+        {"Effect": "Allow", "Action": "ssm:GetParameter",
+         "Resource": "arn:aws:ssm:us-east-1:299196842131:parameter/cdk-bootstrap/hnb659fds/version"}
+      ]}
+
+- Point the WordPress form's admin copy at `register@inbox.freezingsaddles.org`
+  once the stack is up; nothing arrives before the MX record exists.
+
+The stack verifies `inbox.freezingsaddles.org` as an SES identity (DKIM
+records in the zone), adds the MX record, runs the function inside the VPC in
+its own security group with an ingress rule on the database's group, adds the
+free S3 gateway endpoint the function needs to fetch the mail, and makes its
+receipt rule set the account's active one. An account has a single active rule
+set; if another stack already owns it, add `-c activateRuleSet=false` to the
+deploy and put the rule there.
+
+To deploy by hand instead, with credentials for the account:
 
     cd infra && sbt assembly
     cd cdk && npm ci
-    npx cdk deploy \
-      -c hostedZoneId=Z... -c zoneName=freezingsaddles.org \
-      -c dbHost=unmanaged-fs-02.....rds.amazonaws.com -c dbUser=freezing
+    npx cdk deploy -c hostedZoneId=Z2KDHVD1WMJEDS -c zoneName=freezingsaddles.org \
+      -c dbHost=unmanaged-fs-02.c7hti2ehau6i.us-east-1.rds.amazonaws.com -c dbUser=freezing \
+      -c dbPassword='...' -c vpcId=vpc-fb440f81 -c dbSecurityGroupId=sg-...
 
-The stack verifies `register.freezingsaddles.org` as an SES identity (DKIM
-records in the zone), adds the MX record, and makes its receipt rule set the
-account's active one. An account has a single active rule set; if another
-stack already owns it, pass `-c activateRuleSet=false` and add the rule there.
-
-CI builds, tests and synths on every pull request that touches `infra/`, but
-does not deploy; that is a manual step until an OIDC role exists for it.
+Pull requests that touch `infra/` build, test and synth with placeholder
+context but do not deploy.

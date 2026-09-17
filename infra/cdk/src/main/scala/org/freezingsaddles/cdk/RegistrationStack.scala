@@ -52,7 +52,7 @@ import software.constructs.Construct
   * Context (cdk.json or -c):
   *   - hostedZoneId, zoneName: the Route 53 zone for freezingsaddles.org, in this account. Given as
   *     attributes rather than looked up so `cdk synth` works without credentials.
-  *   - recipient (default admin@register.freezingsaddles.org): the address to receive on. Its
+  *   - recipient (default register@inbox.freezingsaddles.org): the address to receive on. Its
   *     domain becomes an SES identity with DKIM records and the MX record in the zone.
   *   - dbHost, dbUser (required), dbPort (default 3306), dbName (default freezing): the MySQL
   *     connection, for a user that can insert into `registrations` and select from `athletes`.
@@ -83,7 +83,7 @@ class RegistrationStack(scope: Construct, id: String, props: StackProps)
     context(name).getOrElse(sys.error(s"$name context is required"))
 
   locally:
-    val recipient       = context("recipient").getOrElse("admin@register.freezingsaddles.org")
+    val recipient       = context("recipient").getOrElse("register@inbox.freezingsaddles.org")
     val mailDomain      = recipient.substring(recipient.indexOf('@') + 1)
     val dbHost          = required("dbHost")
     val dbUser          = required("dbUser")

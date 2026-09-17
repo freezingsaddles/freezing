@@ -39,3 +39,5 @@ infra/**/.metals/
 infra/cdk/node_modules/
 infra/cdk/cdk.out/
 infra/cdk/cdk.context.json
+.bsp/
+.metals/
