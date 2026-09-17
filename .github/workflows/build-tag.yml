@@ -1,0 +1,26 @@
+---
+name: Build Tag
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        app: [web, sync, nq]
+    uses: ./.github/workflows/build-docker.yml
+    with:
+      app: ${{ matrix.app }}
+      tag: ${{ github.ref_name }}
+      push: true
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}

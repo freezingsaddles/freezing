@@ -1,0 +1,110 @@
+---
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - 'main'
+
+permissions:
+  contents: read
+
+concurrency: build-deploy
+
+jobs:
+
+  changes:
+    name: Which apps changed
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.filter.outputs.apps }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Compare against the previous main
+        id: filter
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            changed="ALL"
+          else
+            changed="$(git diff --name-only "$BEFORE" "$GITHUB_SHA")"
+          fi
+          echo "$changed"
+          apps=""
+          if [ "$changed" = "ALL" ] || echo "$changed" | grep -q -E '^(packages/|pyproject\.toml$|uv\.lock$|\.python-version$|\.github/workflows/(deploy|build-docker)\.yml$)'; then
+            apps="web sync nq"
+          else
+            for app in web sync nq; do
+              if echo "$changed" | grep -q "^apps/$app/"; then apps="$apps $app"; fi
+            done
+          fi
+          json="$(echo "$apps" | xargs -n1 | jq -R . | jq -s -c .)"
+          echo "apps=$json" >> "$GITHUB_OUTPUT"
+          echo "Building: $json"
+
+  build:
+    needs: changes
+    if: ${{ needs.changes.outputs.apps != '[]' }}
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        app: ${{ fromJSON(needs.changes.outputs.apps) }}
+    uses: ./.github/workflows/build-docker.yml
+    with:
+      app: ${{ matrix.app }}
+      # Change to "latest" at cut-over. Until then the old repositories own the
+      # "latest" tags that production pulls, so the monorepo publishes "main".
+      tag: main
+      push: true
+    secrets:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  deploy:
+    needs: [changes, build]
+    if: ${{ needs.changes.outputs.apps != '[]' }}
+    permissions:
+      contents: read
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Restart changed services
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          APPS: ${{ join(fromJSON(needs.changes.outputs.apps), ' ') }}
+        with:
+          host: ${{ vars.HOST }}
+          username: ${{ vars.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ vars.PORT }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          envs: APPS
+          script: |
+            set -euo pipefail
+            cd /opt/compose
+            services=""
+            for app in $APPS; do services="$services freezing-$app"; done
+            echo "Would deploy:$services"
+            # Uncomment at cut-over; these are the lines that change production.
+            # docker compose pull $services
+            # docker compose up -d $services
+            docker image prune -f
+
+  test:
+    needs: [deploy]
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: wget spider
+        run: "URL=https://freezingsaddles.org apps/web/test/wget-spider.sh"

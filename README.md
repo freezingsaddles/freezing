@@ -45,5 +45,12 @@ Image names are unchanged: `freezingsaddles/freezing-web`, `-sync` and `-nq`.
 ## CI
 
 Pull requests run lint, tests, a Bandit scan and a build of all three images
-without pushing. Deployment is not wired up in this repository yet; production
-still deploys from the individual repositories until the cut-over.
+without pushing.
+
+A push to `main` builds the images for whichever apps changed (a change under
+`packages/` or to the lock file rebuilds all three), pushes them to Docker Hub
+and runs the deploy job in the `production` environment. Until the cut-over the
+images are tagged `main` rather than `latest`, and the `docker compose` lines
+in the deploy script are commented out, so production still deploys from the
+individual repositories. Cutting over means changing the tag to `latest` and
+uncommenting those lines in `.github/workflows/deploy.yml`.
