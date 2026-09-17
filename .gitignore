@@ -1,0 +1,32 @@
+# Local config files
+*.cfg
+!example.cfg
+!test.cfg
+!development.cfg
+.env*
+!example.env
+/apps/*/data/
+/deploy/sync-data/*
+!/deploy/sync-data/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# Editors
+.idea/
+.vscode/
+*.iml
+.DS_Store
