@@ -395,6 +395,16 @@ body.logged-in #sect-main {
     font-size: 0.85em;
 }
 
+@media (max-width: 575px) {
+    .container .card.register {
+        border-radius: 0;
+        margin-left: -.75rem;
+        margin-right: -.75rem;
+        border-left: none;
+        border-right: none;
+    }
+}
+
 @media (min-width: 576px) {
     .stats-card {
         flex-direction: row;
