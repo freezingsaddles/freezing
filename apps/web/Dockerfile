@@ -1,5 +1,5 @@
 # Build from the workspace root: docker build -f apps/web/Dockerfile .
-FROM python:3.10-slim AS build
+FROM python:3.14-slim AS build
 COPY --from=ghcr.io/astral-sh/uv:0.12.15 /uv /bin/uv
 ENV UV_LINK_MODE=copy UV_COMPILE_BYTECODE=1 UV_PYTHON_DOWNLOADS=never
 WORKDIR /app
@@ -18,7 +18,7 @@ COPY packages/common packages/common
 COPY apps/web apps/web
 RUN uv sync --frozen --no-dev --no-editable --package freezing-web --extra runtime
 
-FROM python:3.10-slim
+FROM python:3.14-slim
 RUN addgroup --system freezing && adduser --system --ingroup freezing freezing
 COPY --from=build /app/.venv /app/.venv
 COPY apps/web/alembic.ini /app/alembic.ini

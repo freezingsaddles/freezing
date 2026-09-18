@@ -90,7 +90,7 @@ def main():
         # This is here to simulate application activity
         # (which keeps the main thread alive).
         subscriber.run_forever()
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt, SystemExit:
         log.info("Exiting on user request.")
     except Exception:
         log.exception("Error running sync/listener.")

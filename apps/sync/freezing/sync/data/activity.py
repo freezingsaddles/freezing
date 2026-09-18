@@ -149,11 +149,12 @@ class ActivitySync(BaseSync):
         )
         ride.elevation_gain = int(unit_helper.feet(elevation_gain).magnitude)
 
-        # Timezone.timezone() is None for a zone name pytz does not know.
+        # Timezone.timezone() is None for a zone name the library does not know.
         tz = strava_activity.timezone.timezone() if strava_activity.timezone else None
         if tz is None:
             raise DataEntryError("Activities cannot have null timezone.")
-        ride.timezone = tz.zone
+        # The zone's name: `key` on a zoneinfo zone (stravalib 2.5+), `zone` on a pytz one.
+        ride.timezone = getattr(tz, "key", None) or getattr(tz, "zone", None) or str(tz)
 
         if ride.photos_fetched is None and strava_activity.total_photo_count:
             ride.photos_fetched = False

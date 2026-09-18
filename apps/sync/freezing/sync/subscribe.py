@@ -96,7 +96,7 @@ class ActivityUpdateSubscriber:
             while not self.shutdown_event.is_set():
                 try:
                     job = self.client.reserve(timeout=30)
-                except (KeyboardInterrupt, SystemExit):
+                except KeyboardInterrupt, SystemExit:
                     raise
                 except greenstalk.TimedOutError:
                     self.logger.debug(
@@ -120,7 +120,7 @@ class ActivityUpdateSubscriber:
                         # Throttle requests to avoid hitting rate limits
                         sleep(self._THROTTLE_DELAY)
 
-        except (KeyboardInterrupt, SystemExit):
+        except KeyboardInterrupt, SystemExit:
             raise
         except Exception:
             self.logger.exception("Unhandled error in tube subscriber loop, exiting.")
