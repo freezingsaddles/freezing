@@ -32,8 +32,7 @@ An observation from the history response looks like this:
 import logging
 from copy import copy
 from datetime import datetime
-
-from pytz import timezone
+from zoneinfo import ZoneInfo
 
 
 def build_date(dateobj):
@@ -43,7 +42,7 @@ def build_date(dateobj):
     day = int(dateobj["mday"])
     hour = int(dateobj["hour"])
     minute = int(dateobj["min"])
-    return datetime(year, mon, day, hour, minute, 0, tzinfo=timezone(dateobj["tzname"]))
+    return datetime(year, mon, day, hour, minute, 0, tzinfo=ZoneInfo(dateobj["tzname"]))
 
 
 def smart_cast(val, type_):

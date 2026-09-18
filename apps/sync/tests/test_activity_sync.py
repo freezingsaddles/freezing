@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -43,9 +44,7 @@ def detailed_activity():
     # Provide a timezone-like object matching production access pattern
     class _TZ:
         def timezone(self):
-            import pytz
-
-            return pytz.timezone("UTC")
+            return ZoneInfo("UTC")
 
     activity.timezone = _TZ()
     # Photos container with primary attribute
@@ -86,7 +85,7 @@ def test_update_ride_basic(activity_sync, detailed_activity, ride):
         assert ride.ride_type == detailed_activity.sport_type
         assert ride.visibility == detailed_activity.visibility
         assert ride.elevation_gain == pytest.approx(328.084, rel=1e-3)  # 100m to feet
-        assert ride.timezone == detailed_activity.timezone.timezone().zone
+        assert ride.timezone == detailed_activity.timezone.timezone().key
 
 
 def test_write_ride_efforts(activity_sync, detailed_activity, ride):

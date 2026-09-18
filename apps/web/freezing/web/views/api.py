@@ -7,9 +7,9 @@ import os
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import arrow
-import pytz
 from flask import Blueprint, abort, jsonify, make_response, request, session
 from sqlalchemy import func, text
 from werkzeug.utils import secure_filename
@@ -233,7 +233,7 @@ def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
     for ride_track, wkt in q:
         assert isinstance(ride_track, RideTrack)
         assert isinstance(wkt, str)
-        ride_tz = pytz.timezone(ride_track.ride.timezone)
+        ride_tz = ZoneInfo(ride_track.ride.timezone)
 
         coordinates = []
         for i, (lon, lat) in enumerate(parse_linestring(wkt)):
@@ -245,7 +245,7 @@ def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
                 float(Decimal(lon)),
                 float(Decimal(lat)),
                 float(Decimal(ride_track.elevation_stream[i])),
-                ride_tz.localize(elapsed_time).isoformat(),
+                elapsed_time.replace(tzinfo=ride_tz).isoformat(),
             )
 
             coordinates.append(point)

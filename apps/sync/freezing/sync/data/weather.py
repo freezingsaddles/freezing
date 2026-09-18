@@ -2,8 +2,8 @@ import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
 from statistics import mean
+from zoneinfo import ZoneInfo
 
-from pytz import timezone
 from sqlalchemy import text
 
 from freezing.model import meta, orm
@@ -93,8 +93,8 @@ class WeatherSync(BaseSync):
                     )
                 )
 
-                ride_today = datetime.now(timezone(ride.timezone))
-                start_date = ride.start_date.replace(tzinfo=timezone(ride.timezone))
+                ride_today = datetime.now(ZoneInfo(ride.timezone))
+                start_date = ride.start_date.replace(tzinfo=ZoneInfo(ride.timezone))
                 fetch_date = start_date + timedelta(seconds=ride.elapsed_time)
                 # For caching purposes we're saying we want weather as of the end of the ride, so if
                 # we have weather from earlier in the day we don't use it. Because we're lame and

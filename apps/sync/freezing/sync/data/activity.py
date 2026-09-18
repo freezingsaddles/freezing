@@ -153,8 +153,8 @@ class ActivitySync(BaseSync):
         tz = strava_activity.timezone.timezone() if strava_activity.timezone else None
         if tz is None:
             raise DataEntryError("Activities cannot have null timezone.")
-        # The zone's name: `key` on a zoneinfo zone (stravalib 2.5+), `zone` on a pytz one.
-        ride.timezone = getattr(tz, "key", None) or getattr(tz, "zone", None) or str(tz)
+        # stravalib 2.5+ hands back a zoneinfo zone, whose name is its key.
+        ride.timezone = getattr(tz, "key", None) or str(tz)
 
         if ride.photos_fetched is None and strava_activity.total_photo_count:
             ride.photos_fetched = False

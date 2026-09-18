@@ -6,11 +6,10 @@ Created on Feb 10, 2013.
 
 import copy
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from dateutil import rrule
 from flask import Blueprint, jsonify
-from pytz import utc
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -599,16 +598,7 @@ def user_daily_points(athlete_id):
     days = []
     points = []
     for dt in day_r:
-        # Thanks Stack Overflow https://stackoverflow.com/a/25265611/424301
-        day_no = (
-            utc.localize(
-                dt,
-                is_dst=None,
-            )
-            .astimezone(config.TIMEZONE)
-            .timetuple()
-            .tm_yday
-        )
+        day_no = dt.replace(tzinfo=UTC).astimezone(config.TIMEZONE).timetuple().tm_yday
         pts = (
             meta.scoped_session()
             .execute(day_q.bindparams(id=athlete_id, yday=day_no))

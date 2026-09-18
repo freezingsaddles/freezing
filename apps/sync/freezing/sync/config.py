@@ -1,9 +1,9 @@
 import logging
 import os
 from datetime import timedelta, tzinfo
+from zoneinfo import ZoneInfo
 
 import arrow
-import pytz
 from colorlog import ColoredFormatter
 from datadog import DogStatsd
 from envparse import env
@@ -41,7 +41,7 @@ class Config:
     TIMEZONE: tzinfo = env(
         "TIMEZONE",
         default="America/New_York",
-        postprocessor=lambda val: pytz.timezone(val),
+        postprocessor=lambda val: ZoneInfo(val),
     )
 
     UPLOAD_GRACE_PERIOD: timedelta = env(

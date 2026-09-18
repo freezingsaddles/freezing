@@ -1,6 +1,5 @@
 from datetime import date, datetime, time
-
-from pytz import timezone
+from zoneinfo import ZoneInfo
 
 # A minimal model with just the data we need.
 
@@ -63,13 +62,13 @@ class Day:
 
 
 class Forecast:
-    timezone: str
+    timezone: ZoneInfo
     latitude: float
     longitude: float
     day: Day
 
     def __init__(self, json):
-        self.timezone = timezone(json["timezone"])
+        self.timezone = ZoneInfo(json["timezone"])
         self.latitude = json["latitude"]
         self.longitude = json["longitude"]
         self.day = Day(json["days"][0], self.timezone)
