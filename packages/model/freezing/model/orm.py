@@ -204,12 +204,7 @@ class RidePhoto(Base):
     __tablename__ = "ride_photos"
 
     id = Column(String(191), primary_key=True, autoincrement=False)
-    # Strava's own photo source: 1 is a Strava-hosted photo. Rows from 2018 and
-    # earlier carry 2, from when Strava still syndicated Instagram photos; their
-    # image URLs have long since stopped resolving. Nothing reads this column.
-    source = Column(Integer, nullable=False, default=1)
     ride_id = Column(BigInteger, ForeignKey("rides.id", ondelete="cascade"), index=True)
-    ref = Column(String(255), nullable=True)
     caption = Column(Text, nullable=True)
 
     img_t = Column(String(255), nullable=True)

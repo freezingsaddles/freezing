@@ -113,7 +113,6 @@ def test_write_ride_efforts(activity_sync, detailed_activity, ride):
 def test_write_ride_photo_primary(activity_sync, detailed_activity, ride):
     session = MagicMock()
     primary_photo = SimpleNamespace(
-        source=1,
         unique_id="test_photo_123",
         urls={
             "100": "https://example.com/100.jpg",

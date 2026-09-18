@@ -96,9 +96,7 @@ class PhotoSync(BaseSync):
                 photo = RidePhoto(
                     id=activity_photo.unique_id,
                     ride_id=ride.id,
-                    ref=activity_photo.ref,
                     primary=False,
-                    source=activity_photo.source,  # meaningless
                 )
                 meta.scoped_session().add(photo)
 
