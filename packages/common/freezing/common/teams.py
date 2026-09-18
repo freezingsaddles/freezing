@@ -6,7 +6,7 @@ https://github.com/freezingsaddles/freezing-web/issues/66.
 """
 
 import logging
-from typing import Iterable, Optional
+from typing import Iterable
 
 from freezing.model import meta
 from freezing.model.orm import Athlete, Team
@@ -32,7 +32,7 @@ def register_athlete_team(
     *,
     competition_teams: Iterable[int],
     observer_teams: Iterable[int] = (),
-    main_team: Optional[int] = None,
+    main_team: int | None = None,
     logger: logging.Logger = log,
 ) -> Team:
     """

@@ -1,14 +1,14 @@
 """SQLAlchemy Metadata and Session object."""
 
 import contextlib
-from typing import Iterator, Optional
+from typing import Iterator
 
 from sqlalchemy import MetaData, orm
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 # SQLAlchemy database engine.  None until model.init_model() sets it.
-engine: Optional[Engine] = None
+engine: Engine | None = None
 
 # SQLAlchemy session manager.  None until model.init_model() sets it, but
 # typed as the real thing: every caller runs after init_model(), and the

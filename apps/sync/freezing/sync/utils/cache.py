@@ -2,7 +2,7 @@ import abc
 import json
 import logging
 import os
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, TypeVar
 
 from stravalib.client import Client
 from stravalib.exc import ObjectNotFound
@@ -60,7 +60,7 @@ class CachingAthleteObjectFetcher(Generic[T], metaclass=abc.ABCMeta):
 
     def get_cached_object_json(
         self, athlete_id: int, object_id: int
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Dict[str, Any] | None:
         """Retrieve raw object from cached directory."""
         directory = self.cache_dir(athlete_id)
 
@@ -89,7 +89,7 @@ class CachingAthleteObjectFetcher(Generic[T], metaclass=abc.ABCMeta):
         object_id: int,
         use_cache: bool = True,
         only_cache: bool = False,
-    ) -> Optional[T]:
+    ) -> T | None:
         pass
 
     def retrieve_object_json(
@@ -99,7 +99,7 @@ class CachingAthleteObjectFetcher(Generic[T], metaclass=abc.ABCMeta):
         object_id: int,
         use_cache: bool = True,
         only_cache: bool = False,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """Fetch an object, possibly from cache, and return the JSON for it.
 
         :param athlete_id:
@@ -181,7 +181,7 @@ class CachingActivityFetcher(CachingAthleteObjectFetcher[DetailedActivity]):
         object_id: int,
         use_cache: bool = True,
         only_cache: bool = False,
-    ) -> Optional[DetailedActivity]:
+    ) -> DetailedActivity | None:
         """Fetch activity and return it.
 
         :param athlete_id:
@@ -221,7 +221,7 @@ class CachingStreamFetcher(CachingAthleteObjectFetcher[List[Stream]]):
         object_id: int,
         use_cache: bool = True,
         only_cache: bool = False,
-    ) -> Optional[List[Stream]]:
+    ) -> List[Stream] | None:
         """Fetch activity and return it.
 
         :param athlete_id:

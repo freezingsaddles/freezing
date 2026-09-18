@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from marshmallow import fields
 
@@ -15,11 +15,11 @@ class DefinedTubes(enum.Enum):
 class ActivityUpdate(BaseMessage):
     """Represents a Webhook Event Subscription Update."""
 
-    operation: Optional[AspectType] = None
-    athlete_id: Optional[int] = None
-    activity_id: Optional[int] = None
-    event_time: Optional[datetime] = None
-    updates: Optional[Dict[str, Any]] = None
+    operation: AspectType | None = None
+    athlete_id: int | None = None
+    activity_id: int | None = None
+    event_time: datetime | None = None
+    updates: Dict[str, Any] | None = None
 
     def __repr__(self):
         return "[Activity {} id={} athlete={}]".format(

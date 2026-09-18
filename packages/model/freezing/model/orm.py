@@ -1,6 +1,6 @@
 import re
 import warnings
-from typing import List, Optional
+from typing import List
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
@@ -121,10 +121,10 @@ class Ride(StravaEntity):
 
     timezone = Column(String(255), nullable=True)
 
-    geo: Mapped[Optional["RideGeo"]] = orm.relationship(
+    geo: Mapped["RideGeo | None"] = orm.relationship(
         "RideGeo", uselist=False, backref="ride", cascade="all, delete, delete-orphan"
     )
-    weather: Mapped[Optional["RideWeather"]] = orm.relationship(
+    weather: Mapped["RideWeather | None"] = orm.relationship(
         "RideWeather",
         uselist=False,
         backref="ride",
@@ -133,7 +133,7 @@ class Ride(StravaEntity):
     photos: Mapped[List["RidePhoto"]] = orm.relationship(
         "RidePhoto", backref="ride", cascade="all, delete, delete-orphan"
     )
-    track: Mapped[Optional["RideTrack"]] = orm.relationship(
+    track: Mapped["RideTrack | None"] = orm.relationship(
         "RideTrack", uselist=False, backref="ride", cascade="all, delete, delete-orphan"
     )
 

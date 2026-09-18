@@ -1,7 +1,6 @@
 import abc
 import logging
 import time
-from typing import Optional, Union
 
 from stravalib import Client
 
@@ -15,8 +14,8 @@ class StravaClientForAthlete(Client):
 
     def __init__(
         self,
-        athlete: Union[int, Athlete],
-        logger: Optional[logging.Logger] = None,
+        athlete: int | Athlete,
+        logger: logging.Logger | None = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
         assert athlete, "No athlete ID or Athlete object provided."
@@ -87,5 +86,5 @@ class BaseSync(metaclass=abc.ABCMeta):
     def description(self):
         pass
 
-    def __init__(self, logger: Optional[logging.Logger] = None):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)

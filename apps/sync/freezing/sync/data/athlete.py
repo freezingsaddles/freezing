@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from stravalib import model as sm
 
@@ -21,7 +20,7 @@ class AthleteSync(BaseSync):
         end_time = config.END_DATE
         return loc_time > end_time
 
-    def sync_athletes(self, max_records: Optional[int] = None):
+    def sync_athletes(self, max_records: int | None = None):
         with meta.transaction_context() as sess:
             # We iterate over all of our athletes that have access tokens.
             # (We can't fetch anything for those that don't.)
