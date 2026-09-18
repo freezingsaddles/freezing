@@ -2,7 +2,7 @@ from datetime import datetime
 
 from stravalib import model as sm
 
-from freezing.common import teams
+from freezing.common import athletes, teams
 from freezing.model import meta
 from freezing.model.orm import Athlete, Team
 from freezing.sync.config import config
@@ -55,61 +55,15 @@ class AthleteSync(BaseSync):
     def register_athlete(
         self, strava_athlete: sm.DetailedAthlete, access_token: str
     ) -> Athlete:
+        """Ensure specified athlete is added to database, returns athlete model.
+
+        Thin binding of :func:`freezing.common.athletes.register_athlete`. The
+        client has already refreshed and stored this athlete's refresh token and
+        expiry, so only the access token is passed on.
         """
-        Ensure specified athlete is added to database, returns athlete model.
-
-        :return: The added athlete model object.
-        :rtype: :class:`bafs.model.Athlete`
-        """
-        session = meta.scoped_session()
-        athlete = session.get(Athlete, strava_athlete.id)
-
-        if athlete is None:
-            athlete = Athlete()
-
-        athlete.id = strava_athlete.id
-        athlete_name = f"{strava_athlete.firstname} {strava_athlete.lastname}"
-        athlete.profile_photo = strava_athlete.profile
-        athlete.access_token = access_token
-
-        def already_exists(display_name) -> bool:
-            return (
-                session.query(Athlete)
-                .filter(Athlete.id != athlete.id)
-                .filter(Athlete.display_name == display_name)
-                .count()
-                > 0
-            )
-
-        def unambiguous_display_name() -> str:
-            if not strava_athlete.lastname:
-                return athlete_name
-            display_name = f"{strava_athlete.firstname} {strava_athlete.lastname[0]}"
-            if already_exists(display_name):
-                self.logger.info(
-                    f"display_name '{display_name}' conflicts, using '{athlete_name}'"
-                )
-                return athlete_name
-            return display_name
-
-        # Only update the display name if it is either:
-        # a new athlete, or the athlete name has changed
-        try:
-            if athlete_name != athlete.name:
-                self.logger.info(
-                    f"Athlete '{athlete_name}' was renamed '{athlete.name}'"
-                )
-                athlete.display_name = unambiguous_display_name()
-        except Exception:
-            self.logger.exception(
-                f"Athlete name disambiguation error for {strava_athlete.id}",
-                exc_info=True,
-            )
-            athlete.display_name = athlete_name
-        finally:
-            athlete.name = athlete_name
-            session.add(athlete)
-        return athlete
+        return athletes.register_athlete(
+            strava_athlete, access_token=access_token, logger=self.logger
+        )
 
     def register_athlete_team(
         self, strava_athlete: sm.DetailedAthlete, athlete_model: Athlete
