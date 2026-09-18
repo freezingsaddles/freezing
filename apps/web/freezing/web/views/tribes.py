@@ -1,4 +1,5 @@
 from collections import defaultdict
+from urllib.parse import urlparse
 
 from flask import Blueprint, redirect, render_template, request, session
 from sqlalchemy import text
@@ -137,6 +138,18 @@ def post_my():
         Tribe.__table__.delete().where(Tribe.athlete_id == athlete_id)
     )
 
-    meta.scoped_session().execute(Tribe.__table__.insert(), my_tribes)
+    # An empty list would be an INSERT with no columns, which MySQL rejects.
+    if my_tribes:
+        meta.scoped_session().execute(Tribe.__table__.insert(), my_tribes)
 
-    return redirect("/tribes/leaderboard")
+    return redirect(_own_page(request.form.get("next")) or "/tribes/leaderboard")
+
+
+def _own_page(url: str | None) -> str | None:
+    """Return the url if it addresses this site, so a form cannot redirect off it."""
+    if not url:
+        return None
+    parts = urlparse(url.replace("\\", "/"))
+    if parts.scheme or parts.netloc or not parts.path.startswith("/"):
+        return None
+    return url

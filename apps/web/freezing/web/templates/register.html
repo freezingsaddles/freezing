@@ -153,7 +153,7 @@
                         the next step.
                     </li>
                 </ul>
-                <a class="btn btn-primary mb-1" href="/register?step=form">Next</a>
+                <a class="btn btn-primary mb-1" href="/register?step=tribes">Next</a>
             {% else %}
                 <ul>
                     <li>The next step is to join the Freezing Saddles {{ end_date.year }} Strava club.</li>
@@ -188,10 +188,48 @@
                    href="/register?step=club&refresh=true">Refresh</a>
             {% endif %}
         </div>
+    {% elif step == "tribes" %}
+        <div class="card mb-3 my-lg-4 p-4 px-lg-5">
+            <h3 class="mb-3">
+                <strong>Step 3.</strong> <span>Join your Bike Tribes (optional)</span>
+            </h3>
+            <p>
+                Your selections will be visible to others, and you will show up on the
+                corresponding leaderboards. If you don't want to fill anything in, just
+                leave it blank.
+            </p>
+            <form method="post" action="/tribes/my">
+                <input type="hidden" name="next" value="/register?step=form" />
+                {% for group in tribal_groups %}
+                    <div class="row mb-3 align-items-center">
+                        <label for="tribe-{{ group.id }}"
+                               class="col-sm-5 col-lg-4 col-form-label">
+                            {{ group.name }}
+                        </label>
+                        <div class="col-sm-7 col-lg-8">
+                            <select name="{{ group.id }}"
+                                    id="tribe-{{ group.id }}"
+                                    class="form-select">
+                                <option></option>
+                                {% for tribe in group.tribes %}
+                                    {% if tribe == tribes.get(group.name) %}
+                                        <option selected>{{ tribe }}</option>
+                                    {% else %}
+                                        <option>{{ tribe }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                {% endfor %}
+                <button type="submit"
+                        class="btn btn-primary mb-1 mt-2 w-100">Next</button>
+            </form>
+        </div>
     {% elif step == "form" %}
         <div class="card mb-3 my-lg-4 p-4 px-lg-5">
             <h3 class="mb-3">
-                <strong>Step 3.</strong> <span>Fill Out the Registration Form</span>
+                <strong>Step 4.</strong> <span>Fill Out the Registration Form</span>
             </h3>
             <ul>
                 <li>

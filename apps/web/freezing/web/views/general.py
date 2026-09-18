@@ -25,6 +25,7 @@ from freezing.web import app, config, data
 from freezing.web.autolog import log
 from freezing.web.exc import MultipleTeamsError, NoTeamsError
 from freezing.web.utils import auth
+from freezing.web.utils.tribes import load_tribes, query_tribes
 from freezing.web.views.shared_sql import team_leaderboard_query
 
 blueprint = Blueprint("general", __name__)
@@ -449,6 +450,8 @@ def register():
         step=step,
         athlete=athlete,
         team=team,
+        tribal_groups=load_tribes() if step == "tribes" else [],
+        tribes=query_tribes(athlete.id) if step == "tribes" and athlete else {},
         mean_team=config.MAIN_TEAM,
         public_authorize_url=public_url,
         private_authorize_url=private_url,
