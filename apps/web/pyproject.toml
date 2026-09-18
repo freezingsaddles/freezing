@@ -25,7 +25,7 @@ authors = [
     {name = "Joe Tatsuko"}
 ]
 license = {text = "Apache License (2.0)"}
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 dependencies = [
     "Flask>=3.1.3,<4",
     "PyMySQL[rsa]>=1.1.2,<2",
@@ -51,7 +51,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.14",
     "Natural Language :: English",
 ]
 

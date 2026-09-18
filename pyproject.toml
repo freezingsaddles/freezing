@@ -2,7 +2,7 @@
 name = "freezing"
 version = "0"
 description = "Freezing Saddles monorepo: shared model, web, sync and nq"
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 dependencies = []
 
 [tool.uv]
@@ -30,7 +30,6 @@ dev = [
     "flake8-pyproject==1.2.4",
     "flake8-quotes==3.4.0",
     "flake8-raise==0.0.5",
-    "flake8-return==1.2.0",
     "flake8-simplify==0.30.0",
     "isort==9.0.1",
     "mypy==2.3.1",
@@ -43,11 +42,11 @@ dev = [
 [tool.black]
 # Format for the Python that runs it (.python-version). Left unset, black infers
 # every version from requires-python up to the newest it knows and its safety
-# check cannot parse that on 3.10.
-target-version = ["py310"]
+# check cannot parse that on the interpreter it runs on.
+target-version = ["py314"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.14"
 # The packages; `mypy` with no arguments checks these, as CI does.
 files = [
     "packages/model/freezing",

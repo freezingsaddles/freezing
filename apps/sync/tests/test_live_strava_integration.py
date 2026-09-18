@@ -244,8 +244,8 @@ class TestStravalib24Features:
         elapsed = elapsed_td.total_seconds()
         moving = moving_td.total_seconds()
 
-        logger.info(f"Elapsed time: {elapsed} seconds ({elapsed/60:.1f} minutes)")
-        logger.info(f"Moving time: {moving} seconds ({moving/60:.1f} minutes)")
+        logger.info(f"Elapsed time: {elapsed} seconds ({elapsed / 60:.1f} minutes)")
+        logger.info(f"Moving time: {moving} seconds ({moving / 60:.1f} minutes)")
 
         assert elapsed > 0
         assert moving > 0
@@ -365,7 +365,7 @@ class TestRateLimiting:
         for i in range(3):
             activities = list(authenticated_client.get_activities(limit=1))
             assert len(activities) > 0
-            logger.info(f"Request {i+1} completed successfully")
+            logger.info(f"Request {i + 1} completed successfully")
 
 
 @pytest.mark.live
