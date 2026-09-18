@@ -14,6 +14,7 @@ import scala.util.control.NonFatal
   log.info(
     s"Freezebot: ${config.channels.byTag.size} tags, polling every ${config.poll.toSeconds}s"
   )
+  config.channels.forumIds.foreach(id => log.info(s"forum: $id"))
   while true do
     try Sync.cycle(config, ds, discord)
     catch case NonFatal(e) => log.error(e)("poll failed")
@@ -21,7 +22,7 @@ import scala.util.control.NonFatal
 end run
 
 /** Prints what a poll would do, and the first message it would send; touches neither Discord nor
-  * the posts table (beyond creating it). Needs no bot token.
+  * the posts table (beyond creating it). Needs no bot token, except to read a forum's open posts.
   */
 @main def preview(): Unit =
   val config   = Config.fromEnv(sys.env)
@@ -29,8 +30,10 @@ end run
   transact(ds)(Posts.createTable())
   val channels = config.channels
   println(s"tags: ${channels.byTag.toList.sortBy(_._1).map((t, c) => s"#$t -> $c").mkString(", ")}")
-  val p        = Sync.plan(config, ds)
+  val discord  = config.token.map(DiscordRest(_)).getOrElse(Discord.none)
+  val p        = Sync.plan(config, ds, discord)
   println(p.summary)
+  p.unmatched.foreach(u => println(s"skip   ${u.photoId} for forum ${u.forumId}: ${u.reason}"))
   p.deletes.foreach(d =>
     println(s"delete ${d.photoId} from ${d.channelId} (message ${d.messageId})")
   )
