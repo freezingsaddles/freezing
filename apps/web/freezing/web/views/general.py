@@ -1,5 +1,5 @@
 """
-Created on Feb 10, 2013
+Created on Feb 10, 2013.
 
 @author: hans
 """
@@ -54,7 +54,7 @@ custom_tag_pages = {
 
 def tag_page(tag):
     return next(
-        (tuple[1] for tuple in custom_tag_pages.items() if tag.startswith(tuple[0])),
+        (page for prefix, page in custom_tag_pages.items() if tag.startswith(prefix)),
         "hashtag/{}".format(tag),
     )
 
@@ -75,22 +75,21 @@ def ess(number):
 
 
 @app.template_filter("ord")
-def ord(number):
+def ordinal(number):
     if number % 10 == 0 or number % 10 > 3 or number // 10 == 1:
         return "th"
-    elif number % 10 == 1:
+    if number % 10 == 1:
         return "st"
-    elif number % 10 == 2:
+    if number % 10 == 2:
         return "nd"
-    else:  # if number % 10 == 3:
-        return "rd"
+    return "rd"  # number % 10 == 3
 
 
 @app.template_filter("myself")
 def myself(number):
     # generic board formats the PK into a fancy string so unformat it
-    id = int(sub(",", "", number)) if isinstance(number, str) else number
-    return "myself" if session.get("athlete_id") == id else ""
+    athlete_id = int(sub(",", "", number)) if isinstance(number, str) else number
+    return "myself" if session.get("athlete_id") == athlete_id else ""
 
 
 @blueprint.route("/")
@@ -223,7 +222,7 @@ def index():
         pr_gold=prs.get(1, 0),
         pr_silver=prs.get(2, 0),
         pr_bronze=prs.get(3, 0),
-        photos=[photo for photo in photos],
+        photos=list(photos),
         tags=tags,
         winners=team_rows[:3],  # + team_rows[4:][-1:]  # for last place too
         yourself=yourself,
@@ -244,14 +243,16 @@ def _trending_tags():
     original_tag = {}
     for res in meta.scoped_session().execute(q).fetchall():
         ride_tags = {}  # Prevent double-tagging
-        for hash in findall(r"(?<=#)\w+", res._mapping["name"]):
-            desuffix = fullmatch(r"(?i)(withkid|foodrescue|fsrealsuppleride).*", hash)
-            hash = desuffix[1] if desuffix else hash
+        for hashtag in findall(r"(?<=#)\w+", res._mapping["name"]):
+            desuffix = fullmatch(
+                r"(?i)(withkid|foodrescue|fsrealsuppleride).*", hashtag
+            )
+            hashtag = desuffix[1] if desuffix else hashtag
             if not fullmatch(
-                r"(?i)(BAFS|FS|FreezingSaddles)?\d*", hash
+                r"(?i)(BAFS|FS|FreezingSaddles)?\d*", hashtag
             ):  # Ditch useless tags
-                original_tag[hash.lower()] = hash
-                ride_tags[hash.lower()] = 1
+                original_tag[hashtag.lower()] = hashtag
+                ride_tags[hashtag.lower()] = 1
         for tag in ride_tags:
             tag_count[tag] = tag_count.get(tag, 0) + 1
     trending_tags = sorted(tag_count.items(), key=lambda t: t[1], reverse=True)
@@ -264,8 +265,7 @@ def _trending_tags():
             [original_tag[t[0]], 1 + (t[1] - min_count) / scale, tag_page(t[0])]
             for t in alpha_tags
         )
-    else:
-        return []
+    return []
 
 
 # Get non-rider stats
@@ -316,9 +316,9 @@ def _rider_stats(athlete_id):
                 from rides R
                 where R.athlete_id = :athlete_id
                 """).bindparams(athlete_id=athlete_id)).one()
-    ride_days = set(res[0] for res in (meta.scoped_session().execute(text("""
+    ride_days = {res[0] for res in (meta.scoped_session().execute(text("""
                     select ride_date from daily_scores DS where DS.athlete_id = :athlete_id
-                    """).bindparams(athlete_id=athlete_id)).fetchall()))
+                    """).bindparams(athlete_id=athlete_id)).fetchall())}
     team = (
         meta.scoped_session().query(Team).join(Athlete).filter_by(id=athlete_id).one()
     )
@@ -446,7 +446,8 @@ def register():
 @blueprint.route("/authorization")
 def authorization():
     """
-    Method called by Strava (redirect) that includes parameters.
+    Handle the redirect from Strava that includes parameters.
+
     - state
     - code
     - error

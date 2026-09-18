@@ -2,20 +2,16 @@ from __future__ import absolute_import
 
 import inspect
 import logging
-import sys
 
 
 class EagerFormattingAdapter(logging.LoggerAdapter):
-    """
-    A `logging.LoggerAdapter` that add unterpolation support but performs the
-    evaluation immediately if the appropriate loglevel is set.
-    """
+    """A `logging.LoggerAdapter` that add unterpolation support but performs the evaluation immediately if the appropriate loglevel is set."""
 
     def __init__(self, logger, extra=None):
         """
-        Initialize the adapter with a logger and a dict-like object which
-        provides contextual information. This constructor signature allows
-        easy stacking of LoggerAdapters, if so desired.
+        Initialize the adapter with a logger and a dict-like object which provides contextual information.
+
+        This constructor signature allows easy stacking of LoggerAdapters, if so desired.
 
         You can effectively pass keyword arguments as shown in the
         following example:
@@ -35,26 +31,23 @@ class EagerFormattingAdapter(logging.LoggerAdapter):
             # Do the string formatting immediately.
             if args:
                 return self._getUnterpolatedMessage(msg, args)
-            else:
-                return msg
-        else:
-            # Otherwise, just drop the message completely to avoid anything going
-            # wrong in the future.  This text shoudl clue one in to what's going
-            # on in the bizarre edge case where this ever does show up.
-            return "(log message suppressed due to insufficient log level)"
+            return msg
+        # Otherwise, just drop the message completely to avoid anything going
+        # wrong in the future.  This text shoudl clue one in to what's going
+        # on in the bizarre edge case where this ever does show up.
+        return "(log message suppressed due to insufficient log level)"
 
     def _getUnterpolatedMessage(self, msg, args):
         """
-        Returns the formatted string, will first attempt str.format and will
-        fallback to msg % args as it was originally.
+        Return the formatted string, will first attempt str.format and will fallback to msg % args as it was originally.
 
         This is lifted almost wholesale from logging_unterpolation.
         """
         original_msg = msg
         if isinstance(args, dict):
             # special case handing for unpatched logging supporting
-            # statements like:
-            # logging.debug("a %(a)d b %(b)s", {'a':1, 'b':2})
+            # statements that pass a single mapping as the only argument,
+            # for %(name)s-style interpolation
             args = (args,)
 
         try:
@@ -65,16 +58,8 @@ class EagerFormattingAdapter(logging.LoggerAdapter):
             # by casting the left side (the "msg" variable) in this context
             # to unicode. So we'll do that here
 
-            if sys.version_info >= (
-                3,
-                0,
-            ):
-                # this is most likely unnecessary on python 3, but it's here
-                # for completeness, in the case of someone manually creating
-                # a bytestring
-                unicode_type = str
-            else:
-                unicode_type = unicode
+            # This used to check for Python 2 vs 3, but Python 2 is dead, so:
+            unicode_type = str
 
             # handle the attempt to print utf-8 encoded data, similar to
             # %-interpolation's handling of unicode formatting non-ascii
@@ -103,73 +88,47 @@ class EagerFormattingAdapter(logging.LoggerAdapter):
         return msg
 
     def debug(self, msg, *args, **kwargs):
-        """
-        Delegate a debug call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
+        """Delegate a debug call to the underlying logger, after adding contextual information from this adapter instance."""
         self.log(logging.DEBUG, msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
-        """
-        Delegate an info call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
+        """Delegate an info call to the underlying logger, after adding contextual information from this adapter instance."""
         self.log(logging.INFO, msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
-        """
-        Delegate a warning call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
+        """Delegate a warning call to the underlying logger, after adding contextual information from this adapter instance."""
         self.log(logging.WARNING, msg, *args, **kwargs)
 
     def warn(self, msg, *args, **kwargs):
-        """
-        Delegate a warning call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
+        """Delegate a warning call to the underlying logger, after adding contextual information from this adapter instance."""
         self.log(logging.WARNING, msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
-        """
-        Delegate an error call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
+        """Delegate an error call to the underlying logger, after adding contextual information from this adapter instance."""
         self.log(logging.ERROR, msg, *args, **kwargs)
 
     def exception(self, msg, *args, **kwargs):
-        """
-        Delegate an exception call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
+        """Delegate an exception call to the underlying logger, after adding contextual information from this adapter instance."""
         kwargs["exc_info"] = 1
         self.log(logging.ERROR, msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
-        """
-        Delegate a critical call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
+        """Delegate a critical call to the underlying logger, after adding contextual information from this adapter instance."""
         self.log(logging.CRITICAL, msg, *args, **kwargs)
 
     def log(self, level, msg, *args, **kwargs):
-        """
-        Delegate a log call to the underlying logger, after adding
-        contextual information from this adapter instance.
-        """
+        """Delegate a log call to the underlying logger, after adding contextual information from this adapter instance."""
         msg, kwargs = self.process(msg, kwargs)
         # We explicitly do not pass the args into the log method here, since
         # they should be "used up" by the eagerFormat method.
         self.logger.log(level, self._eagerFormat(msg, level, args), **kwargs)
 
     def isEnabledFor(self, level):
-        """
-        See if the underlying logger is enabled for the specified level.
-        """
+        """See if the underlying logger is enabled for the specified level."""
         return self.logger.isEnabledFor(level)
 
 
-class AutoLogger(object):
+class AutoLogger:
     """
     A logger proxy object, with all of the methods and attributes of C{Logger}.
 
@@ -217,7 +176,7 @@ log = AutoLogger(EagerFormattingAdapter)
 
 
 def log_exceptions(fn):
-    """A decorator designed to wrap a function and log any exception that method produces.
+    """Wrap a function and log any exception that method produces.
 
     The exception will still be raised after being logged.
 
@@ -232,7 +191,7 @@ def log_exceptions(fn):
             a = args or []
             a = [str(x)[:255] for x in a]
             kw = kwargs or {}
-            kw = dict([(str(k)[:255], str(v)[:255]) for k, v in kw.items()])
+            kw = {str(k)[:255]: str(v)[:255] for k, v in kw.items()}
             log.debug("Calling %s.%s %r %r" % (fn.__module__, fn.__name__, a, kw))
             return fn(*args, **kwargs)
         except Exception as e:

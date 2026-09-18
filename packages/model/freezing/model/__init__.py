@@ -13,7 +13,6 @@ from sqlalchemy.sql.expression import ClauseElement, Executable
 from freezing.model import meta, migrationsutil
 from freezing.model.autolog import log
 from freezing.model.config import config
-from freezing.model.meta import engine
 from freezing.model.monkeypatch import collections
 from freezing.model.orm import (
     Athlete,
@@ -51,7 +50,7 @@ def init_db():
 
 def init_model(sqlalchemy_url: str, drop: bool = False, check_version: bool = True):
     """
-    Initializes the tables and classes of the model using configured engine.
+    Initialize the tables and classes of the model using configured engine.
 
     :param sqlalchemy_url: The database URI.
     :param drop: Whether to drop the tables first.
@@ -105,7 +104,8 @@ def init_model(sqlalchemy_url: str, drop: bool = False, check_version: bool = Tr
                 warnings.warn(
                     "Unknown db revision {} installed, ignoring db upgrade.".format(
                         installed
-                    )
+                    ),
+                    stacklevel=2,
                 )
             else:
                 if latest != installed:

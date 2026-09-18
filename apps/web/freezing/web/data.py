@@ -1,6 +1,4 @@
-"""
-Functions for interacting with the datastore and the strava apis.
-"""
+"""Functions for interacting with the datastore and the strava apis."""
 
 from __future__ import division, unicode_literals
 
@@ -56,7 +54,7 @@ def register_athlete(strava_athlete, token_dict):
 
 def register_athlete_team(strava_athlete, athlete_model):
     """
-    Updates db with configured team that matches the athlete's teams.
+    Update db with configured team that matches the athlete's teams.
 
     Thin binding of :func:`freezing.common.teams.register_athlete_team` to this
     app's configuration; see that function for the rules and exceptions.

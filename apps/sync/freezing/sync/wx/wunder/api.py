@@ -1,5 +1,4 @@
-"""
-Created on Feb 27, 2013
+"""Created on Feb 27, 2013.
 
 @author: hans
 """
@@ -78,14 +77,12 @@ state_name_to_abbrev_map = {
 
 
 class Fault(Exception):
-    """
-    Container for exceptions raised by the remote server.
-    """
+    """Container for exceptions raised by the remote server."""
 
     type = None
     description = None
 
-    def __init__(self, p1, p2=None):
+    def __init__(self, p1, p2=None):  # noqa: B042 (message built from args)
         if p1 and p2:
             self.type = p1
             self.description = p2
@@ -97,22 +94,19 @@ class Fault(Exception):
 
 
 class NoDataFound(RuntimeError):
-    """
-    Exception to raise when there is no data available.
-    """
+    """Exception to raise when there is no data available."""
 
 
-class Client(object):
-    """
-    A Weather Underground client.
-    """
+class Client:
+    """A Weather Underground client."""
 
     # Here is an example URL:
     # http://api.wunderground.com/api/{api_key}/history_20130101/q/VA/Mc_Lean.json')
     base_url = urlparse("http://api.wunderground.com/api/")
 
     def __init__(self, api_key, cache_dir=None, pause=1.0, cache_only=False):
-        """
+        """Create a client.
+
         :param api_key: The wunderground api key.
         :param cache_dir: The base directory for cache files.
         :param pause: How long to pause between requests (wunderground rate limit is 10 req/minute for developer accounts)
@@ -129,9 +123,7 @@ class Client(object):
             os.makedirs(self.cache_dir)
 
     def _handle_protocol_error(self, response):
-        """
-        Parses the JSON response from the server, raising a :class:`stravatools.api.Fault` if the
-        server returned an error.
+        """Parse the JSON response from the server, raising a :class:`stravatools.api.Fault` if the server returned an error.
 
         :param response: The response JSON
         :raises Fault: If the response contains an error.
@@ -144,25 +136,19 @@ class Client(object):
         return response
 
     def get(self, *args, **kwargs):
-        """
-        Construct a URL built on top of the base where args are the path elements
-        and kwargs are any keywords.
-        """
+        """Construct a URL built on top of the base where args are the path elements and kwargs are any keywords."""
         path = self.base_url.path
         if not path.endswith("/"):
             path += "/"
 
         path_components = [self.api_key] + list(args)
-        if path_components:
-            if not path_components[-1].endswith(".json"):
-                path_components[-1] += ".json"
+        if path_components and not path_components[-1].endswith(".json"):
+            path_components[-1] += ".json"
 
         path += "/".join(path_components)
 
-        params = dict()
+        params = {}
         params.update(kwargs)
-        # query_params.update(urllib.urlencode(kwargs))
-        # new_query_string = urllib.urlencode(query_params)
 
         url = urlunsplit(
             (
@@ -270,7 +256,7 @@ class Client(object):
 
         try:
             history_data = HistoryDay.from_json(data["history"])
-        except:
+        except Exception:
             self.log.exception("Unable to parse data: {0!r}".format(data))
             raise
 
@@ -283,7 +269,6 @@ class Client(object):
         return path
 
     def _check_cache(self, location_param, date):
-        data = None
         if self.cache_dir:
             basedir = self._cache_dir(location_param)
             filename = date.strftime("%Y-%m-%d") + ".json"
@@ -291,11 +276,10 @@ class Client(object):
             if os.path.exists(filepath):
                 self.log.debug("Cache hit for {0}/{1}".format(location_param, date))
                 with open(filepath, "r") as fp:
-                    data = json.loads(fp.read())
-            else:
-                self.log.debug("Cache miss for {0}/{1}".format(location_param, date))
+                    return json.loads(fp.read())
+            self.log.debug("Cache miss for {0}/{1}".format(location_param, date))
 
-        return data
+        return None
 
     def _write_cache(self, location_param, date, response_json):
         if self.cache_dir:

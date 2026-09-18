@@ -21,7 +21,7 @@ class WebhookResource:
 
     def on_get(self, req: falcon.Request, resp: falcon.Response):
         """
-        The GET request is used by Strava, when the webhook is initially registered, to validate this endpoint.
+        Validate this endpoint for Strava, which sends the GET request when the webhook is initially registered.
 
         See: https://developers.strava.com/docs/webhooks/
         """

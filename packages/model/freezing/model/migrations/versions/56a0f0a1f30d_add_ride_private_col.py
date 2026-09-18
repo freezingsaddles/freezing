@@ -1,4 +1,4 @@
-"""add ride private col
+"""Add ride private col.
 
 Revision ID: 56a0f0a1f30d
 Revises: 48e1dd00cbd8

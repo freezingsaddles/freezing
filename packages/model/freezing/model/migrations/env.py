@@ -6,7 +6,7 @@ from os import environ
 from alembic import context
 from sqlalchemy import create_engine, engine_from_config, pool
 
-from freezing.model import config, meta, orm
+from freezing.model import meta, orm
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -19,15 +19,10 @@ if config.config_file_name:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-# target_metadata = None
 target_metadata = orm.Base.metadata
 
 # other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+# can be acquired with config.get_main_option(name).
 
 
 def run_migrations_offline():
@@ -58,7 +53,6 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-
     if environ["SQLALCHEMY_URL"]:
         print(
             "run_migrations_online: using SQLALCHEMY_URL environment variable for connection"

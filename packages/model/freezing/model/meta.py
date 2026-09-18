@@ -1,4 +1,4 @@
-"""SQLAlchemy Metadata and Session object"""
+"""SQLAlchemy Metadata and Session object."""
 
 import contextlib
 from typing import Callable, ContextManager
@@ -23,7 +23,7 @@ def transaction_context(read_only: bool = False) -> ContextManager[Session]:
     session = scoped_session()
     try:
         yield session
-    except:
+    except BaseException:  # an interrupt mid-transaction must roll back too
         session.rollback()
         raise
     else:

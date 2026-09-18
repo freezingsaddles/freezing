@@ -1,4 +1,4 @@
-"""bookkeeping
+"""Bookkeeping.
 
 Revision ID: 41c3e58a61aa
 Revises: 17b73a90925d

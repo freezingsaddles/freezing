@@ -21,9 +21,7 @@ from freezing.sync.wx.visualcrossing.api import HistoVisualCrossing
 # the start day of the ride, so an epic century that starts just before midnight will receive no
 # credit for the blizzard that starts at one minute past midnight.
 class WeatherSync(BaseSync):
-    """
-    Synchronize rides from data with the database.
-    """
+    """Synchronize rides from data with the database."""
 
     name = "sync-weather"
     description = "Sync all ride weather"
@@ -80,9 +78,8 @@ class WeatherSync(BaseSync):
 
             try:
                 # If you can't reproduce the ancient infrastructure required by all this and so can't run any of the
-                # geoalchemy stuff you can hardcode this to debug
-                # start_geo_wkt = "POINT(-76.96 38.96)"
-                # start_geo_wkt = meta.scoped_session().scalar(ride.geo.start_geo.wkt)
+                # geoalchemy stuff you can hardcode start_geo_wkt here to a fixed
+                # point, e.g. POINT(-76.96 38.96), to debug.
                 point = parse_point_wkt(start_geo_wkt)
 
                 # We round lat/lon to decrease the granularity and allow better re-use of cache data.
@@ -176,8 +173,8 @@ class WeatherSync(BaseSync):
                 rw.ride_precip = (
                     sum([o.precip_accumulation for o in ride_observations]) * scale
                 )
-                rw.ride_rain = any([o.precip_type == "rain" for o in ride_observations])
-                rw.ride_snow = any([o.precip_type == "snow" for o in ride_observations])
+                rw.ride_rain = any(o.precip_type == "rain" for o in ride_observations)
+                rw.ride_snow = any(o.precip_type == "snow" for o in ride_observations)
 
                 rw.wind_speed = mean([o.wind_speed for o in ride_observations])
                 rw.wind_gust = max([o.wind_gust for o in ride_observations])
@@ -193,7 +190,7 @@ class WeatherSync(BaseSync):
                 sess.add(rw)
                 sess.flush()
 
-            except:
+            except Exception:
                 self.logger.exception(
                     "Error getting weather data for ride: {0}".format(ride)
                 )

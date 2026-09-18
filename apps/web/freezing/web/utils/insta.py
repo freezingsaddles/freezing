@@ -1,6 +1,4 @@
-"""
-Utility functions for working with images.
-"""
+"""Utility functions for working with images."""
 
 import os
 import shutil
@@ -61,7 +59,8 @@ def cache_photos(uid, base_dir):
 
 def _write_instagram_photo(uid, photo, dest_dir):
     """
-    Writes out photo for specified uid and Image object to destination directory.
+    Write out photo for specified uid and Image object to destination directory.
+
     :param uid:
     :param photo:
     :param dest_dir:

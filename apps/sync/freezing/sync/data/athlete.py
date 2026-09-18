@@ -87,7 +87,7 @@ class AthleteSync(BaseSync):
                 self.logger.info(
                     f"display_name '{display_name}' conflicts, using '{athlete_name}'"
                 )
-                display_name = athlete_name
+                return athlete_name
             return display_name
 
         # Only update the display name if it is either:
@@ -112,8 +112,7 @@ class AthleteSync(BaseSync):
     def register_athlete_team(
         self, strava_athlete: sm.DetailedAthlete, athlete_model: Athlete
     ) -> Team:
-        """
-        Updates db with configured team that matches the athlete's teams.
+        """Update db with configured team that matches the athlete's teams.
 
         Thin binding of :func:`freezing.common.teams.register_athlete_team` to
         this app's configuration; see that function for the rules and

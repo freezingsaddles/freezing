@@ -1,6 +1,4 @@
-"""
-Some authentication-related utility functions/classes.
-"""
+"""Some authentication-related utility functions/classes."""
 
 import logging
 from datetime import timedelta
@@ -21,7 +19,8 @@ def login_athlete(strava_athlete):
 
 def requires_auth(f):
     """
-    Decorator for view functions that require authentication.
+    Require authentication for a view function.
+
     :param f:
     :return:
     """
@@ -31,8 +30,7 @@ def requires_auth(f):
         if not g.logged_in:
             logging.error("Unauthorized access.")
             raise Forbidden("This page requires authentication.")
-        else:
-            logging.info("User is logged in! {}".format(session.get("athlete_id")))
+        logging.info("User is logged in! {}".format(session.get("athlete_id")))
         return f(*args, **kwargs)
 
     return wrapper

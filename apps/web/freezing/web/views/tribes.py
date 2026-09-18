@@ -24,7 +24,9 @@ def leaderboard():
     tribal_groups = load_tribes()
     my_tribes = query_my_tribes()
 
-    tribe_stats = defaultdict(lambda: dict(distance=0, points=0, ride_days=0, riders=0))
+    tribe_stats = defaultdict(
+        lambda: {"distance": 0, "points": 0, "ride_days": 0, "riders": 0}
+    )
 
     stats_query = text("""
         SELECT
@@ -122,11 +124,11 @@ def post_my():
     tribal_groups = load_tribes()
 
     my_tribes = [
-        dict(
-            athlete_id=athlete_id,
-            tribal_group=tribal_group.name,
-            tribe_name=request.form.get(tribal_group.id),
-        )
+        {
+            "athlete_id": athlete_id,
+            "tribal_group": tribal_group.name,
+            "tribe_name": request.form.get(tribal_group.id),
+        }
         for tribal_group in tribal_groups
         if request.form.get(tribal_group.id) in tribal_group.tribes
     ]

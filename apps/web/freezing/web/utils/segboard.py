@@ -55,9 +55,9 @@ def load_segments() -> SegmentBoard:
     return schema.load(doc)
 
 
-def load_segment(id) -> SegmentBoardSegment | None:
+def load_segment(segment_id) -> SegmentBoardSegment | None:
     board = load_segments()
 
-    matches = [segment for segment in board.segments if segment.segment == id]
+    matches = [segment for segment in board.segments if segment.segment == segment_id]
 
     return matches[0] if matches else None

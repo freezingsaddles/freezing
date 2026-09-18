@@ -1,16 +1,11 @@
 import json
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from stravalib.client import Client
-from stravalib.model import DetailedActivity, Stream
 
-from freezing.sync.utils.cache import (
-    CachingActivityFetcher,
-    CachingAthleteObjectFetcher,
-    CachingStreamFetcher,
-)
+from freezing.sync.utils.cache import CachingActivityFetcher, CachingStreamFetcher
 
 
 @pytest.fixture

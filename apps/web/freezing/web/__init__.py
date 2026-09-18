@@ -220,9 +220,7 @@ def inject_config():
 
 
 def init_db():
-    """
-    Initialize the database. If the database is not available, keep trying for a bit.
-    """
+    """Initialize the database. If the database is not available, keep trying for a bit."""
     TRIES = 6
     delay = 2
     for x in range(1, TRIES + 1):
@@ -236,7 +234,7 @@ def init_db():
             break
         except Exception as ex:
             if x == TRIES:
-                raise ex from None
+                raise
             log.warning(
                 f"Failed to connect to database, retrying in {delay}s ({x}) - error was {str(ex)}"
             )

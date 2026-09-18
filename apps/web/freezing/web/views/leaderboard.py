@@ -70,7 +70,8 @@ def team_leaderboard_classic():
     )
 
     for team_id in team_members:
-        team_members[team_id] = reversed(
+        # noqa: C413 -- reverse=True would flip the order of tied scores.
+        team_members[team_id] = reversed(  # noqa: C413
             sorted(team_members[team_id], key=lambda m: m._mapping["total_score"])
         )
 

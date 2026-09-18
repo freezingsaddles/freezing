@@ -11,9 +11,7 @@ from freezing.web.utils.auth import requires_auth
 
 
 def bt_jsonify(data):
-    """
-    Override eto handle raw lists expected by bootrap table.
-    """
+    """Override eto handle raw lists expected by bootrap table."""
     return current_app.response_class(
         json.dumps(data, default=json_seralizer), mimetype="application/json"
     )
@@ -25,8 +23,7 @@ blueprint = Blueprint("user", __name__)
 def json_seralizer(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
-    else:
-        return str(obj)
+    return str(obj)
 
 
 @blueprint.route("/rides")
@@ -68,23 +65,23 @@ def rides_data():
     for r in rides_q:
         w = r.weather
         results.append(
-            dict(
-                avg_temp=w.ride_temp_avg if w else None,
-                avg_windchill=w.ride_windchill_avg if w else None,
-                distance=r.distance,
-                elapsed_time=r.elapsed_time,
-                id=r.id,
-                moving_time=r.moving_time,
-                name=r.name,
-                photos_fetched=r.photos_fetched,
-                private=r.private,
-                start_date=r.start_date,
-                freeze_points=(
+            {
+                "avg_temp": w.ride_temp_avg if w else None,
+                "avg_windchill": w.ride_windchill_avg if w else None,
+                "distance": r.distance,
+                "elapsed_time": r.elapsed_time,
+                "id": r.id,
+                "moving_time": r.moving_time,
+                "name": r.name,
+                "photos_fetched": r.photos_fetched,
+                "private": r.private,
+                "start_date": r.start_date,
+                "freeze_points": (
                     (11 * (atan((r.distance + 4) - 2 * pi) + 1.4) - 2.66)
                     * (1.2 + atan((32 - w.ride_temp_start) / 5))
                     if w
                     else None
                 ),
-            )
+            }
         )
     return bt_jsonify(results)

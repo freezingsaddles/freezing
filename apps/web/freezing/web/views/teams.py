@@ -73,7 +73,7 @@ def teams_show_team(team_id):
     return render_template(
         "teams/show.html",
         team=our_team,
-        members=[m for m in members],
+        members=list(members),
         mosaic=mosaic,
         weeks=weeks,
         first_day=(config.START_DATE - start).days,

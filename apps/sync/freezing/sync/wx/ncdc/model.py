@@ -1,9 +1,7 @@
 from dateutil import parser
 
 
-class BaseCollection(object):
-    """ """
-
+class BaseCollection:
     totalCount = None
 
     def __init__(self, getter, result=None):
@@ -12,10 +10,10 @@ class BaseCollection(object):
             self.parse(result)
 
     def parse(self, result):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
-class PagedCollection(object):
+class PagedCollection:
     pageCount = None
     _page = None
 
@@ -42,7 +40,7 @@ class PagedCollection(object):
         self._page = v
 
     def parse(self, result):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class SearchResultCollection(PagedCollection):
@@ -87,14 +85,14 @@ class DataCollection(BaseCollection):
         return iter(self.observations.values())
 
 
-class ObservationData(object):
+class ObservationData:
     def __init__(self, date, dataType, value):
         self.date = date
         self.dataType = dataType
         self.value = value
 
 
-class DesiredObservations(object):
+class DesiredObservations:
     def __init__(self, attributes_wanted):
         self.observations = {}
         self.attributes_wanted = set(attributes_wanted)
@@ -109,7 +107,7 @@ class DesiredObservations(object):
                 self.observations[o.dataType] = o
 
 
-class LocationSearchResult(object):
+class LocationSearchResult:
     _minDate = None
     _maxDate = None
 
@@ -122,8 +120,8 @@ class LocationSearchResult(object):
         inCart=None,
         country=None,
         inDateRange=None,
-        type=None,
-        id=None,
+        type=None,  # noqa: A002 (keyword names mirror the NCDC search result)
+        id=None,  # noqa: A002
         minDate=None,
         maxDate=None,
     ):
@@ -165,5 +163,5 @@ class LocationSearchResult(object):
         )
 
 
-class WeatherData(object):
+class WeatherData:
     required_attribs = ("TMAX", "TMIN", "PRCP", "SNOW")

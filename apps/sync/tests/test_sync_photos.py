@@ -2,7 +2,8 @@
 
 This services Instagram sync, which is likely obsolete, but running
 freezing-sync-photos was bombing so this test makes sure that
-the libraries needed are all in place."""
+the libraries needed are all in place.
+"""
 
 from freezing.sync.data.photos import PhotoSync
 

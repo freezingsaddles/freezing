@@ -1,4 +1,4 @@
-"""photo fields
+"""Photo fields.
 
 Revision ID: ca3d5036d720
 Revises: 41c3e58a61aa

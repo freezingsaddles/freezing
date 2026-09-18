@@ -26,8 +26,6 @@ jobs:
       - name: isort
         run: uv run --no-sync isort --check-only --diff .
       - name: flake8
-        # There are too many findings to start with to fail on this
-        continue-on-error: true
         run: uv run --no-sync flake8 .
       - name: fawltydeps
         run: |

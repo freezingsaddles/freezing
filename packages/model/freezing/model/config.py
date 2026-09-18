@@ -33,13 +33,11 @@ config = Config()
 
 def init_logging(loglevel: int = logging.INFO, color: bool = False):
     """
-    Initialize the logging subsystem and create a logger for this class,
-    using passed in optparse options.
+    Initialize the logging subsystem and create a logger for this class, using passed in optparse options.
 
     :param level: The log level (e.g. logging.DEBUG)
     :return:
     """
-
     ch = logging.StreamHandler()
     ch.setLevel(loglevel)
 
@@ -68,9 +66,9 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
         logging.root,
     ]
 
-    for l in loggers:
-        if l is logging.root:
-            l.setLevel(logging.DEBUG)
+    for logger in loggers:
+        if logger is logging.root:
+            logger.setLevel(logging.DEBUG)
         else:
-            l.setLevel(logging.INFO)
-        l.addHandler(ch)
+            logger.setLevel(logging.INFO)
+        logger.addHandler(ch)

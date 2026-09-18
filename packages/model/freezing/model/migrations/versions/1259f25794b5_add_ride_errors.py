@@ -1,4 +1,4 @@
-"""add ride_errors
+"""Add ride_errors.
 
 Revision ID: 1259f25794b5
 Revises: 56a0f0a1f30d

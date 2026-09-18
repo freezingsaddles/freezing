@@ -18,7 +18,7 @@ def parse_point_wkt(wkt):
 
 def parse_linestring(wkt):
     """
-    Parses LINESTRING WKT into a list of lon/lat (str) tuples.
+    Parse LINESTRING WKT into a list of lon/lat (str) tuples.
 
     :param wkt: The WKT for the LINESTRING
     :type wkt: str`

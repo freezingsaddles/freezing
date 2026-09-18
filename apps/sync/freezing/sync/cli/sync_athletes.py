@@ -1,4 +1,3 @@
-from freezing.model import meta, orm
 from freezing.sync.data.athlete import AthleteSync
 
 from . import BaseCommand

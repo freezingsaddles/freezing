@@ -1,4 +1,4 @@
-"""ride tracks
+"""Ride tracks.
 
 Revision ID: 17b73a90925d
 Revises: 54627e8199c9

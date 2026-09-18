@@ -56,8 +56,6 @@ ignore_unused = [
     "flake8-raise",
     "flake8-return",
     "flake8-simplify",
-    "flake8-sorted-keys",
-    "flake8-todo",
     "freezing-model",
     "gunicorn",
     "isort",

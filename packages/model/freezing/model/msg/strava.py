@@ -1,10 +1,9 @@
-import abc
 import enum
 from datetime import datetime
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 
 import arrow
-from marshmallow import Schema, fields, post_load, pre_load
+from marshmallow import fields, pre_load
 
 from . import BaseMessage, BaseSchema
 
@@ -52,9 +51,7 @@ class SubscriptionSchema(BaseSchema):
 
 
 class SubscriptionCallback(BaseMessage):
-    """
-    Represents a Webhook Event Subscription Callback.
-    """
+    """Represents a Webhook Event Subscription Callback."""
 
     hub_mode: str = None
     hub_verify_token: str = None
@@ -62,9 +59,7 @@ class SubscriptionCallback(BaseMessage):
 
 
 class SubscriptionCallbackSchema(BaseSchema):
-    """
-    Represents a Webhook Event Subscription Callback.
-    """
+    """Represents a Webhook Event Subscription Callback."""
 
     _model_class = SubscriptionCallback
 
@@ -74,9 +69,7 @@ class SubscriptionCallbackSchema(BaseSchema):
 
 
 class SubscriptionUpdate(BaseMessage):
-    """
-    Represents a Webhook Event Subscription Update.
-    """
+    """Represents a Webhook Event Subscription Update."""
 
     subscription_id: int = None
     owner_id: int = None
@@ -88,9 +81,7 @@ class SubscriptionUpdate(BaseMessage):
 
 
 class SubscriptionUpdateSchema(BaseSchema):
-    """
-    Represents a Webhook Event Subscription Update.
-    """
+    """Represents a Webhook Event Subscription Update."""
 
     _model_class = SubscriptionUpdate
 

@@ -11,9 +11,7 @@ from freezing.sync.config import Config
 
 
 class StravaClientForAthlete(Client):
-    """
-    Creates a StravaClient for the specified athlete.
-    """
+    """Creates a StravaClient for the specified athlete."""
 
     def __init__(
         self,
@@ -61,7 +59,7 @@ class StravaClientForAthlete(Client):
             refresh_token = athlete.access_token
         else:
             raise ValueError(
-                "athlete %s had no access or refresh token".format(athlete.id)
+                "athlete {} had no access or refresh token".format(athlete.id)
             )
         if refresh_token:
             self.logger.info("saving refresh token for athlete %s", athlete.id)
