@@ -57,11 +57,13 @@ Pull requests run lint, tests, a Bandit scan and a build of all four images
 without pushing; a pull request that touches `apps/freezebot` also runs its
 sbt tests.
 
-A push to `main` builds the images for whichever apps changed (a change under
-`packages/`, to the lock file or to `deploy/docker-compose.yml` rebuilds them
-all), pushes them to Docker Hub tagged `main`, and deploys them in the
-`production` environment: the box's `.env` pins `FREEZING_<APP>_TAG=main` for
+A push to `main` builds the images for whichever apps changed, pushes them to
+Docker Hub tagged `main`, and deploys them in the `production` environment: the box's `.env` pins `FREEZING_<APP>_TAG=main` for
 all four services, so `main` is what production runs.
+
+Everything the apps share counts as a change to all four: `packages/`,
+`pyproject.toml`, `uv.lock`, `.python-version`, `.dockerignore`,
+`deploy/docker-compose.yml` and the two workflows that build and deploy.
 
 The deploy step fast-forwards the sparse clone at `/opt/freezing`, whose
 `deploy/` directory the box reaches through the `/opt/compose` symlink, then

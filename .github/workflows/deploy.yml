@@ -37,7 +37,10 @@ jobs:
           fi
           echo "$changed"
           apps=""
-          if [ "$changed" = "ALL" ] || echo "$changed" | grep -q -E '^(packages/|deploy/docker-compose\.yml$|pyproject\.toml$|uv\.lock$|\.python-version$|\.github/workflows/(deploy|build-docker)\.yml$)'; then
+          # Shared code, the resolved dependencies, what the build context holds,
+          # how an image is built, and the file compose runs them from: each of
+          # these reaches every app.
+          if [ "$changed" = "ALL" ] || echo "$changed" | grep -q -E '^(packages/|pyproject\.toml$|uv\.lock$|\.python-version$|\.dockerignore$|deploy/docker-compose\.yml$|\.github/workflows/(deploy|build-docker)\.yml$)'; then
             apps="web sync nq freezebot"
           else
             for app in web sync nq freezebot; do
