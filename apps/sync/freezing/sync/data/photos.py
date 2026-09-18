@@ -33,7 +33,7 @@ class PhotoSync(BaseSync):
                 q = q.filter_by(id=activity_id)
 
             for ride in q:
-                self.logger.info("Writing out photos for {0!r}".format(ride))
+                self.logger.info(f"Writing out photos for {ride!r}")
                 try:
                     client = StravaClientForAthlete(ride.athlete)
                     big_photos = client.get_activity_photos(ride.id, size=BigSize)
@@ -47,7 +47,7 @@ class PhotoSync(BaseSync):
                     self.logger.exception(
                         "Error fetching/writing "
                         "non-primary photos activity "
-                        "{0}, athlete {1}".format(ride.id, ride.athlete),
+                        "{}, athlete {}".format(ride.id, ride.athlete),
                         exc_info=True,
                     )
 
@@ -111,7 +111,7 @@ class PhotoSync(BaseSync):
             meta.scoped_session().flush()
 
         for deleted_photo in existing_photos.values():
-            self.logger.info("Deleting deleted photo {}".format(deleted_photo))
+            self.logger.info(f"Deleting deleted photo {deleted_photo}")
             meta.scoped_session().delete(deleted_photo)
 
         ride.photos_fetched = True

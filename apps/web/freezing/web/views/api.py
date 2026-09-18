@@ -202,8 +202,8 @@ def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
     if end_date is not None:
         end_date = arrow.get(end_date).datetime.replace(tzinfo=None)
 
-    log.debug("Filtering on start_date: {}".format(start_date))
-    log.debug("Filtering on end_date: {}".format(end_date))
+    log.debug(f"Filtering on start_date: {start_date}")
+    log.debug(f"Filtering on end_date: {end_date}")
 
     sess = meta.scoped_session()
 
@@ -272,7 +272,7 @@ def geo_tracks_all():
 @blueprint.route("/teams/<int:team_id>/tracks.geojson")
 @auth.crossdomain(origin="*")
 def geo_tracks_team(team_id):
-    log.info("Fetching gps tracks for team {}".format(team_id))
+    log.info(f"Fetching gps tracks for team {team_id}")
 
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
@@ -338,7 +338,7 @@ def _track_map(
     if athlete_id:
         q = q.bindparams(athlete_id=athlete_id)
     if hash_tag:
-        q = q.bindparams(hash_tag="%#{}%".format(hash_tag))
+        q = q.bindparams(hash_tag=f"%#{hash_tag}%")
     if ride_ids:
         q = q.bindparams(ride_ids=ride_ids)
     if limit:

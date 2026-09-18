@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 import yaml
 from marshmallow import fields
@@ -14,8 +13,8 @@ class SegmentBoardSegment(BaseMessage):
     segment_name = None
     name = None
     description = None
-    sponsors: List[int] | None = None
-    banned: List[int] | None = None  # banned for prior win
+    sponsors: list[int] | None = None
+    banned: list[int] | None = None  # banned for prior win
     url = None
     discord: int | None = None
 
@@ -34,7 +33,7 @@ class SegmentBoardSegmentchema(BaseSchema):
 
 
 class SegmentBoard(BaseMessage):
-    segments: List[SegmentBoardSegment] = []
+    segments: list[SegmentBoardSegment] = []
 
 
 class SegmentBoardSchema(BaseSchema):
@@ -46,9 +45,9 @@ class SegmentBoardSchema(BaseSchema):
 def load_segments() -> SegmentBoard:
     path = os.path.join(config.LEADERBOARDS_DIR, "segment.yml")
     if not os.path.exists(path):
-        raise ObjectNotFound("Could not find yaml board definition {}".format(path))
+        raise ObjectNotFound(f"Could not find yaml board definition {path}")
 
-    with open(path, "rt", encoding="utf-8") as fp:
+    with open(path, encoding="utf-8") as fp:
         doc = yaml.safe_load(fp)
 
     schema = SegmentBoardSchema()

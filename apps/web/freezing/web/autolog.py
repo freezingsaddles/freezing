@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import inspect
 import logging
 
@@ -18,7 +16,7 @@ class EagerFormattingAdapter(logging.LoggerAdapter):
 
         adapter = LoggerAdapter(someLogger, dict(p1=v1, p2="v2"))
         """
-        super(EagerFormattingAdapter, self).__init__(logger, extra)
+        super().__init__(logger, extra)
 
     def _eagerFormat(self, msg, level, args):
         """
@@ -159,7 +157,7 @@ class AutoLogger:
     def __getattr__(self, name):
         if "self" in inspect.currentframe().f_locals:
             other = inspect.currentframe().f_locals["self"]
-            caller_name = "%s.%s" % (
+            caller_name = "{}.{}".format(
                 other.__class__.__module__,
                 other.__class__.__name__,
             )
@@ -195,10 +193,12 @@ def log_exceptions(fn):
             a = [str(x)[:255] for x in a]
             kw = kwargs or {}
             kw = {str(k)[:255]: str(v)[:255] for k, v in kw.items()}
-            log.debug("Calling %s.%s %r %r" % (fn.__module__, fn.__name__, a, kw))
+            log.debug(
+                "Calling {}.{} {!r} {!r}".format(fn.__module__, fn.__name__, a, kw)
+            )
             return fn(*args, **kwargs)
         except Exception as e:
-            log.error("Error calling function %s: %s" % (fn.__name__, e))
+            log.error("Error calling function {}: {}".format(fn.__name__, e))
             log.exception(e)
             raise
 

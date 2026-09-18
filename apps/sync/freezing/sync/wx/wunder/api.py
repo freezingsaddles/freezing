@@ -86,11 +86,11 @@ class Fault(Exception):
         if p1 and p2:
             self.type = p1
             self.description = p2
-            msg = "{0}: {1}".format(self.type, self.description)
+            msg = f"{self.type}: {self.description}"
         else:
             self.description = p1
             msg = self.description
-        super(Fault, self).__init__(msg)
+        super().__init__(msg)
 
 
 class NoDataFound(RuntimeError):
@@ -160,7 +160,7 @@ class Client:
             )
         )
 
-        self.log.debug("GET {0!r} with params {1!r}".format(url, params))
+        self.log.debug(f"GET {url!r} with params {params!r}")
 
         try:
             raw = requests.get(url, params=params)
@@ -176,15 +176,13 @@ class Client:
         us_city_location_param = None
 
         if lat and lon:
-            latlon_location_param = "{0},{1}".format(lat, lon)
+            latlon_location_param = f"{lat},{lon}"
 
         # Try for US city first, since this will be more reusable
         if us_city:
             # Split on comma to extract state
             if us_city.count(",") != 1:
-                self.log.info(
-                    "Unable to parse city/state for us city: {0}".format(us_city)
-                )
+                self.log.info(f"Unable to parse city/state for us city: {us_city}")
             else:
                 state_code = None
                 city_parts = [part.strip() for part in us_city.split(",")]
@@ -193,7 +191,7 @@ class Client:
                         state_code = state_name_to_abbrev_map[city_parts[-1]]
                     else:
                         self.log.debug(
-                            "State len > 2 and not in name -> abbrev map: {0!r}".format(
+                            "State len > 2 and not in name -> abbrev map: {!r}".format(
                                 city_parts[-1]
                             )
                         )
@@ -205,9 +203,7 @@ class Client:
                         state_code + "/" + city_parts[0].replace(" ", "_")
                     )
                 else:
-                    self.log.info(
-                        "Unable to parse US state from {0!r}.".format(us_city)
-                    )
+                    self.log.info(f"Unable to parse US state from {us_city!r}.")
 
         # Check both for cache, starting with more specific one
         data = None
@@ -227,7 +223,7 @@ class Client:
                             res = self.get(date.strftime("history_%Y%m%d"), "q", lp)
                         except Fault:
                             self.log.info(
-                                "Server fault trying to fetch wx for {0},{1}".format(
+                                "Server fault trying to fetch wx for {},{}".format(
                                     lp, date
                                 )
                             )
@@ -241,7 +237,7 @@ class Client:
                 else:
                     # We tried all param options but each had an error
                     raise NoDataFound(
-                        "Unable to retrieve wx for lat/lon={0}, us_city={1}, date={2}".format(
+                        "Unable to retrieve wx for lat/lon={}, us_city={}, date={}".format(
                             (lat, lon), us_city, date
                         )
                     )
@@ -249,7 +245,7 @@ class Client:
                 self._write_cache(lp, date, data)
             else:
                 raise NoDataFound(
-                    "cache_only=True and no cached data found for lat/lon={0}, us_city={1}, date={2}".format(
+                    "cache_only=True and no cached data found for lat/lon={}, us_city={}, date={}".format(
                         (lat, lon), us_city, date
                     )
                 )
@@ -257,7 +253,7 @@ class Client:
         try:
             history_data = HistoryDay.from_json(data["history"])
         except Exception:
-            self.log.exception("Unable to parse data: {0!r}".format(data))
+            self.log.exception(f"Unable to parse data: {data!r}")
             raise
 
         return history_data
@@ -274,10 +270,10 @@ class Client:
             filename = date.strftime("%Y-%m-%d") + ".json"
             filepath = os.path.join(basedir, filename)
             if os.path.exists(filepath):
-                self.log.debug("Cache hit for {0}/{1}".format(location_param, date))
-                with open(filepath, "r") as fp:
+                self.log.debug(f"Cache hit for {location_param}/{date}")
+                with open(filepath) as fp:
                     return json.loads(fp.read())
-            self.log.debug("Cache miss for {0}/{1}".format(location_param, date))
+            self.log.debug(f"Cache miss for {location_param}/{date}")
 
         return None
 

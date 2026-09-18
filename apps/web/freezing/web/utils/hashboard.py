@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 import yaml
 from marshmallow import fields
@@ -14,8 +13,8 @@ class HashtagBoardTag(BaseMessage):
     alt: str | None = None
     name = None
     description = None
-    sponsors: List[int] | None = None
-    banned: List[int] | None = None  # banned for prior win
+    sponsors: list[int] | None = None
+    banned: list[int] | None = None  # banned for prior win
     discord: int | None = None
     freezebot: bool | None = None  # post tagged photos to the discord channel
     rank_by = None
@@ -46,7 +45,7 @@ class HashtagBoardTagSchema(BaseSchema):
 
 
 class HashtagBoard(BaseMessage):
-    tags: List[HashtagBoardTag] = []
+    tags: list[HashtagBoardTag] = []
 
 
 class HashtagBoardSchema(BaseSchema):
@@ -58,9 +57,9 @@ class HashtagBoardSchema(BaseSchema):
 def load_hashboard() -> HashtagBoard:
     path = os.path.join(config.LEADERBOARDS_DIR, "hashtag.yml")
     if not os.path.exists(path):
-        raise ObjectNotFound("Could not find yaml board definition {}".format(path))
+        raise ObjectNotFound(f"Could not find yaml board definition {path}")
 
-    with open(path, "rt", encoding="utf-8") as fp:
+    with open(path, encoding="utf-8") as fp:
         doc = yaml.safe_load(fp)
 
     schema = HashtagBoardSchema()

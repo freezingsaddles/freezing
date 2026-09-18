@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from marshmallow import fields
 
@@ -19,7 +19,7 @@ class ActivityUpdate(BaseMessage):
     athlete_id: int | None = None
     activity_id: int | None = None
     event_time: datetime | None = None
-    updates: Dict[str, Any] | None = None
+    updates: dict[str, Any] | None = None
 
     def __repr__(self):
         return "[Activity {} id={} athlete={}]".format(

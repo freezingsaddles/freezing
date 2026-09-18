@@ -6,7 +6,7 @@ https://github.com/freezingsaddles/freezing-web/issues/66.
 """
 
 import logging
-from typing import Iterable
+from collections.abc import Iterable
 
 from freezing.model import meta
 from freezing.model.orm import Athlete, Team
@@ -62,7 +62,7 @@ def register_athlete_team(
 
     if strava_athlete.clubs is None:
         raise NoTeamsError(
-            "Athlete {0} ({1} {2}): No clubs returned- {3}. {4}.".format(
+            "Athlete {} ({} {}): No clubs returned- {}. {}.".format(
                 strava_athlete.id,
                 strava_athlete.firstname,
                 strava_athlete.lastname,
@@ -85,7 +85,7 @@ def register_athlete_team(
         matches = [c for c in strava_athlete.clubs if c.id == main_team]
     if not matches:
         raise NoTeamsError(
-            "Athlete {0} ({1} {2}): {3} {4}".format(
+            "Athlete {} ({} {}): {} {}".format(
                 strava_athlete.id,
                 strava_athlete.firstname,
                 strava_athlete.lastname,

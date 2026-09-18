@@ -36,7 +36,7 @@ class WeatherSync(BaseSync):
             sess.query(orm.RideWeather).delete()
 
         if limit:
-            self.logger.info("Fetching weather for first {0} rides".format(limit))
+            self.logger.info(f"Fetching weather for first {limit} rides")
         else:
             self.logger.info("Fetching weather for all rides")
 
@@ -65,13 +65,13 @@ class WeatherSync(BaseSync):
 
         for i, r in enumerate(rows):
             if limit and i >= limit:
-                logging.info("Limit ({0}) reached".format(limit))
+                logging.info(f"Limit ({limit}) reached")
                 break
 
             ride = sess.get(orm.Ride, r._mapping["id"])
             start_geo_wkt = r._mapping["start_geo"]
             self.logger.info(
-                "Processing ride: {0} ({1}/{2}) ({3})".format(
+                "Processing ride: {} ({}/{}) ({})".format(
                     ride.id, i, num_rides, start_geo_wkt
                 )
             )
@@ -88,7 +88,7 @@ class WeatherSync(BaseSync):
                 lat = round(Decimal(point.lat), 1)
 
                 self.logger.debug(
-                    "Ride metadata: time={0} dur={1} loc={2}/{3}".format(
+                    "Ride metadata: time={} dur={} loc={}/{}".format(
                         ride.start_date, ride.elapsed_time, lat, lon
                     )
                 )
@@ -115,7 +115,7 @@ class WeatherSync(BaseSync):
                     time=fetch_date, latitude=lat, longitude=lon
                 )
 
-                self.logger.debug("Got response in timezone {0}".format(hist.timezone))
+                self.logger.debug(f"Got response in timezone {hist.timezone}")
 
                 ride_start = start_date.astimezone(tz=hist.timezone)
                 ride_end = ride_start + timedelta(seconds=ride.elapsed_time)
@@ -150,7 +150,7 @@ class WeatherSync(BaseSync):
                     )
 
                 for x in ride_observations:
-                    self.logger.debug("Observation: {0}".format(x.__dict__))
+                    self.logger.debug(f"Observation: {x.__dict__}")
 
                 rw = orm.RideWeather()
                 rw.ride_id = ride.id
@@ -185,15 +185,13 @@ class WeatherSync(BaseSync):
                 rw.sunrise = hist.day.sunrise.time()
                 rw.sunset = hist.day.sunset.time()
 
-                self.logger.debug("Ride weather: {0}".format(rw.__dict__))
+                self.logger.debug(f"Ride weather: {rw.__dict__}")
 
                 sess.add(rw)
                 sess.flush()
 
             except Exception:
-                self.logger.exception(
-                    "Error getting weather data for ride: {0}".format(ride)
-                )
+                self.logger.exception(f"Error getting weather data for ride: {ride}")
                 sess.rollback()
 
             else:

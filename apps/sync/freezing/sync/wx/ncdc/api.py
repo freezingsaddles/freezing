@@ -31,11 +31,11 @@ class Fault(Exception):
         if p1 and p2:
             self.name = p1
             self.message = p2
-            msg = "{0}: {1}".format(self.name, self.message)
+            msg = f"{self.name}: {self.message}"
         else:
             self.message = p1
             msg = self.message
-        super(Fault, self).__init__(msg)
+        super().__init__(msg)
 
 
 class Client:
@@ -85,7 +85,7 @@ class Client:
             )
         )
 
-        self.log.debug("GET {0!r} with params {1!r}".format(url, params))
+        self.log.debug(f"GET {url!r} with params {params!r}")
         raw = requests.get(url, params=params)
         raw.raise_for_status()
         self._handle_protocol_error(raw.json())
@@ -136,12 +136,10 @@ class Client:
             filename = date.strftime("%Y-%m-%d") + ".json"
             filepath = os.path.join(basedir, filename)
             if os.path.exists(filepath):
-                self.log.debug(
-                    "Cache hit for {0}/{1}/{2}".format(dataset, station, date)
-                )
-                with open(filepath, "r") as fp:
+                self.log.debug(f"Cache hit for {dataset}/{station}/{date}")
+                with open(filepath) as fp:
                     return json.loads(fp.read())
-            self.log.debug("Cache miss for {0}/{1}/{2}".format(dataset, station, date))
+            self.log.debug(f"Cache miss for {dataset}/{station}/{date}")
 
         return None
 

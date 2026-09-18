@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 import arrow
 from marshmallow import fields, pre_load
@@ -78,7 +78,7 @@ class SubscriptionUpdate(BaseMessage):
     # The schema loads this with fields.Enum(AspectType), not as a str.
     aspect_type: AspectType | None = None
     event_time: datetime | None = None
-    updates: Dict[str, Any] | None = None
+    updates: dict[str, Any] | None = None
 
 
 class SubscriptionUpdateSchema(BaseSchema):

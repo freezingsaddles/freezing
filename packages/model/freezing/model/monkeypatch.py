@@ -17,7 +17,7 @@ def collections():
         import collections
         from collections import abc
 
-        collections.Iterable = abc.Iterable
-        collections.Mapping = abc.Mapping
-        collections.MutableSet = abc.MutableSet
-        collections.MutableMapping = abc.MutableMapping
+        collections.abc.Iterable = abc.Iterable
+        collections.abc.Mapping = abc.Mapping
+        collections.abc.MutableSet = abc.MutableSet
+        collections.abc.MutableMapping = abc.MutableMapping

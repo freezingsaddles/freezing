@@ -28,7 +28,7 @@ class TestCachingAthleteObjectFetcher:
             athlete_id=athlete_id, object_id=object_id, object_json=object_json
         )
         assert os.path.exists(cache_path)
-        with open(cache_path, "r") as f:
+        with open(cache_path) as f:
             cached_data = json.load(f)
         assert cached_data == object_json
 

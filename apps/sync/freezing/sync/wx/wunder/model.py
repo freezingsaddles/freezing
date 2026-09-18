@@ -82,7 +82,7 @@ class Observation:
         return o
 
     def __repr__(self):
-        return "<{0} date={1} temp={2}>".format(
+        return "<{} date={} temp={}>".format(
             self.__class__.__name__, self.date, self.temp
         )
 
@@ -110,15 +110,13 @@ class HistoryDay:
             prev = o
         else:
             self.log.warning(
-                "Exhausted all observations, didn't find any later than {0} (will use closest)".format(
+                "Exhausted all observations, didn't find any later than {} (will use closest)".format(
                     date
                 )
             )
 
         if prev is None:
-            self.log.warning(
-                "Couldn't find a wx observation earlier than {0}".format(date)
-            )
+            self.log.warning(f"Couldn't find a wx observation earlier than {date}")
             prev = o  # last object from iter?
 
         return prev
@@ -135,15 +133,13 @@ class HistoryDay:
             prev = o
         else:
             self.log.warning(
-                "Exhausted all observations, didn't find any earlier than {0} (will use closest)".format(
+                "Exhausted all observations, didn't find any earlier than {} (will use closest)".format(
                     date
                 )
             )
 
         if prev is None:
-            self.log.warning(
-                "No wx observations after {0} (will use closest)".format(date)
-            )
+            self.log.warning(f"No wx observations after {date} (will use closest)")
             prev = o  # last object from iter
 
         return prev

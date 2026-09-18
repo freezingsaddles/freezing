@@ -1,7 +1,7 @@
 """SQLAlchemy Metadata and Session object."""
 
 import contextlib
-from typing import Iterator
+from collections.abc import Iterator
 
 from sqlalchemy import MetaData, orm
 from sqlalchemy.engine import Engine

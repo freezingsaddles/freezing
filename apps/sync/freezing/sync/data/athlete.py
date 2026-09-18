@@ -28,11 +28,11 @@ class AthleteSync(BaseSync):
             q = sess.query(Athlete)
             q = q.filter(Athlete.access_token is not None)
             if max_records:
-                self.logger.info("Limiting to {} records.".format(max_records))
+                self.logger.info(f"Limiting to {max_records} records.")
                 q = q.limit(max_records)
 
             for athlete in q.all():
-                self.logger.info("Updating athlete: {0}".format(athlete))
+                self.logger.info(f"Updating athlete: {athlete}")
                 try:
                     client = StravaClientForAthlete(athlete)
                     strava_athlete = client.get_athlete()
@@ -49,7 +49,7 @@ class AthleteSync(BaseSync):
                     )
                 except Exception:
                     self.logger.exception(
-                        "Error registering athlete {0}".format(athlete), exc_info=True
+                        f"Error registering athlete {athlete}", exc_info=True
                     )
 
     def register_athlete(

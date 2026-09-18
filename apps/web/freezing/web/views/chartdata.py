@@ -927,7 +927,7 @@ def distance_by_lowtemp():
 def short(name, max_len=17):
     if len(name) < max_len:
         return name
-    return "{}…{}".format(name[: max_len - 2], name[len(name) - 1 : len(name)])
+    return f"{name[: max_len - 2]}…{name[len(name) - 1 : len(name)]}"
 
 
 def exec_and_jsonify_query(
@@ -1012,7 +1012,7 @@ def indiv_coldest():
     q = text(parameterized_suffering_query("ride_temp_start", "temp_start", func="min"))
 
     def hl(res, ql):
-        return "%.2f F for %s on %s in %s" % (
+        return "{:.2f} F for {} on {} in {}".format(
             res._mapping["temp_start"],
             fmt_dur(res._mapping["moving"]),
             fmt_date(res._mapping["date"]),
@@ -1035,7 +1035,7 @@ def indiv_snowiest():
     )
 
     def hl(res, ql):
-        return "%.2f in for %s on %s in %s" % (
+        return "{:.2f} in for {} on {} in {}".format(
             res._mapping["snow"],
             fmt_dur(res._mapping["moving"]),
             fmt_date(res._mapping["date"]),
@@ -1058,7 +1058,7 @@ def indiv_rainiest():
     )
 
     def hl(res, ql):
-        return "%.2f in for %s on %s in %s" % (
+        return "{:.2f} in for {} on {} in {}".format(
             res._mapping["rain"],
             fmt_dur(res._mapping["moving"]),
             fmt_date(res._mapping["date"]),

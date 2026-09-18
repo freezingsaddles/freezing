@@ -33,7 +33,7 @@ def parse_linestring(wkt):
 
 
 def linestring_wkt(points):
-    wkt_dims = ["{} {}".format(lon, lat) for (lon, lat) in points]
+    wkt_dims = [f"{lon} {lat}" for (lon, lat) in points]
     return "LINESTRING({})".format(", ".join(wkt_dims))
 
 
@@ -44,7 +44,7 @@ def reverse_coordinates():
     )
     for i, row in enumerate(results, 1):
         if i % 100 == 0:
-            print("Row: {}".format(i))
+            print(f"Row: {i}")
         orig_points = parse_linestring(row["gps_track"])
         new_points = [(lon, lat) for (lat, lon) in orig_points]
         new_wkt = linestring_wkt(new_points)

@@ -1,7 +1,6 @@
 import logging
 import os
 from datetime import timedelta, tzinfo
-from typing import List
 
 import arrow
 import pytz
@@ -52,7 +51,7 @@ class Config:
         postprocessor=lambda val: timedelta(days=val),
     )
 
-    EXCLUDE_KEYWORDS: List[str] = env(
+    EXCLUDE_KEYWORDS: list[str] = env(
         "EXCLUDE_KEYWORDS", cast=list, subcast=str, default=["#NoBAFS"]
     )
 

@@ -13,7 +13,7 @@ class SyncActivitiesScript(BaseCommand):
     description = "Syncs all activities for registered athletes."
 
     def build_parser(self):
-        parser = super(SyncActivitiesScript, self).build_parser()
+        parser = super().build_parser()
 
         parser.add_argument(
             "--start-date",

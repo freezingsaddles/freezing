@@ -1,5 +1,5 @@
 import abc
-from typing import Callable
+from collections.abc import Callable
 
 from marshmallow import Schema, post_load
 
@@ -8,7 +8,7 @@ class BaseMessage:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             if not hasattr(self.__class__, k):
-                raise AttributeError("No class attribute {!r}".format(k))
+                raise AttributeError(f"No class attribute {k!r}")
             setattr(self, k, v)
 
 
