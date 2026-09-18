@@ -199,7 +199,7 @@
                 leave it blank.
             </p>
             <form method="post" action="/tribes/my">
-                <input type="hidden" name="next" value="/register?step=form" />
+                <input type="hidden" name="next" value="register" />
                 {% for group in tribal_groups %}
                     <div class="row mb-3 align-items-center">
                         <label for="tribe-{{ group.id }}"

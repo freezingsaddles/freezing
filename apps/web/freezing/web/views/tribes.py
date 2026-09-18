@@ -1,7 +1,6 @@
 from collections import defaultdict
-from urllib.parse import urlparse
 
-from flask import Blueprint, redirect, render_template, request, session
+from flask import Blueprint, redirect, render_template, request, session, url_for
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -142,14 +141,6 @@ def post_my():
     if my_tribes:
         meta.scoped_session().execute(Tribe.__table__.insert(), my_tribes)
 
-    return redirect(_own_page(request.form.get("next")) or "/tribes/leaderboard")
-
-
-def _own_page(url: str | None) -> str | None:
-    """Return the url if it addresses this site, so a form cannot redirect off it."""
-    if not url:
-        return None
-    parts = urlparse(url.replace("\\", "/"))
-    if parts.scheme or parts.netloc or not parts.path.startswith("/"):
-        return None
-    return url
+    # Names, not urls: nothing the browser sends reaches redirect() as a url.
+    after = {"register": url_for("general.register", step="form")}
+    return redirect(after.get(request.form.get("next"), url_for(".leaderboard")))
