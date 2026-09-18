@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import List, Optional, TypeVar
+from typing import List, TypeVar
 
 import arrow
 from geoalchemy2.elements import WKTElement
@@ -36,7 +36,7 @@ _overlap_ignore = timedelta(minutes=3)
 T = TypeVar("T")
 
 
-def _required(value: Optional[T], activity: SummaryActivity, field: str) -> T:
+def _required(value: T | None, activity: SummaryActivity, field: str) -> T:
     """Narrow an activity field that Strava always sends for a ride but stravalib types as optional."""
     if value is None:
         raise DataEntryError(f"Activity {activity.id} has no {field}.")
@@ -326,10 +326,10 @@ class ActivitySync(BaseSync):
 
     def sync_rides_detail(
         self,
-        athlete_id: Optional[int] = None,
-        activity_id: Optional[int] = None,
+        athlete_id: int | None = None,
+        activity_id: int | None = None,
         rewrite: bool = False,
-        max_records: Optional[int] = None,
+        max_records: int | None = None,
         use_cache: bool = True,
         only_cache: bool = False,
     ):
@@ -533,7 +533,7 @@ class ActivitySync(BaseSync):
         *,
         start_date: datetime,
         end_date: datetime,
-        exclude_keywords: Optional[List[str]],
+        exclude_keywords: List[str] | None,
     ):
         """Assert that activity is valid for the competition.
 
@@ -643,7 +643,7 @@ class ActivitySync(BaseSync):
         athlete: Athlete,
         start_date: datetime,
         end_date: datetime,
-        exclude_keywords: Optional[List[str]] = None,
+        exclude_keywords: List[str] | None = None,
     ) -> List[SummaryActivity]:
         """
         List all of the rides for individual athlete.
@@ -960,8 +960,8 @@ class ActivitySync(BaseSync):
         self,
         total_segments: int,
         segment: int,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ):
         """Sync rides for the athletes in one of ``total_segments`` segments.
 
@@ -989,11 +989,11 @@ class ActivitySync(BaseSync):
 
     def sync_rides(
         self,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         rewrite: bool = False,
         force: bool = False,
-        athlete_ids: Optional[List[int]] = None,
+        athlete_ids: List[int] | None = None,
     ):
         with meta.transaction_context() as sess:
             if start_date is None:

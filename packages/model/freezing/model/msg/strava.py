@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import arrow
 from marshmallow import fields, pre_load
@@ -25,12 +25,12 @@ class Subscription(BaseMessage):
     http://strava.github.io/api/partner/v3/events/
     """
 
-    application_id: Optional[int] = None
-    object_type: Optional[ObjectType] = None
-    aspect_type: Optional[AspectType] = None
-    callback_url: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    application_id: int | None = None
+    object_type: ObjectType | None = None
+    aspect_type: AspectType | None = None
+    callback_url: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class SubscriptionSchema(BaseSchema):
@@ -53,9 +53,9 @@ class SubscriptionSchema(BaseSchema):
 class SubscriptionCallback(BaseMessage):
     """Represents a Webhook Event Subscription Callback."""
 
-    hub_mode: Optional[str] = None
-    hub_verify_token: Optional[str] = None
-    hub_challenge: Optional[str] = None
+    hub_mode: str | None = None
+    hub_verify_token: str | None = None
+    hub_challenge: str | None = None
 
 
 class SubscriptionCallbackSchema(BaseSchema):
@@ -71,14 +71,14 @@ class SubscriptionCallbackSchema(BaseSchema):
 class SubscriptionUpdate(BaseMessage):
     """Represents a Webhook Event Subscription Update."""
 
-    subscription_id: Optional[int] = None
-    owner_id: Optional[int] = None
-    object_id: Optional[int] = None
-    object_type: Optional[ObjectType] = None
+    subscription_id: int | None = None
+    owner_id: int | None = None
+    object_id: int | None = None
+    object_type: ObjectType | None = None
     # The schema loads this with fields.Enum(AspectType), not as a str.
-    aspect_type: Optional[AspectType] = None
-    event_time: Optional[datetime] = None
-    updates: Optional[Dict[str, Any]] = None
+    aspect_type: AspectType | None = None
+    event_time: datetime | None = None
+    updates: Dict[str, Any] | None = None
 
 
 class SubscriptionUpdateSchema(BaseSchema):

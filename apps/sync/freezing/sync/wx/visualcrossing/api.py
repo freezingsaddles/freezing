@@ -2,7 +2,6 @@ import os
 from datetime import datetime
 from json import dumps, load, loads
 from logging import Logger, getLogger
-from typing import Optional
 
 from requests import get
 from requests.exceptions import HTTPError
@@ -16,9 +15,9 @@ class HistoVisualCrossing:
     def __init__(
         self,
         api_key: str,
-        cache_dir: Optional[str] = None,
+        cache_dir: str | None = None,
         cache_only: bool = False,
-        logger: Optional[Logger] = None,
+        logger: Logger | None = None,
     ):
         self.api_key = api_key
         self.cache_dir = cache_dir

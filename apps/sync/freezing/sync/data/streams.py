@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from geoalchemy2.elements import WKTElement
 from sqlalchemy import and_
@@ -23,9 +23,9 @@ class StreamSync(BaseSync):
 
     def sync_streams(
         self,
-        athlete_id: Optional[int] = None,
+        athlete_id: int | None = None,
         rewrite: bool = False,
-        max_records: Optional[int] = None,
+        max_records: int | None = None,
         use_cache: bool = True,
         only_cache: bool = False,
     ):

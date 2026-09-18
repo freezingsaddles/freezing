@@ -2,7 +2,6 @@ import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
 from statistics import mean
-from typing import Optional
 
 from pytz import timezone
 from sqlalchemy import text
@@ -28,7 +27,7 @@ class WeatherSync(BaseSync):
     description = "Sync all ride weather"
 
     def sync_weather(
-        self, clear: bool = False, limit: Optional[int] = None, cache_only: bool = False
+        self, clear: bool = False, limit: int | None = None, cache_only: bool = False
     ):
         sess = meta.scoped_session()
 
