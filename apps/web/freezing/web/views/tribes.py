@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from flask import Blueprint, redirect, render_template, request, session
+from flask import Blueprint, redirect, render_template, request, session, url_for
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -137,6 +137,10 @@ def post_my():
         Tribe.__table__.delete().where(Tribe.athlete_id == athlete_id)
     )
 
-    meta.scoped_session().execute(Tribe.__table__.insert(), my_tribes)
+    # An empty list would be an INSERT with no columns, which MySQL rejects.
+    if my_tribes:
+        meta.scoped_session().execute(Tribe.__table__.insert(), my_tribes)
 
-    return redirect("/tribes/leaderboard")
+    # Names, not urls: nothing the browser sends reaches redirect() as a url.
+    after = {"register": url_for("general.register", step="form")}
+    return redirect(after.get(request.form.get("next"), url_for(".leaderboard")))

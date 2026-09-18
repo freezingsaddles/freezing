@@ -11,7 +11,7 @@
         </div>
     {% endif %}
     {% if step == "intro" %}
-        <div class="card mb-3 my-lg-4 p-4 px-lg-5">
+        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
             <h3 class="mb-3">Register for Freezing Saddles {{ end_date.year }}</h3>
             <p>
                 Freezing Saddles is a winter riding competition for cyclists in the
@@ -61,7 +61,7 @@
                href="/register?step=login">Start Registration</a>
         </div>
     {% elif step == "login" %}
-        <div class="card mb-3 my-lg-4 p-4 px-lg-5">
+        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
             <h3 class="mb-3">
                 <strong>Step 1.</strong> <span>Connect Strava and Login</span>
             </h3>
@@ -136,7 +136,7 @@
                href="{{ registration_site }}contact-form/">contact us</a>.
         </div>
     {% elif step == "club" %}
-        <div class="card mb-3 my-lg-4 p-4 px-lg-5">
+        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
             <h3 class="mb-3">
                 <strong>Step 2.</strong>
                 <span>Join the Freezing Saddles {{ end_date.year }} Strava Club</span>
@@ -153,7 +153,7 @@
                         the next step.
                     </li>
                 </ul>
-                <a class="btn btn-primary mb-1" href="/register?step=form">Next</a>
+                <a class="btn btn-primary mb-1" href="/register?step=tribes">Next</a>
             {% else %}
                 <ul>
                     <li>The next step is to join the Freezing Saddles {{ end_date.year }} Strava club.</li>
@@ -188,10 +188,48 @@
                    href="/register?step=club&refresh=true">Refresh</a>
             {% endif %}
         </div>
-    {% elif step == "form" %}
-        <div class="card mb-3 my-lg-4 p-4 px-lg-5">
+    {% elif step == "tribes" %}
+        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
             <h3 class="mb-3">
-                <strong>Step 3.</strong> <span>Fill Out the Registration Form</span>
+                <strong>Step 3.</strong> <span>Join your Bike Tribes</span>
+            </h3>
+            <p>
+                Your selections will be visible to others, and you will show up on the
+                corresponding leaderboards. If you don't want to fill anything in, just
+                leave it blank.
+            </p>
+            <form method="post" action="/tribes/my">
+                <input type="hidden" name="next" value="register" />
+                {% for group in tribal_groups %}
+                    <div class="row mb-3 align-items-center">
+                        <label for="tribe-{{ group.id }}"
+                               class="col-sm-5 col-lg-4 col-form-label">
+                            {{ group.name }}
+                        </label>
+                        <div class="col-sm-7 col-lg-8">
+                            <select name="{{ group.id }}"
+                                    id="tribe-{{ group.id }}"
+                                    class="form-select">
+                                <option></option>
+                                {% for tribe in group.tribes %}
+                                    {% if tribe == tribes.get(group.name) %}
+                                        <option selected>{{ tribe }}</option>
+                                    {% else %}
+                                        <option>{{ tribe }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                {% endfor %}
+                <button type="submit"
+                        class="btn btn-primary mb-1 mt-2 w-100">Next</button>
+            </form>
+        </div>
+    {% elif step == "form" %}
+        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+            <h3 class="mb-3">
+                <strong>Step 4.</strong> <span>Fill Out the Registration Form</span>
             </h3>
             <ul>
                 <li>
@@ -218,7 +256,7 @@
                href="{{ registration_site }}freezing-saddles-2027-registration/?stravanumber={{ athlete.id }}">Registration Form</a>
         </div>
     {% elif step == "complete" %}
-        <div class="card mb-3 my-lg-4 p-4 px-lg-5">
+        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
             <h3 class="mb-3">Registration Complete</h3>
             <ul>
                 <li>Congratulations! Your registration is complete.</li>
