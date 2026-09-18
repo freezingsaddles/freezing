@@ -25,9 +25,7 @@ class TeamSchema(Schema):
 
 class RidePhotoSchema(Schema):
     id = fields.String()
-    source = fields.Integer()
     ride_id = fields.Integer()
-    ref = fields.String(**optional)
     caption = fields.String(**optional)
 
     img_t = fields.String(**optional)

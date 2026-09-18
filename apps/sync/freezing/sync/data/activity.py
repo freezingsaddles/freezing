@@ -281,8 +281,6 @@ class ActivitySync(BaseSync):
             photo = RidePhoto()
             photo.id = activity_photo.unique_id
             photo.primary = True
-            photo.source = activity_photo.source
-            photo.ref = None
             photo.caption = None
             photo.img_l = activity_photo.urls["600"]
             photo.img_t = activity_photo.urls["100"]

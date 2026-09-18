@@ -204,9 +204,7 @@ class RidePhoto(Base):
     __tablename__ = "ride_photos"
 
     id = Column(String(191), primary_key=True, autoincrement=False)
-    source = Column(Integer, nullable=False, default=2)
     ride_id = Column(BigInteger, ForeignKey("rides.id", ondelete="cascade"), index=True)
-    ref = Column(String(255), nullable=True)
     caption = Column(Text, nullable=True)
 
     img_t = Column(String(255), nullable=True)
@@ -214,22 +212,17 @@ class RidePhoto(Base):
 
     @property
     def img_l_dimensions(self):
+        """The image's dimensions, if Strava spelled them into the URL."""
         width, height = (None, None)
         if self.img_l:
-            if self.source == 1:
-                try:
-                    width, height = re.match(
-                        ".+-(\\d+)x(\\d+)\\.\\w+$", self.img_l
-                    ).groups()
-                except AttributeError:
-                    warnings.warn(
-                        "Unable to get width and height from source=1 image url: {}".format(
-                            self.img_l
-                        ),
-                        stacklevel=2,
-                    )
+            match = re.match(".+-(\\d+)x(\\d+)\\.\\w+$", self.img_l)
+            if match:
+                width, height = match.groups()
             else:
-                width, height = (612, 612)
+                warnings.warn(
+                    f"Unable to get width and height from image url: {self.img_l}",
+                    stacklevel=2,
+                )
         return (width, height)
 
     primary = Column(Boolean, nullable=False, default=False)
