@@ -65,6 +65,7 @@ services:
       - 'nginx-config:/etc/nginx/conf.d'
       - 'nginx-vhosts:/etc/nginx/vhost.d'
       - 'nginx-webroot:/usr/share/nginx/html'
+      - './web/maintenance.html:/usr/share/nginx/html/maintenance.html:ro'
     labels:
       - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy"
       - "com.github.nginx-proxy.nginx"

@@ -101,6 +101,7 @@ jobs:
             # the deploy rather than merging if the box has diverged.
             git -C /opt/freezing pull --ff-only
             cd /opt/compose
+            bin/link-default-cert.sh
             services=""
             for app in $APPS; do services="$services freezing-$app"; done
             echo "Deploying:$services"
