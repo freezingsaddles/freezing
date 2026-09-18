@@ -1,5 +1,7 @@
 """Various utility functions."""
 
+from typing import Optional
+
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 
@@ -21,7 +23,9 @@ def create_config(sqlalchemy_url: str) -> Config:
     return alembic_cfg
 
 
-def get_database_version() -> str:
-    """Get the current database revision (partial GUID)."""
+def get_database_version() -> Optional[str]:
+    """Get the current database revision (partial GUID), None if unversioned."""
+    if meta.engine is None:
+        raise RuntimeError("The database engine is not initialised; call init_model()")
     context = MigrationContext.configure(meta.engine.connect())
     return context.get_current_revision()

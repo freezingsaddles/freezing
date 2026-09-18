@@ -10,8 +10,8 @@ from freezing.web.exc import ObjectNotFound
 
 
 class HashtagBoardTag(BaseMessage):
-    tag = None
-    alt = None
+    tag: str | None = None
+    alt: str | None = None
     name = None
     description = None
     sponsors: List[int] | None = None
@@ -74,7 +74,8 @@ def load_hashtag(hashtag) -> HashtagBoardTag | None:
     matches = [
         tag
         for tag in board.tags
-        if tag.tag.lower() == hashtag.lower()
+        if tag.tag is not None
+        and tag.tag.lower() == hashtag.lower()
         or tag.alt
         and tag.alt.lower() == hashtag.lower()
     ]

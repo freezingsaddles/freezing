@@ -44,5 +44,9 @@ def make_app(publisher: ActivityPublisher = None) -> falcon.App:
 # auto-restart workers when it detects a code change, and it also works
 # with pdb.
 if __name__ == "__main__":
-    httpd = simple_server.make_server("127.0.0.1", 8000, make_app())
+    # falcon annotates App.__call__'s start_response more narrowly than
+    # wsgiref's StartResponse protocol (no optional exc_info argument).
+    httpd = simple_server.make_server(
+        "127.0.0.1", 8000, make_app()  # type: ignore[arg-type]
+    )
     httpd.serve_forever()

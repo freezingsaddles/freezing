@@ -135,10 +135,11 @@ def visit_create_view(element, compiler, **kw):
 
 
 def drop_supplemental_db_objects(engine: Engine):
-    engine.execute("drop view if exists daily_scores")
-    engine.execute("drop view if exists ride_daylight")
-    engine.execute("drop view if exists _build_ride_daylight")
-    engine.execute("drop view if exists lbd_athletes")
+    with engine.begin() as conn:
+        conn.execute(sa.text("drop view if exists daily_scores"))
+        conn.execute(sa.text("drop view if exists ride_daylight"))
+        conn.execute(sa.text("drop view if exists _build_ride_daylight"))
+        conn.execute(sa.text("drop view if exists lbd_athletes"))
 
 
 def create_supplemental_db_objects(engine: Engine):
@@ -167,7 +168,8 @@ def create_supplemental_db_objects(engine: Engine):
         ;
     """.format(config.TIMEZONE))
 
-    engine.execute(_v_daily_scores_create)
+    with engine.begin() as conn:
+        conn.execute(_v_daily_scores_create)
 
     _v_buid_ride_daylight = sa.DDL("""
         create view _build_ride_daylight as
@@ -182,7 +184,8 @@ def create_supplemental_db_objects(engine: Engine):
         ;
         """)
 
-    engine.execute(_v_buid_ride_daylight)
+    with engine.begin() as conn:
+        conn.execute(_v_buid_ride_daylight)
 
     _v_ride_daylight = sa.DDL("""
         create view ride_daylight as
@@ -193,7 +196,8 @@ def create_supplemental_db_objects(engine: Engine):
         ;
         """)
 
-    engine.execute(_v_ride_daylight)
+    with engine.begin() as conn:
+        conn.execute(_v_ride_daylight)
 
     _v_leaderboard_athletes = sa.DDL("""
        create view lbd_athletes as select a.id, a.name, a.display_name, a.team_id from athletes a
@@ -201,7 +205,8 @@ def create_supplemental_db_objects(engine: Engine):
         ;
         """)
 
-    engine.execute(_v_leaderboard_athletes)
+    with engine.begin() as conn:
+        conn.execute(_v_leaderboard_athletes)
 
     _v_100_mile_team_score = sa.DDL("""
         create or replace VIEW `weekly_stats` AS
@@ -238,7 +243,8 @@ def create_supplemental_db_objects(engine: Engine):
         ;
         """)
 
-    engine.execute(_v_100_mile_team_score)
+    with engine.begin() as conn:
+        conn.execute(_v_100_mile_team_score)
 
     _v_daily_variance = sa.DDL("""
              create or replace view variance_by_day as
@@ -265,4 +271,5 @@ def create_supplemental_db_objects(engine: Engine):
                 group by ds.athlete_id;
             """)
 
-    engine.execute(_v_daily_variance)
+    with engine.begin() as conn:
+        conn.execute(_v_daily_variance)

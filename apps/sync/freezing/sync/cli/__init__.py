@@ -1,6 +1,7 @@
 import abc
 import argparse
 import logging
+from typing import Optional
 
 from freezing.model import init_model
 from freezing.sync.config import config, init_logging
@@ -8,7 +9,7 @@ from freezing.sync.exc import CommandError
 
 
 class BaseCommand(metaclass=abc.ABCMeta):
-    logger: logging.Logger = None
+    logger: Optional[logging.Logger] = None
 
     @property
     @abc.abstractmethod

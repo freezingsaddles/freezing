@@ -41,6 +41,7 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
     ch = logging.StreamHandler()
     ch.setLevel(loglevel)
 
+    formatter: logging.Formatter
     if color:
         formatter = ColoredFormatter(
             "%(log_color)s%(levelname)-8s%(reset)s [%(name)s] %(message)s",

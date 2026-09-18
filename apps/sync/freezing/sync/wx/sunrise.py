@@ -140,7 +140,7 @@ class Sun:
 
 if __name__ == "__main__":
     s = Sun(lat=39.45536859, lon=-77.4142634)
-    when = datetime.now(tzinfo=pytz.timezone("America/New_York"))
+    when = datetime.now(tz=pytz.timezone("America/New_York"))
     print(datetime.today())  # noqa: T201
     print(s.sunrise(when))  # noqa: T201
     print(s.sunset(when))  # noqa: T201

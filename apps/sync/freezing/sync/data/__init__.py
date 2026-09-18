@@ -1,7 +1,7 @@
 import abc
 import logging
 import time
-from typing import Union
+from typing import Optional, Union
 
 from stravalib import Client
 
@@ -16,7 +16,7 @@ class StravaClientForAthlete(Client):
     def __init__(
         self,
         athlete: Union[int, Athlete],
-        logger: logging.Logger = None,
+        logger: Optional[logging.Logger] = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
         assert athlete, "No athlete ID or Athlete object provided."
@@ -32,9 +32,9 @@ class StravaClientForAthlete(Client):
         super(StravaClientForAthlete, self).__init__(
             access_token=athlete.access_token, rate_limit_requests=True
         )
-        self.refresh_access_token(athlete)
+        self.refresh_athlete_access_token(athlete)
 
-    def refresh_access_token(self, athlete: Athlete):
+    def refresh_athlete_access_token(self, athlete: Athlete):
         assert athlete, "No athlete ID or Athlete object provided."
         if athlete.refresh_token is not None:
             an_hour_from_now = time.time() + 60 * 60
@@ -87,5 +87,5 @@ class BaseSync(metaclass=abc.ABCMeta):
     def description(self):
         pass
 
-    def __init__(self, logger: logging.Logger = None):
+    def __init__(self, logger: Optional[logging.Logger] = None):
         self.logger = logger or logging.getLogger(__name__)

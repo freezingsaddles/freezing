@@ -25,7 +25,7 @@ change to the model and the code that uses it land in one pull request; there
 is no separate model release.
 
     uv sync --all-packages --all-extras   # one virtualenv for everything
-    uv run black --check .                 # formatting, isort and flake8 the same way
+    uv run black --check .                 # formatting; isort, flake8 and mypy the same way
     cd packages/common && uv run pytest
     cd apps/sync && APP_SETTINGS=example.cfg uv run pytest -m "not live"
     cd apps/nq && uv run pytest

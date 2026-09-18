@@ -47,7 +47,7 @@ class Day:
     sunset: datetime
     temperature_min: float
     temperature_max: float
-    hours: [Hour]
+    hours: list[Hour]
 
     def __init__(self, json, tz):
         self.date = date.fromisoformat(json["datetime"])

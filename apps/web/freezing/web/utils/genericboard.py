@@ -72,8 +72,8 @@ class GenericBoard(BaseMessage):
     discord: int | None = None
     sponsors: List[int] | None = None
     banned: List[int] | None = None  # banned for prior win
-    query = None
-    fields: List[GenericBoardField] = None
+    query: str | None = None
+    fields: List[GenericBoardField] | None = None
 
 
 class GenericBoardSchema(BaseSchema):
@@ -92,6 +92,8 @@ class GenericBoardSchema(BaseSchema):
 
 def load_board_and_data(leaderboard) -> Tuple[GenericBoard, List[Dict[str, Any]]]:
     board = load_board(leaderboard)
+    if board.query is None:
+        raise ObjectNotFound("Board {} has no query".format(leaderboard))
 
     with meta.transaction_context(read_only=True) as session:
         rs = session.execute(text(board.query))
