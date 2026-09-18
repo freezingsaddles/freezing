@@ -34,6 +34,8 @@ class SyncTest extends munit.FunSuite:
 
   private class FakeDiscord extends Discord:
     val calls                                             = collection.mutable.ListBuffer[String]()
+    var threads                                           = List.empty[DiscordThread]
+    var forumFails                                        = false
     var gone                                              = Set.empty[Long]
     private var next                                      = 1000L
     def post(channel: Long, message: ujson.Obj)           =
@@ -46,11 +48,17 @@ class SyncTest extends munit.FunSuite:
     def delete(channel: Long, id: Long)                   =
       calls += s"delete $channel $id"
       !gone(id)
+    def channel(id: Long)                                 =
+      if forumFails then throw DiscordError(403, "Missing Access")
+      Channel(id, if id == forum then 15 else 0, 1L)
+    def activeThreads(guild: Long)                        = threads
   end FakeDiscord
 
-  private val bingo    = 100L
+  private val socks    = 100L
   private val scavhunt = 200L
-  private val channels = Channels(Map("bingo" -> bingo, "scavhunt" -> scavhunt))
+  private val forum    = 300L
+  private val channels =
+    Channels(Map("socks" -> socks, "scavhunt" -> scavhunt, "bingo" -> forum))
   private val since    = LocalDateTime.of(2026, 1, 1, 0, 0)
   private val clock    = () => LocalDateTime.of(2026, 2, 1, 12, 0)
 
@@ -91,7 +99,7 @@ class SyncTest extends munit.FunSuite:
     sql"update ride_photos set caption = $caption where id = $id".update.run()
 
   private def cycle(discord: FakeDiscord, c: Config = config()): Plan =
-    val p = Sync.plan(c, ds)
+    val p = Sync.plan(c, ds, discord)
     Sync.apply(p, discord, ds, clock)
     p
 
@@ -104,8 +112,8 @@ class SyncTest extends munit.FunSuite:
     transact(ds):
       ride(10, 1, "Morning loop", jan6)
       ride(11, 2, "Errands", jan5)
-      photo("p1", 10, Some("Park sign #bingo #scavhunt"))
-      photo("p2", 11, Some("#Bingo!"))
+      photo("p1", 10, Some("Park sign #socks #scavhunt"))
+      photo("p2", 11, Some("#Socks!"))
       photo("p3", 11, Some("no tag"))
       photo("p4", 11, None)
     val discord = FakeDiscord()
@@ -128,19 +136,19 @@ class SyncTest extends munit.FunSuite:
   test("a changed caption edits the post; a dropped tag deletes it; a deleted photo deletes it"):
     transact(ds):
       ride(10, 1, "Morning loop", jan6)
-      photo("p1", 10, Some("Park sign #bingo #scavhunt"))
-      photo("p2", 10, Some("#bingo"))
+      photo("p1", 10, Some("Park sign #socks #scavhunt"))
+      photo("p2", 10, Some("#socks"))
     val discord = FakeDiscord()
     cycle(discord)
     discord.calls.clear()
     transact(ds):
-      caption("p1", "Park sign, corrected #bingo")
+      caption("p1", "Park sign, corrected #socks")
       sql"delete from ride_photos where id = 'p2'".update.run()
     val p       = cycle(discord)
     assertEquals(p.summary, "0 to post, 1 to edit, 2 to delete")
     assertEquals(
       discord.calls.toList.sorted,
-      List("delete 100 1003", "delete 200 1002", "edit 100 1001 Park sign, corrected #bingo"),
+      List("delete 100 1003", "delete 200 1002", "edit 100 1001 Park sign, corrected #socks"),
     )
     assertEquals(rows().map(r => (r.photoId, r.channelId)), List(("p1", 100L)))
     assertEquals(rows().head.updatedAt, clock())
@@ -149,15 +157,15 @@ class SyncTest extends munit.FunSuite:
   test("a message someone deleted on Discord is not posted again"):
     transact(ds):
       ride(10, 1, "Morning loop", jan6)
-      photo("p1", 10, Some("#bingo"))
+      photo("p1", 10, Some("#socks"))
     val discord = FakeDiscord()
     cycle(discord)
     discord.gone = Set(1001L)
-    transact(ds)(caption("p1", "#bingo again"))
+    transact(ds)(caption("p1", "#socks again"))
     cycle(discord)
     assertEquals(rows().map(_.messageId), List(0L))
     discord.calls.clear()
-    transact(ds)(caption("p1", "#bingo yet again"))
+    transact(ds)(caption("p1", "#socks yet again"))
     assert(cycle(discord).isEmpty)
     // Its photo going away still tidies the row, without a Discord call.
     transact(ds)(sql"delete from ride_photos".update.run())
@@ -170,10 +178,10 @@ class SyncTest extends munit.FunSuite:
       ride(10, 1, "Old", since.minusMinutes(1))
       ride(11, 1, "Private", jan5, priv = true)
       ride(12, 1, "New", since)
-      photo("p1", 10, Some("#bingo"))
-      photo("p2", 11, Some("#bingo"))
-      photo("p3", 12, Some("#bingo"))
-      sql"insert into ride_photos values ('p4', 12, '#bingo', null, false)".update.run()
+      photo("p1", 10, Some("#socks"))
+      photo("p2", 11, Some("#socks"))
+      photo("p3", 12, Some("#socks"))
+      sql"insert into ride_photos values ('p4', 12, '#socks', null, false)".update.run()
     val discord = FakeDiscord()
     cycle(discord)
     assertEquals(discord.calls.toList, List("post 100 New"))
@@ -181,15 +189,15 @@ class SyncTest extends munit.FunSuite:
   test("moving since later or dropping a tag from the configuration leaves old posts alone"):
     transact(ds):
       ride(10, 1, "Morning loop", jan5)
-      photo("p1", 10, Some("#bingo #scavhunt"))
+      photo("p1", 10, Some("#socks #scavhunt"))
     val discord = FakeDiscord()
     cycle(discord)
     discord.calls.clear()
     assert(cycle(discord, config().copy(since = jan6)).isEmpty)
-    assert(cycle(discord, config(only = Set("bingo"))).isEmpty)
+    assert(cycle(discord, config(only = Set("socks"))).isEmpty)
     // But a photo that loses a tag is still taken down from that channel (and its other post edited),
     // and a ride made private is taken down everywhere.
-    transact(ds)(caption("p1", "#bingo"))
+    transact(ds)(caption("p1", "#socks"))
     assertEquals(
       cycle(discord, config().copy(since = jan6)).summary,
       "0 to post, 1 to edit, 1 to delete",
@@ -202,8 +210,8 @@ class SyncTest extends munit.FunSuite:
     transact(ds):
       ride(10, 1, "One", jan5)
       ride(11, 1, "Two", jan6)
-      photo("p1", 10, Some("#bingo"))
-      photo("p2", 11, Some("#bingo"))
+      photo("p1", 10, Some("#socks"))
+      photo("p2", 11, Some("#socks"))
       photo("p3", 11, Some("#scavhunt"))
     val discord = FakeDiscord()
     assertEquals(cycle(discord, config(maxPosts = 2)).creates.size, 2)
@@ -215,36 +223,123 @@ class SyncTest extends munit.FunSuite:
     "with ride tags, a tagged ride's primary photo posts unless a caption already carries the tag"
   ):
     transact(ds):
-      ride(10, 1, "Sign hunt #bingo #scavhunt", jan5)
+      ride(10, 1, "Sign hunt #socks #scavhunt", jan5)
       ride(11, 2, "Untagged", jan6)
-      photo("p1", 10, Some("the sign #bingo"))
+      photo("p1", 10, Some("the sign #socks"))
       photo("p2", 10, None, primary = true)
       photo("p3", 11, None, primary = true)
     val discord = FakeDiscord()
-    assert(cycle(discord).creates.map(_.key) == List(("p1", bingo)))
+    assert(cycle(discord).creates.map(_.key) == List(("p1", socks)))
     discord.calls.clear()
     val p       = cycle(discord, config(rideTags = true))
     assertEquals(p.creates.map(_.key), List(("p2", scavhunt)))
-    assertEquals(discord.calls.toList, List("post 200 Sign hunt #bingo #scavhunt"))
+    assertEquals(discord.calls.toList, List("post 200 Sign hunt #socks #scavhunt"))
 
   test("one failing post does not stop the others, and is retried next poll"):
     transact(ds):
       ride(10, 1, "One", jan5)
       ride(11, 1, "Two", jan6)
-      photo("p1", 10, Some("#bingo"))
-      photo("p2", 11, Some("#bingo"))
+      photo("p1", 10, Some("#socks"))
+      photo("p2", 11, Some("#socks"))
     val discord = new FakeDiscord:
       override def post(channel: Long, message: ujson.Obj) =
         if message("embeds")(0)("title").str == "One" then throw DiscordError(403, "Missing Access")
         else super.post(channel, message)
-    assertEquals(Sync.apply(Sync.plan(config(), ds), discord, ds, clock), 1)
+    assertEquals(Sync.apply(Sync.plan(config(), ds, discord), discord, ds, clock), 1)
     assertEquals(rows().map(_.photoId), List("p2"))
-    assertEquals(Sync.plan(config(), ds).creates.map(_.photoId), List("p1"))
+    assertEquals(Sync.plan(config(), ds, discord).creates.map(_.photoId), List("p1"))
 
   test("a display name falls back to the strava name"):
     transact(ds):
       ride(10, 2, "Ride", jan5)
-      photo("p1", 10, Some("#bingo"))
+      photo("p1", 10, Some("#socks"))
     val photos = connect(ds)(Photos.candidates(since))
     assertEquals(photos.map(p => (p.athleteName, p.profilePhoto)), List(("Bo Rider", None)))
+
+  private def post(id: Long, name: String) =
+    DiscordThread(id, forum, name, archived = false, locked = false)
+  private val bingoPosts                   = List(
+    post(301, "March 22 - Synagogue"),
+    post(302, "March 29 - Sign (w/pic of bike)"),
+    post(303, "March 24 - Flag (military)"),
+    post(304, "March 25 - Flag (state)"),
+  )
+
+  test("a forum photo is a comment under the post its caption names"):
+    transact(ds):
+      ride(10, 1, "Ride", jan5)
+      photo("p1", 10, Some("#bingo bike sign - at last"))
+      photo("p2", 10, Some("#bingo flag"))
+      photo("p3", 10, Some("#bingo"))
+    val discord = FakeDiscord()
+    discord.threads = bingoPosts
+    val p       = cycle(discord)
+    assertEquals(discord.calls.toList, List("post 302 Ride"))
+    assertEquals(
+      rows().map(r => (r.photoId, r.channelId, r.parentId)),
+      List(("p1", 302L, Some(forum))),
+    )
+    assertEquals(p.unmatched.map(u => (u.photoId, u.forumId)), List(("p2", forum), ("p3", forum)))
+    assert(p.unmatched.find(_.photoId == "p2").exists(_.reason.contains("more than one")))
+    // The ride's date settles which flag.
+    transact(ds)(
+      sql"update rides set start_date = ${LocalDateTime.of(2026, 3, 24, 9, 0)}".update.run()
+    )
+    assertEquals(cycle(discord).creates.map(_.channelId), List(303L))
+
+  test("a forum photo stays while its caption fits, moves for another item, goes with its photo"):
+    transact(ds):
+      ride(10, 1, "Ride", jan5)
+      photo("p1", 10, Some("#bingo bike sign"))
+    val discord = FakeDiscord()
+    discord.threads = bingoPosts
+    cycle(discord)
+    discord.calls.clear()
+    // A new post that would score higher does not pull it across.
+    discord.threads = post(305, "March 30 - Bike sign") :: bingoPosts
+    assert(cycle(discord).isEmpty)
+    // Nor does the post closing.
+    discord.threads = bingoPosts.filterNot(_.id == 302)
+    assert(cycle(discord).isEmpty)
+    // A different item moves it.
+    discord.threads = bingoPosts
+    transact(ds)(caption("p1", "#bingo synagogue, second try"))
+    assertEquals(cycle(discord).summary, "1 to post, 0 to edit, 1 to delete")
+    assertEquals(discord.calls.toList, List("delete 302 1001", "post 301 Ride"))
+    assertEquals(rows().map(_.channelId), List(301L))
+    // Gone from the table: gone from the forum, even with the post since closed.
+    discord.calls.clear()
+    discord.threads = Nil
+    transact(ds)(sql"delete from ride_photos".update.run())
+    assertEquals(cycle(discord).summary, "0 to post, 0 to edit, 1 to delete")
+    assertEquals(discord.calls.toList, List("delete 301 1002"))
+
+  test("a forum that cannot be read posts nothing and loses nothing"):
+    transact(ds):
+      ride(10, 1, "Ride", jan5)
+      photo("p1", 10, Some("#bingo bike sign"))
+      photo("p2", 10, Some("#bingo synagogue"))
+    val discord = FakeDiscord()
+    discord.threads = bingoPosts
+    assertEquals(cycle(discord).creates.size, 2)
+    discord.calls.clear()
+    discord.forumFails = true
+    transact(ds)(caption("p2", "#bingo flag"))
+    val p       = cycle(discord)
+    // The caption change is still an edit in place; nothing moves or goes.
+    assertEquals(p.summary, "0 to post, 1 to edit, 0 to delete")
+    assertEquals(p.unmatched.size, 0)
+    assertEquals(rows().size, 2)
+    // Without a token the preview reports the reason rather than failing.
+    val none    = Sync.plan(config(), ds, Discord.none)
+    assert(none.isEmpty)
+    assertEquals(none.unmatched.size, 0)
+
+  test("a ride named for the forum item puts its primary photo under the post"):
+    transact(ds):
+      ride(10, 1, "Commute #bingo (synagogue)", jan5)
+      photo("p1", 10, None, primary = true)
+    val discord = FakeDiscord()
+    discord.threads = bingoPosts
+    assertEquals(cycle(discord, config(rideTags = true)).creates.map(_.channelId), List(301L))
 end SyncTest

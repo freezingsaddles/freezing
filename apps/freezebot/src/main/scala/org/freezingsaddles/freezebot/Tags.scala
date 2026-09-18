@@ -15,6 +15,13 @@ case class Channels(byTag: Map[String, Long]):
   def of(text: String): Set[Long] = Tags.in(text).flatMap(byTag.get).toSet
   def ids: Set[Long]              = byTag.values.toSet
 
+  /** The channels that are forums: those of the tags [[Forum]] names. */
+  def forumIds: Set[Long]            = byTag
+    .collect:
+      case (t, c) if Forum.tags(t) => c
+    .toSet
+  def forums(channel: Long): Boolean = forumIds(channel)
+
 object Channels:
   /** One configured tag: its names (the tag and its alt) and the channel. */
   case class Entry(names: Set[String], channel: Long)

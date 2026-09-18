@@ -97,8 +97,11 @@ case class Post(
     fingerprint: String,
     postedAt: LocalDateTime,
     updatedAt: LocalDateTime,
+    /** For a comment under a forum post: the forum, with `channelId` being the post's thread. */
+    parentId: Option[Long],
 ) derives DbCodec:
   def onDiscord: Boolean = messageId != 0
+end Post
 
 object Posts:
   /** Freezebot's own table, created on start; the Python side neither reads nor migrates it. */
@@ -110,18 +113,19 @@ object Posts:
             fingerprint char(64) not null,
             posted_at datetime not null,
             updated_at datetime not null,
+            parent_id bigint null,
             primary key (photo_id, channel_id)
           )""".update.run()
 
   def all()(using DbCon): List[Post] =
-    sql"""select photo_id, channel_id, message_id, fingerprint, posted_at, updated_at
+    sql"""select photo_id, channel_id, message_id, fingerprint, posted_at, updated_at, parent_id
           from freezebot_posts""".query[Post].run().toList
 
   def insert(p: Post)(using DbCon): Unit =
     sql"""insert into freezebot_posts
-            (photo_id, channel_id, message_id, fingerprint, posted_at, updated_at)
+            (photo_id, channel_id, message_id, fingerprint, posted_at, updated_at, parent_id)
           values (${p.photoId}, ${p.channelId}, ${p.messageId}, ${p.fingerprint},
-                  ${p.postedAt}, ${p.updatedAt})""".update.run()
+                  ${p.postedAt}, ${p.updatedAt}, ${p.parentId})""".update.run()
 
   def update(p: Post)(using DbCon): Unit =
     sql"""update freezebot_posts

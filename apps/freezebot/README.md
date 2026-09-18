@@ -28,8 +28,34 @@ Every poll (`FREEZEBOT_POLL_SECONDS`, default 60):
    at most `FREEZEBOT_MAX_POSTS` (default 10) new posts per poll, oldest ride
    first, so a backlog trickles into a channel rather than flooding it.
 
+## Bicycle bingo, a forum
+
+The `bingo` tag's channel is a forum: the moderator opens a post per item,
+titled like `March 24 - Flag (military)`, and a rider's photo belongs under
+the right one as a comment. Freezebot picks it from the words after the tag
+in the caption, up to any punctuation. The instruction to riders is
+
+    #bingo bike sign - anything else you want to say
+
+Each poll lists the forum's open posts and parses their titles into a date, a
+head (`Flag`) and a qualifier (`military`). The caption's words must name a
+word of a post's head; the qualifier and then the ride's date separate posts
+that share a head (`#bingo military flag`, or a ride on the 24th for a bare
+`#bingo flag`). A caption that fits no post, or two posts equally, is left
+alone and logged once, so a rider who sees their photo missing can adjust the
+caption; the next poll picks it up, as it does a post the moderator creates
+later. Spelling is forgiving: a word that starts another, or is one letter or
+one swap off, counts.
+
+Once posted, a photo stays under its post while the caption still fits it or
+the post has closed; a caption changed to another item moves it. The tags
+that work this way are named in `Forum.scala` (only `bingo`); a forum's
+channel id is its `discord` in `hashtag.yml` as for any other tag, and the bot
+also needs Send Messages in Threads there.
+
 `freezebot_posts` is Freezebot's own table, created on start and never read by
-the Python side, keyed by photo id and channel id: one row per Discord message.
+the Python side, keyed by photo id and channel id (a forum post's thread id, with the forum in
+`parent_id`): one row per Discord message.
 Each row keeps a fingerprint of the message as sent, which is how an edit is
 noticed. A message that a person deletes on Discord is remembered as such
 (message id 0) and the photo is not posted again.
@@ -39,7 +65,7 @@ moving `FREEZEBOT_SINCE` later. Both stop new posts; Freezebot only touches
 channels it is currently configured for.
 
 Discord is reached over its REST API with a bot token, no gateway connection:
-three endpoints over `java.net.http`, with rate limits waited out. The database
+five endpoints over `java.net.http`, with rate limits waited out. The database
 layer is [Magnum](https://github.com/AugustNagro/magnum) over plain JDBC.
 
 ## Configuration
@@ -78,7 +104,9 @@ else):
     FREEZEBOT_TAGS_FILE=../web/leaderboards/hashtag.yml \
     sbt "runMain org.freezingsaddles.freezebot.preview"
 
-It prints the tag map, the plan, and the first message as JSON.
+It prints the tag map, the plan, the photos it would not match to a forum
+post, and the first message as JSON. With `DISCORD_BOT_TOKEN` set it reads the
+forum's open posts too (reads only); without, forum photos show as unread.
 
 ## Deploying
 

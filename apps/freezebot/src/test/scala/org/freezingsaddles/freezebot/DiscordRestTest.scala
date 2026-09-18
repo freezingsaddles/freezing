@@ -85,4 +85,28 @@ class DiscordRestTest extends munit.FunSuite:
     val e    = intercept[DiscordError](fake.client.post(42L, message))
     assertEquals(e.status, 403)
     assert(e.getMessage.contains("Missing Access"))
+
+  test("a channel and a server's active threads are read"):
+    val fake = Fake(
+      response(200, """{"id": "300", "type": 15, "guild_id": "1", "name": "bingo"}"""),
+      response(
+        200,
+        """{"threads": [
+        {"id": "301", "parent_id": "300", "name": "March 22 - Synagogue", "thread_metadata": {"archived": false, "locked": false}},
+        {"id": "9", "parent_id": "8", "name": "elsewhere", "thread_metadata": {"archived": true, "locked": false}}
+      ], "members": []}""",
+      ),
+    )
+    assertEquals(fake.client.channel(300L), Channel(300L, 15, 1L))
+    assertEquals(
+      fake.client.activeThreads(1L),
+      List(
+        DiscordThread(301L, 300L, "March 22 - Synagogue", false, false),
+        DiscordThread(9L, 8L, "elsewhere", true, false),
+      ),
+    )
+    assertEquals(
+      fake.requests.map(r => r.method + " " + r.uri.getPath).toList,
+      List("GET /api/v10/channels/300", "GET /api/v10/guilds/1/threads/active"),
+    )
 end DiscordRestTest

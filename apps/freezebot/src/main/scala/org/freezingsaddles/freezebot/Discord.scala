@@ -6,7 +6,15 @@ import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
 import java.time.Duration
 
-/** The three things Freezebot does to a channel. */
+/** A channel as Discord describes it: its type (15 and 16 are forums) and its server. */
+case class Channel(id: Long, kind: Int, guildId: Long)
+
+/** A thread; in a forum, a post. */
+case class DiscordThread(id: Long, parentId: Long, name: String, archived: Boolean, locked: Boolean)
+
+/** The three things Freezebot does to a channel, and the two things it reads for a forum. A
+  * thread's id serves as a channel id for posting, editing and deleting.
+  */
 trait Discord:
   /** @return the new message's id */
   def post(channel: Long, message: ujson.Obj): Long
@@ -16,13 +24,28 @@ trait Discord:
 
   /** @return false when the message was already gone from Discord */
   def delete(channel: Long, messageId: Long): Boolean
+
+  def channel(id: Long): Channel
+
+  /** Every active thread in the server; the caller keeps the ones under its forum. */
+  def activeThreads(guild: Long): List[DiscordThread]
 end Discord
+
+object Discord:
+  /** For the preview without a token: nothing can be read or written. */
+  val none: Discord = new Discord:
+    private def no                                               = throw DiscordError(0, "no DISCORD_BOT_TOKEN")
+    def post(channel: Long, message: ujson.Obj)                  = no
+    def edit(channel: Long, messageId: Long, message: ujson.Obj) = no
+    def delete(channel: Long, messageId: Long)                   = no
+    def channel(id: Long)                                        = no
+    def activeThreads(guild: Long)                               = no
 
 final class DiscordError(val status: Int, val body: String)
     extends RuntimeException(s"Discord replied $status: $body")
 
 /** Discord's REST API with a bot token. Posting needs no gateway connection, so there is no
-  * websocket and no library: three endpoints over `java.net.http`.
+  * websocket and no library: five endpoints over `java.net.http`.
   *
   * Rate limits: a 429 is waited out and retried, and a reply that empties a bucket is followed by a
   * wait for it to refill, so a burst of posts spreads itself out.
@@ -53,6 +76,30 @@ class DiscordRest(
       case ok if ok / 100 == 2 => true
       case 404                 => false
       case status              => throw DiscordError(status, r.body)
+
+  override def channel(id: Long): Channel =
+    val c = ujson.read(get(s"/channels/$id"))
+    Channel(c("id").str.toLong, c("type").num.toInt, c("guild_id").str.toLong)
+
+  override def activeThreads(guild: Long): List[DiscordThread] =
+    ujson
+      .read(get(s"/guilds/$guild/threads/active"))("threads")
+      .arr
+      .toList
+      .map: t =>
+        val meta = t.obj.get("thread_metadata").map(_.obj).getOrElse(ujson.Obj().obj)
+        DiscordThread(
+          id = t("id").str.toLong,
+          parentId = t("parent_id").str.toLong,
+          name = t("name").str,
+          archived = meta.get("archived").exists(_.bool),
+          locked = meta.get("locked").exists(_.bool),
+        )
+
+  private def get(path: String): String =
+    val r = request("GET", path, None)
+    if r.statusCode / 100 != 2 then throw DiscordError(r.statusCode, r.body)
+    r.body
 
   private def request(
       method: String,
