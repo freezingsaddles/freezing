@@ -1,4 +1,4 @@
-"""drop global_privacy col
+"""Drop global_privacy col.
 
 Revision ID: 8925b9da7d7
 Revises: 180c13f61b54

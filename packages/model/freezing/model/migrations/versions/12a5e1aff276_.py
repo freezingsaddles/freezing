@@ -1,4 +1,3 @@
-import sqlalchemy as sa
 from alembic import op
 
 from freezing.model.config import config

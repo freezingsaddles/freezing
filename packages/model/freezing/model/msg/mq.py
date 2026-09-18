@@ -13,9 +13,7 @@ class DefinedTubes(enum.Enum):
 
 
 class ActivityUpdate(BaseMessage):
-    """
-    Represents a Webhook Event Subscription Update.
-    """
+    """Represents a Webhook Event Subscription Update."""
 
     operation: AspectType = None
     athlete_id: int = None
@@ -32,9 +30,7 @@ class ActivityUpdate(BaseMessage):
 
 
 class ActivityUpdateSchema(BaseSchema):
-    """
-    Represents a Webhook Event Subscription Update.
-    """
+    """Represents a Webhook Event Subscription Update."""
 
     _model_class = ActivityUpdate
 

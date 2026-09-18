@@ -1,4 +1,4 @@
-"""manual column
+"""Manual column.
 
 Revision ID: 54675468b7bb
 Revises: 628c4c0afbd

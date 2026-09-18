@@ -3,11 +3,8 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
-from stravalib.model import ActivityPhotoPrimary, DetailedActivity
 
-from freezing.model.orm import Athlete, Ride, RideEffort, RidePhoto
 from freezing.sync.data.activity import ActivitySync
-from freezing.sync.utils.cache import CachingActivityFetcher
 
 
 @pytest.fixture

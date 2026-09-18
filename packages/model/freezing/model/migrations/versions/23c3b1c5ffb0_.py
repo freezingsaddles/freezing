@@ -1,4 +1,3 @@
-import sqlalchemy as sa
 from alembic import op
 
 """Create weekly_stats view

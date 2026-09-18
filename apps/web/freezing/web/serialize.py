@@ -1,7 +1,7 @@
 from marshmallow import Schema, fields
 
 # shortcut
-optional = dict(allow_none=True, required=False)
+optional = {"allow_none": True, "required": False}
 
 
 class AthleteSchema(Schema):
@@ -13,8 +13,6 @@ class AthleteSchema(Schema):
     refresh_token = fields.String(**optional)
     expires_at = fields.Integer()
     profile_photo = fields.String(**optional)
-
-    # rides = orm.relationship("Ride", backref="athlete", lazy="dynamic", cascade="all, delete, delete-orphan")
 
 
 class TeamSchema(Schema):

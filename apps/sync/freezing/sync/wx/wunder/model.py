@@ -1,38 +1,43 @@
+"""Model for Weather Underground history data.
+
+An observation from the history response looks like this:
+
+    {
+    "date": {
+    "pretty": "12:52 AM EST on January 01, 2013",
+    "year": "2013",
+    "mon": "01",
+    "mday": "01",
+    "hour": "00",
+    "min": "52",
+    "tzname": "America/New_York"
+    },
+    "utcdate": {
+    "pretty": "5:52 AM GMT on January 01, 2013",
+    "year": "2013",
+    "mon": "01",
+    "mday": "01",
+    "hour": "05",
+    "min": "52",
+    "tzname": "UTC"
+    },
+    "tempm":"3.3", "tempi":"37.9","dewptm":"-2.2", "dewpti":"28.0","hum":"68","wspdm":"11.1", "wspdi":"6.9",
+    "wgustm":"-9999.0", "wgusti":"-9999.0","wdird":"200","wdire":"SSW","vism":"16.1", "visi":"10.0",
+    "pressurem":"1016.1", "pressurei":"30.01","windchillm":"0.4", "windchilli":"32.7","heatindexm":"-9999",
+    "heatindexi":"-9999","precipm":"-9999.00", "precipi":"-9999.00","conds":"Overcast","icon":"cloudy",
+    "fog":"0","rain":"0","snow":"0","hail":"0","thunder":"0","tornado":"0",
+    "metar":"METAR KDCA 010552Z 20006KT 10SM FEW075 OVC130 03/M02 A3001 RMK AO2 SLP161 T00331022 10044 20033 56011" },
+"""
+
 import logging
 from copy import copy
 from datetime import datetime
 
 from pytz import timezone
 
-#        {
-#        "date": {
-#        "pretty": "12:52 AM EST on January 01, 2013",
-#        "year": "2013",
-#        "mon": "01",
-#        "mday": "01",
-#        "hour": "00",
-#        "min": "52",
-#        "tzname": "America/New_York"
-#        },
-#        "utcdate": {
-#        "pretty": "5:52 AM GMT on January 01, 2013",
-#        "year": "2013",
-#        "mon": "01",
-#        "mday": "01",
-#        "hour": "05",
-#        "min": "52",
-#        "tzname": "UTC"
-#        },
-#        "tempm":"3.3", "tempi":"37.9","dewptm":"-2.2", "dewpti":"28.0","hum":"68","wspdm":"11.1", "wspdi":"6.9",
-#        "wgustm":"-9999.0", "wgusti":"-9999.0","wdird":"200","wdire":"SSW","vism":"16.1", "visi":"10.0",
-#        "pressurem":"1016.1", "pressurei":"30.01","windchillm":"0.4", "windchilli":"32.7","heatindexm":"-9999",
-#        "heatindexi":"-9999","precipm":"-9999.00", "precipi":"-9999.00","conds":"Overcast","icon":"cloudy",
-#        "fog":"0","rain":"0","snow":"0","hail":"0","thunder":"0","tornado":"0",
-#        "metar":"METAR KDCA 010552Z 20006KT 10SM FEW075 OVC130 03/M02 A3001 RMK AO2 SLP161 T00331022 10044 20033 56011" },
-
 
 def build_date(dateobj):
-    """Builds a date from wundergound date structure."""
+    """Build a date from wundergound date structure."""
     year = int(dateobj["year"])
     mon = int(dateobj["mon"])
     day = int(dateobj["mday"])
@@ -44,14 +49,11 @@ def build_date(dateobj):
 def smart_cast(val, type_):
     if val is None or val == "" or (isinstance(val, str) and val.startswith("-99")):
         return None
-    else:
-        return type_(val)
+    return type_(val)
 
 
-class Observation(object):
-    """
-    A particular wx observation (e.g. there might be many during a day).
-    """
+class Observation:
+    """A particular wx observation (e.g. there might be many during a day)."""
 
     date = None
     temp = None
@@ -63,9 +65,7 @@ class Observation(object):
 
     @classmethod
     def from_json(cls, jsonobj):
-        """
-        Constructs an observation from json object.
-        """
+        """Construct an observation from json object."""
         o = Observation()
         o.raw = jsonobj
 
@@ -87,10 +87,8 @@ class Observation(object):
         )
 
 
-class HistoryDay(object):
-    """
-    History for a single day.
-    """
+class HistoryDay:
+    """History for a single day."""
 
     date = None
 
@@ -101,7 +99,7 @@ class HistoryDay(object):
         self.observations = []
 
     def find_first_before(self, date):
-        """Finds the first observation before the specified date."""
+        """Find the first observation before the specified date."""
         date = date.replace(tzinfo=self.date.tzinfo)
         # Iterate over the observations until the date is later, then return the previous
         assert len(self.observations) > 0
@@ -126,7 +124,7 @@ class HistoryDay(object):
         return prev
 
     def find_next_after(self, date):
-        """Finds the next observation after the specified date."""
+        """Find the next observation after the specified date."""
         assert len(self.observations) > 0
         date = date.replace(tzinfo=self.date.tzinfo)
         # Iterate over the observations until the date is later, then return the previous
@@ -151,9 +149,7 @@ class HistoryDay(object):
         return prev
 
     def find_observations_within(self, start_date, end_date):
-        """
-        Returns all observations whose dates fall in between the specified start and end dates.
-        """
+        """Return all observations whose dates fall in between the specified start and end dates."""
         # We are assuming that the observations will always be same tz as this [day] history object.
         # (That should be safe??)
         if start_date.tzinfo is None:
@@ -178,9 +174,7 @@ class HistoryDay(object):
         return matched
 
     def find_nearest_observation(self, date):
-        """
-        Gets the observation closest in time (before or after) to specified date.
-        """
+        """Get the observation closest in time (before or after) to specified date."""
         if date.tzinfo is None:
             date = copy(date).replace(tzinfo=self.date.tzinfo)
 
@@ -203,9 +197,7 @@ class HistoryDay(object):
 
     @classmethod
     def from_json(cls, jsonobj):
-        """
-        Initialize object from JSON object.
-        """
+        """Initialize object from JSON object."""
         h = HistoryDay()
 
         h.raw = jsonobj

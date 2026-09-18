@@ -1,8 +1,5 @@
-"""
-Various utility functions.
-"""
+"""Various utility functions."""
 
-import alembic
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 
@@ -25,8 +22,6 @@ def create_config(sqlalchemy_url: str) -> Config:
 
 
 def get_database_version() -> str:
-    """
-    Gets the current database revision (partial GUID).
-    """
+    """Get the current database revision (partial GUID)."""
     context = MigrationContext.configure(meta.engine.connect())
     return context.get_current_revision()

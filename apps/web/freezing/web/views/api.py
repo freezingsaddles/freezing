@@ -124,15 +124,13 @@ def list_photos():
     for p in photos:
         results.append(schema.dump(p))
 
-    return jsonify(dict(result=results, count=len(results)))
+    return jsonify({"result": results, "count": len(results)})
 
 
 @blueprint.route("/leaderboard/team")
 @auth.crossdomain(origin="*")
 def team_leaderboard():
-    """
-    Loads the leaderboard data broken down by team.
-    """
+    """Load the leaderboard data broken down by team."""
     q = text("""
              select T.id as team_id, T.name as team_name, sum(DS.points) as total_score,
              sum(DS.distance) as total_distance
@@ -162,7 +160,8 @@ def team_leaderboard():
         team_members.setdefault(indiv_row["team_id"], []).append(indiv_row)
 
     for team_id in team_members:
-        team_members[team_id] = reversed(
+        # noqa: C413 -- reverse=True would flip the order of tied scores.
+        team_members[team_id] = reversed(  # noqa: C413
             sorted(team_members[team_id], key=lambda m: m["total_score"])
         )
 
@@ -192,7 +191,7 @@ def team_leaderboard():
             }
         )
 
-    return jsonify(dict(leaderboard=rows))
+    return jsonify({"leaderboard": rows})
 
 
 def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
@@ -314,8 +313,8 @@ def _track_map(
 ):
     teamsq = text("select id, name from teams order by id asc")
     teams = [
-        {"id": id, "name": name}
-        for [id, name] in meta.scoped_session().execute(teamsq).fetchall()
+        {"id": team_id, "name": name}
+        for [team_id, name] in meta.scoped_session().execute(teamsq).fetchall()
     ]
 
     q = text(f"""

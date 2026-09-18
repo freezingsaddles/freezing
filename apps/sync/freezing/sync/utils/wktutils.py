@@ -1,8 +1,8 @@
 import re
 from collections import namedtuple
 
-_point_rx = re.compile("^POINT\((.+)\)$")
-_linestring_rx = re.compile("^LINESTRING\((.+)\)$")
+_point_rx = re.compile(r"^POINT\((.+)\)$")
+_linestring_rx = re.compile(r"^LINESTRING\((.+)\)$")
 
 LonLat = namedtuple("LonLat", ["lon", "lat"])
 
@@ -17,8 +17,7 @@ def parse_point_wkt(wkt):
 
 
 def parse_linestring(wkt):
-    """
-    Parses LINESTRING WKT into a list of lon/lat (str) tuples.
+    """Parse LINESTRING WKT into a list of lon/lat (str) tuples.
 
     :param wkt: The WKT for the LINESTRING
     :type wkt: str`

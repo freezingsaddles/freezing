@@ -1,4 +1,4 @@
-"""add photo uid
+"""Add photo uid.
 
 Revision ID: 48e1dd00cbd8
 Revises: 8925b9da7d7

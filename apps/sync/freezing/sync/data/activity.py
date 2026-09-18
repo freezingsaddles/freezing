@@ -1,5 +1,4 @@
 import logging
-import re
 from datetime import datetime, timedelta
 from typing import List, Optional
 
@@ -44,12 +43,10 @@ class ActivitySync(BaseSync):
         if value is None:
             return None
         # stravalib Duration
-        if hasattr(value, "timedelta") and callable(getattr(value, "timedelta")):
+        if hasattr(value, "timedelta") and callable(value.timedelta):
             return int(value.timedelta().total_seconds())
         # builtin timedelta or any object exposing total_seconds()
-        if hasattr(value, "total_seconds") and callable(
-            getattr(value, "total_seconds")
-        ):
+        if hasattr(value, "total_seconds") and callable(value.total_seconds):
             return int(value.total_seconds())
         # numeric seconds
         try:
@@ -158,8 +155,7 @@ class ActivitySync(BaseSync):
         )
 
     def write_ride_efforts(self, strava_activity: DetailedActivity, ride: Ride):
-        """
-        Writes out all effort associated with a ride to the database.
+        """Write out all effort associated with a ride to the database.
 
         :param strava_activity: The :class:`stravalib.orm.Activity` that is associated with this effort.
         :param ride: The db model object for ride.
@@ -229,14 +225,13 @@ class ActivitySync(BaseSync):
     def _make_photo_from_native(
         self, activity_photo: ActivityPhotoPrimary, ride: Ride, session: Session
     ) -> Optional[RidePhoto]:
-        """
-        Writes a data native (source=1) primary photo to db.
+        """Write a data native (source=1) primary photo to db.
 
         :param photo: The primary photo from an activity.
         :param ride: The db model object for ride.
         :return: The newly added ride photo object.
         """
-        # 'photos': {u'count': 1,
+        # 'photos': {u'count': 1,  # noqa: E800 (example of Strava's photo data)
         #   u'primary': {u'id': None,
         #    u'source': 1,
         #    u'unique_id': u'35453b4b-0fc1-46fd-a824-a4548426b57d',
@@ -248,7 +243,7 @@ class ActivitySync(BaseSync):
             self.logger.warning(
                 "Photo {} present, but has no URLs (skipping)".format(activity_photo)
             )
-            return None
+            return
 
         photo = session.get(RidePhoto, activity_photo.unique_id)
         if photo:
@@ -317,11 +312,11 @@ class ActivitySync(BaseSync):
         q = q.options(joinedload(Ride.athlete))
 
         # TODO: Construct a more complex query to catch photos_fetched=False, track_fetched=False, etc.
-        q = q.filter(Ride.private == False)
+        q = q.filter(Ride.private == False)  # noqa: E712
 
         if not rewrite:
-            no_detail = Ride.detail_fetched == False
-            resync_efforts = (Ride.efforts_fetched == False) & (
+            no_detail = Ride.detail_fetched == False  # noqa: E712
+            resync_efforts = (Ride.efforts_fetched == False) & (  # noqa: E712
                 Ride.resync_date <= datetime.now()
             )
             q = q.filter(no_detail | resync_efforts)
@@ -434,10 +429,10 @@ class ActivitySync(BaseSync):
 
                 ride = self.write_ride(strava_activity)
                 self.update_ride_complete(strava_activity=strava_activity, ride=ride)
-            except ObjectNotFound:
+            except ObjectNotFound as e:
                 raise ActivityNotFound(
                     "Activity {} not found, ignoring.".format(activity_id)
-                )
+                ) from e
             except IneligibleActivity:
                 raise
             except AccessUnauthorized:
@@ -461,8 +456,7 @@ class ActivitySync(BaseSync):
                 raise
 
     def update_ride_complete(self, strava_activity: DetailedActivity, ride: Ride):
-        """
-        Updates all ride data from a fully-populated Strava `Activity`.
+        """Update all ride data from a fully-populated Strava `Activity`.
 
         :param strava_activity: The Activity that has been populated from detailed fetch.
         :param ride: The database ride object to update.
@@ -514,8 +508,7 @@ class ActivitySync(BaseSync):
         end_date: datetime,
         exclude_keywords: List[str],
     ):
-        """
-        Asserts that activity is valid for the competition.
+        """Assert that activity is valid for the competition.
 
         :param activity:
         :param start_date:
@@ -651,9 +644,9 @@ class ActivitySync(BaseSync):
             else:
                 return False
 
-        activities = client.get_activities(
+        activities: BatchedResultsIterator[SummaryActivity] = client.get_activities(
             after=start_date, limit=None
-        )  # type: BatchedResultsIterator[SummaryActivity]
+        )
 
         filtered_rides = [
             a
@@ -693,16 +686,12 @@ class ActivitySync(BaseSync):
                     f"Excluding ride {activity.id} because of overlap with {overlap_ids}"
                 )
                 return True
+            return False
 
-        non_overlapping_rides = [
-            a for a in filtered_rides if not overlaps_larger(a, filtered_rides)
-        ]
-
-        return non_overlapping_rides
+        return [a for a in filtered_rides if not overlaps_larger(a, filtered_rides)]
 
     def write_ride(self, activity: SummaryActivity) -> Ride:
-        """
-        Takes the specified activity and writes it to the database.
+        """Take the specified activity and write it to the database.
 
         :param activity: The Strava :class:`stravalib.orm.Activity` object.
 
@@ -813,10 +802,9 @@ class ActivitySync(BaseSync):
         db_rides = q.all()
 
         # Quickly filter out only the rides that are not in the database.
-        returned_ride_ids = set([r.id for r in api_ride_entries])
+        returned_ride_ids = {r.id for r in api_ride_entries}
         db_rides_by_id = {r.id: r for r in db_rides}
         stored_ride_ids = set(db_rides_by_id.keys())
-        # new_ride_ids = list(returned_ride_ids - stored_ride_ids)
         removed_ride_ids = list(stored_ride_ids - returned_ride_ids)
 
         num_rides = len(api_ride_entries)
@@ -950,7 +938,7 @@ class ActivitySync(BaseSync):
         start_date: datetime = None,
         end_date: datetime = None,
     ):
-        """
+        """Sync rides for the athletes in one of ``total_segments`` segments.
 
         :param total_segments: The number of segments to divide athletes into (e.g. 24 if this is being run hourly)
         :param segment: Which segment (0-based) to select.
@@ -972,6 +960,7 @@ class ActivitySync(BaseSync):
                 return self.sync_rides(
                     start_date=start_date, end_date=end_date, athlete_ids=athlete_ids
                 )
+            return None
 
     def sync_rides(
         self,

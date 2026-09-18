@@ -12,8 +12,6 @@ from freezing.sync.data.activity import ActivitySync
 from freezing.sync.data.athlete import AthleteSync
 from freezing.sync.data.photos import PhotoSync
 from freezing.sync.data.weather import WeatherSync
-
-# from freezing.sync.workflow import configured_publisher
 from freezing.sync.subscribe import ActivityUpdateSubscriber
 
 
@@ -37,16 +35,14 @@ def main():
 
     scheduler = BackgroundScheduler()
 
-    # workflow_publisher = configured_publisher()
-
     activity_sync = ActivitySync()
     weather_sync = WeatherSync()
     athlete_sync = AthleteSync()
     photo_sync = PhotoSync()
 
     # Every hour run a sync on the activities for athletes
-    # falling into the specified segment
-    # athlete_id % total_segments == segment
+    # falling into the specified segment (those whose athlete_id modulo
+    # total_segments equals the segment).
     # TODO: Probably it would be more prudent to split into 15-minute segments,
     # to match rate limits.  Admittedly that will make the time-based segment
     # calculation a little trickier.

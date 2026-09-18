@@ -32,8 +32,6 @@ dev = [
     "flake8-raise==0.0.5",
     "flake8-return==1.2.0",
     "flake8-simplify==0.30.0",
-    "flake8-sorted-keys==0.2.0",
-    "flake8-todo==0.7",
     "isort==9.0.1",
     "mypy==2.3.1",
     "pre-commit==4.6.2",
@@ -53,17 +51,29 @@ profile = "black"
 known_first_party = ["freezing"]
 
 [tool.flake8]
-# Thanks https://www.reddit.com/r/learnpython/comments/rr6y69/comment/hqeqt68/?utm_source=share&utm_medium=web2x&context=3
+max-line-length = 88
+max-complexity = 39
+inline-quotes = "double"
+exclude = [".venv", ".git", "__pycache__", "build", "dist", "node_modules", "target"]
 ignore = [
+    # black's formatting: slices, line length, line breaks before operators.
     "E203",
     "E501",
     "W503",
+    # Missing docstrings (D100-D107): documenting what exists is required to be
+    # right (D2xx, D4xx), documenting everything is not.
+    "D1",
+    # Class attributes named like builtins: the ORM's `id` and `type` columns.
+    "A003",
 ]
-max-line-length = 88
-max-complexity = 39
-extend-ignore = "E203"
-inline-quotes = "double"
-exclude = [".venv", ".git", "__pycache__", "build", "dist"]
+per-file-ignores = [
+    # Alembic's own layout puts the revision identifiers before the imports,
+    # and a migration reports with print.
+    "packages/model/freezing/model/migrations/versions/*.py:E402,T201",
+    "packages/model/freezing/model/migrations/env.py:T201",
+    # Command-line scripts print.
+    "packages/model/bin/*.py:T201",
+]
 
 [tool.pymarkdown]
 plugins.md013.enabled = false

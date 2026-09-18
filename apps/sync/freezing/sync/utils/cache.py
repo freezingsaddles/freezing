@@ -27,8 +27,8 @@ class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
         return "{}_{}.json".format(object_id, self.object_type)
 
     def cache_dir(self, athlete_id: int) -> str:
-        """
-        Gets the cache directory for specific athlete.
+        """Get the cache directory for specific athlete.
+
         :param athlete_id: The athlete ID.
         :return: The cache directory.
         """
@@ -41,8 +41,8 @@ class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
     def cache_object_json(
         self, *, athlete_id: int, object_id: int, object_json: Dict[str, Any]
     ) -> str:
-        """
-        Writes object (e.g. activity, stream) to cache dir.
+        """Write object (e.g. activity, stream) to cache dir.
+
         :return: The path to the cached file.
         """
         directory = self.cache_dir(athlete_id)
@@ -56,27 +56,23 @@ class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
         return cache_path
 
     def get_cached_object_json(self, athlete_id: int, object_id: int) -> Dict[str, Any]:
-        """
-        Retrieves raw object from cached directory.
-        """
+        """Retrieve raw object from cached directory."""
         directory = self.cache_dir(athlete_id)
 
         object_fname = self.filename(object_id=object_id)
         cache_path = os.path.join(directory, object_fname)
 
-        activity_json = None
         if os.path.exists(cache_path):
             with open(cache_path, "r") as fp:
-                activity_json = json.load(fp)
-
-        return activity_json
+                return json.load(fp)
+        return None
 
     @abc.abstractmethod
     def download_object_json(
         self, *, athlete_id: int, object_id: int
     ) -> Dict[str, Any]:
-        """
-        Download object json.
+        """Download object json.
+
         :return: The object json structure.
         """
 
@@ -100,8 +96,7 @@ class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
         use_cache: bool = True,
         only_cache: bool = False,
     ) -> Optional[Any]:
-        """
-        Fetches an object, possibly from cache, and returns the JSON for it.
+        """Fetch an object, possibly from cache, and return the JSON for it.
 
         :param athlete_id:
         :param object_id:
@@ -183,8 +178,7 @@ class CachingActivityFetcher(CachingAthleteObjectFetcher):
         use_cache: bool = True,
         only_cache: bool = False,
     ) -> Optional[DetailedActivity]:
-        """
-        Fetches activity and returns it.
+        """Fetch activity and return it.
 
         :param athlete_id:
         :param object_id:
@@ -200,6 +194,7 @@ class CachingActivityFetcher(CachingAthleteObjectFetcher):
         )
         if activity_json:
             return DetailedActivity.model_validate(activity_json)
+        return None
 
 
 class CachingStreamFetcher(CachingAthleteObjectFetcher):
@@ -223,8 +218,7 @@ class CachingStreamFetcher(CachingAthleteObjectFetcher):
         use_cache: bool = True,
         only_cache: bool = False,
     ) -> Optional[List[Stream]]:
-        """
-        Fetches activity and returns it.
+        """Fetch activity and return it.
 
         :param athlete_id:
         :param object_id:
@@ -243,3 +237,4 @@ class CachingStreamFetcher(CachingAthleteObjectFetcher):
             return [
                 Stream.model_validate(stream_struct) for stream_struct in streams_json
             ]
+        return None

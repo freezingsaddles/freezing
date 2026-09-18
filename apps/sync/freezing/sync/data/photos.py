@@ -1,8 +1,7 @@
-from sqlalchemy import and_
 from stravalib.client import BatchedResultsIterator
 from stravalib.model import ActivityPhoto
 
-from freezing.model import meta, orm
+from freezing.model import meta
 from freezing.model.orm import Ride, RidePhoto
 from freezing.sync.data import StravaClientForAthlete
 
@@ -42,11 +41,9 @@ class PhotoSync(BaseSync):
                         for photo in big_photos:
                             self.logger.info(f"Big photo: {str(photo)}")
                     self.write_ride_photos_nonprimary(big_photos, ride, BigSize)
-                    # We don't display thumbnails because they are too small, so don't
-                    # sync them anymore.
-                    # small_photos = client.get_activity_photos(ride.id, size=SmallSize)
-                    # self.write_ride_photos_nonprimary(small_photos, ride, SmallSize)
-                except:
+                    # We don't display thumbnails (SmallSize) because they are too
+                    # small, so don't sync them anymore.
+                except Exception:
                     self.logger.exception(
                         "Error fetching/writing "
                         "non-primary photos activity "
@@ -60,8 +57,7 @@ class PhotoSync(BaseSync):
         ride: Ride,
         size: int,
     ):
-        """
-        Writes out/updates all photos associated with a ride to the database.
+        """Write out/update all photos associated with a ride to the database.
 
         :param activity_photos: Photos for an activity.
         :type activity_photos: list[stravalib.orm.ActivityPhoto]
@@ -69,7 +65,6 @@ class PhotoSync(BaseSync):
         :param ride: The db model object for ride.
         :type ride: bafs.orm.Ride
         """
-
         photos = meta.scoped_session().query(RidePhoto).filter_by(ride_id=ride.id)
         existing_photos = {photo.id: photo for photo in photos}
         found_primary = False

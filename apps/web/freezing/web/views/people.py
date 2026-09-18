@@ -19,9 +19,7 @@ def get_local_datetime() -> datetime:
 
 
 def get_today() -> datetime:
-    """
-    Sometimes you have an old database for testing and you need to set today to be something that is not actually today
-    """
+    """Sometimes you have an old database for testing and you need to set today to be something that is not actually today."""
     if False:
         return datetime(2024, 3, 18, tzinfo=config.TIMEZONE)
     return get_local_datetime()
@@ -42,7 +40,7 @@ def people_list_users():
     for u in users_list:
         weekly_dist = 0
         weekly_rides = 0
-        total_rides = 0
+        total_rides = 0  # noqa: SIM113 -- tallied alongside the other per-ride sums
         total_dist = 0
         for r in u.rides:
             total_rides += 1
@@ -85,7 +83,7 @@ def people_show_person(user_id):
     today_rides = 0
     weekly_dist = 0
     weekly_rides = 0
-    total_rides = 0
+    total_rides = 0  # noqa: SIM113 -- tallied alongside the other per-ride sums
     total_dist = 0
     for r in our_user.rides:
         total_rides += 1

@@ -16,7 +16,6 @@ def test_get_webhook(client):
     }
 
     result = client.simulate_get("/webhook", params=d)
-    print(result)
     assert result.json == {"hub.challenge": "asdf"}
 
 
@@ -28,15 +27,15 @@ def test_get_webhook_bad_token(client):
 
 
 def test_post_webhook(client, publisher: ActivityPublisher):
-    d = dict(
-        subscription_id=111,
-        owner_id=222,
-        object_type="activity",
-        object_id=999,
-        aspect_type="update",
-        updates={"title": "Hello world."},
-        event_time=1358919359,
-    )
+    d = {
+        "subscription_id": 111,
+        "owner_id": 222,
+        "object_type": "activity",
+        "object_id": 999,
+        "aspect_type": "update",
+        "updates": {"title": "Hello world."},
+        "event_time": 1358919359,
+    }
 
     result = client.simulate_post(
         "/webhook", body=json.dumps(d), headers={"content-type": "application/json"}
@@ -50,13 +49,13 @@ def test_post_webhook(client, publisher: ActivityPublisher):
     message.operation = AspectType(d["aspect_type"])
     message.updates = d["updates"]
 
-    called_with = dict(
-        activity_id=d["object_id"],
-        athlete_id=d["owner_id"],
-        operation=d["aspect_type"],
-        event_time="2013-01-23T05:35:59+00:00",
-        updates=d["updates"],
-    )
+    called_with = {
+        "activity_id": d["object_id"],
+        "athlete_id": d["owner_id"],
+        "operation": d["aspect_type"],
+        "event_time": "2013-01-23T05:35:59+00:00",
+        "updates": d["updates"],
+    }
 
     publisher.publish_message.assert_called_with(
         called_with, dest=DefinedTubes.activity_update

@@ -91,7 +91,6 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
     :param level: The log level (e.g. logging.DEBUG)
     :return:
     """
-
     ch = logging.StreamHandler()
     ch.setLevel(loglevel)
 
@@ -117,18 +116,15 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
         "freezing": logging.DEBUG,
         "requests": logging.INFO,
         "stravalib": logging.INFO,
+        "root": logging.DEBUG,
     }
-    log_level_map["root"] = logging.DEBUG
     loggers = {k: logging.getLogger(k) for k in log_level_map.keys()}
     loggers.update({"root": logging.root})
 
     for k, logger in loggers.items():
         logger.setLevel(log_level_map[k])
-    # logger.addHandler(ch)
-    # logging.root.setLevel(loglevel)
 
     logging.root.addHandler(ch)
 
-    print(f"loggers: {loggers}")
-
+    logger.info(f"loggers: {loggers}")
     logger.info(f"logging initialized for app version {config.VERSION_STRING}")

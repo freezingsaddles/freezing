@@ -4,9 +4,7 @@ from . import BaseCommand
 
 
 class SyncWeatherScript(BaseCommand):
-    """
-    Synchronize rides from data with the database.
-    """
+    """Synchronize rides from data with the database."""
 
     name = "sync-weather"
 

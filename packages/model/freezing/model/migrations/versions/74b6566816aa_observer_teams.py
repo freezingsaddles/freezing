@@ -1,4 +1,4 @@
-"""observer teams
+"""Observer teams.
 
 Revision ID: 74b6566816aa
 Revises: 65e22ab36882

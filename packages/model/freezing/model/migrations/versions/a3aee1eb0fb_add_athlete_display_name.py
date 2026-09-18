@@ -1,4 +1,4 @@
-"""add athlete display name
+"""Add athlete display name.
 
 Revision ID: a3aee1eb0fb
 Revises: 3361172cfdc9

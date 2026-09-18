@@ -34,11 +34,11 @@ class StreamSync(BaseSync):
         q = session.query(Ride).options(joinedload(Ride.athlete))
 
         # We do not fetch streams for private rides.
-        q = q.filter(and_(Ride.private == False))
+        q = q.filter(and_(Ride.private == False))  # noqa: E712
 
         if not rewrite:
             q = q.filter(
-                Ride.track_fetched == False,
+                Ride.track_fetched == False,  # noqa: E712
             )
 
         if athlete_id:
@@ -116,10 +116,10 @@ class StreamSync(BaseSync):
                     session.commit()
                 else:
                     self.logger.debug("No streams for {!r} (skipping)".format(ride))
-            except ObjectNotFound:
+            except ObjectNotFound as e:
                 raise ActivityNotFound(
                     "Streams not found for {}, athlete {}".format(ride, ride.athlete)
-                )
+                ) from e
             except Exception:
                 self.logger.exception(
                     "Error fetching/writing activity streams for "

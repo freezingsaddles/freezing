@@ -9,10 +9,8 @@ from requests.exceptions import HTTPError
 from .model import Forecast
 
 
-class HistoVisualCrossing(object):
-    """
-    Histomorphic visual crossing. Kinda like animal crossing, but for weather data.
-    """
+class HistoVisualCrossing:
+    """Histomorphic visual crossing. Kinda like animal crossing, but for weather data."""
 
     def __init__(
         self,
@@ -72,7 +70,7 @@ class HistoVisualCrossing(object):
             try:
                 with open(path, "r") as file:
                     return load(file)
-            except:
+            except Exception:
                 self.logger.warning(f"Error reading cache file {path}")
                 os.remove(path)
 

@@ -1,5 +1,5 @@
 """
-Live Integration Tests for Stravalib 2.4 Upgrade
+Live Integration Tests for Stravalib 2.4 Upgrade.
 
 These tests make real API calls to Strava to validate that the upgrade
 is working correctly. They require valid Strava API credentials and an
@@ -13,7 +13,6 @@ To skip these tests in CI:
 """
 
 import logging
-import os
 from unittest.mock import patch
 
 import pytest
@@ -40,6 +39,7 @@ def database_session():
 def test_athlete(database_session):
     """
     Get a test athlete from the database that has activities.
+
     Skips if no suitable athlete is found.
     """
     session = database_session
@@ -60,6 +60,7 @@ def authenticated_client(test_athlete):
 def test_activity_id(authenticated_client, test_athlete):
     """
     Get a real activity ID from the authenticated athlete.
+
     Fetches the most recent activity.
     """
     # Get the most recent activity
@@ -258,12 +259,7 @@ class TestActivitySyncCompatibility:
     def test_full_activity_conversion_pipeline(
         self, authenticated_client, test_activity_id
     ):
-        """
-        Test the complete pipeline of fetching an activity and converting
-        all unit measurements as done in update_ride_basic.
-        """
-        from freezing.sync.data.activity import ActivitySync
-
+        """Test the complete pipeline of fetching an activity and converting all unit measurements as done in update_ride_basic."""
         activity = authenticated_client.get_activity(test_activity_id)
 
         # Simulate the conversions done in update_ride_basic
@@ -340,7 +336,7 @@ class TestActivitySyncCompatibility:
         activity = authenticated_client.get_activity(test_activity_id)
 
         if hasattr(activity, "photos") and activity.photos:
-            logger.info(f"Activity has photos")
+            logger.info("Activity has photos")
             if hasattr(activity.photos, "primary") and activity.photos.primary:
                 primary = activity.photos.primary
                 logger.info(f"  Primary photo: {primary}")
@@ -358,6 +354,7 @@ class TestRateLimiting:
     def test_rate_limit_handling(self, authenticated_client):
         """
         Test that rate limiting is properly configured and works.
+
         This doesn't exhaust the rate limit, just verifies the mechanism exists.
         """
         # Verify the client was created with rate limiting

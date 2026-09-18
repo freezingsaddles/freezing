@@ -106,15 +106,15 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
 
     logging.root.addHandler(ch)
 
-    for l in loggers:
-        if l is logging.root:
-            l.setLevel(logging.DEBUG)
+    for logger in loggers:
+        if logger is logging.root:
+            logger.setLevel(logging.DEBUG)
         else:
-            l.setLevel(logging.INFO)
+            logger.setLevel(logging.INFO)
 
     # The stravalib.attributes logger is very noisy and spits out
-    # WARNING level messages that are not very useful, such as:
-    # "WARNING  [stravalib.attributes.EntityAttribute] Unable to set attribute visibility on entity <Activity id=13209828474 name=None>"
+    # WARNING level messages that are not very useful, such as "Unable to set
+    # attribute visibility on entity <Activity ...>" from EntityAttribute.
     # Silence it except for CRITICAL messages.
     logging.getLogger("stravalib.attributes").setLevel(logging.CRITICAL)
     # stravalib.protocl leaks client_secrets into logs, which is bad in production especially

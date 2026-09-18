@@ -38,18 +38,19 @@ class StravaEntity(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=False)
     name = Column(String(1000), nullable=False)
 
-    def __init__(self, id=None, name=None, **kwargs):
+    # Callers pass id= by keyword, so the parameter keeps the builtin's name.
+    def __init__(self, id=None, name=None, **kwargs):  # noqa: A002
         self.id = id
         self.name = name
         for k, v in kwargs.items():
             try:
                 setattr(self, k, v)
-            except AttributeError:
+            except AttributeError as e:
                 raise AttributeError(
                     "Unable to set attribute {0} on {1}".format(
                         k, self.__class__.__name__
                     )
-                )
+                ) from e
 
     def __repr__(self):
         return "<{0} id={1} name={2!r}>".format(
@@ -58,8 +59,6 @@ class StravaEntity(Base):
 
 
 class Team(StravaEntity):
-    """ """
-
     __tablename__ = "teams"
     athletes = orm.relationship("Athlete", backref="team")
     leaderboard_exclude = Column(Boolean, nullable=False, default=False)
@@ -68,8 +67,6 @@ class Team(StravaEntity):
 
 
 class Athlete(StravaEntity):
-    """ """
-
     __tablename__ = "athletes"
     display_name = Column(String(255), nullable=True)
     team_id = Column(BigInteger, ForeignKey("teams.id", ondelete="set null"))
@@ -84,8 +81,6 @@ class Athlete(StravaEntity):
 
 
 class RideError(StravaEntity):
-    """ """
-
     __tablename__ = "ride_errors"
     athlete_id = Column(
         BigInteger,
@@ -99,8 +94,6 @@ class RideError(StravaEntity):
 
 
 class Ride(StravaEntity):
-    """ """
-
     __tablename__ = "rides"
     athlete_id = Column(
         BigInteger,
@@ -110,8 +103,8 @@ class Ride(StravaEntity):
     )
     description = Column(String(1024), nullable=True)
     elapsed_time = Column(Integer, nullable=False)  # Seconds
-    # in case we want to conver that to a TIME type ... (using time for interval is kinda mysql-specific brokenness, though)
-    # time.strftime('%H:%M:%S', time.gmtime(12345))
+    # in case we want to convert that to a TIME type, time.strftime with time.gmtime
+    # would do it (using time for interval is kinda mysql-specific brokenness, though)
     moving_time = Column(Integer, nullable=False, index=True)  #
     elevation_gain = Column(Integer, nullable=True)  # 270 (feet)
     average_speed = Column(Float)  # mph
@@ -234,15 +227,14 @@ class RidePhoto(Base):
                     warnings.warn(
                         "Unable to get width and height from source=1 image url: {}".format(
                             self.img_l
-                        )
+                        ),
+                        stacklevel=2,
                     )
             else:
                 width, height = (612, 612)
         return (width, height)
 
     primary = Column(Boolean, nullable=False, default=False)
-
-    # upload_date = Column(DateTime, nullable=False, index=True) # 2010-02-28T08:31:35Z
 
     def __repr__(self):
         return "<{} id={} primary={!r}>".format(
@@ -280,8 +272,6 @@ class RideWeather(Base):
 
 
 class Tribe(Base):
-    """ """
-
     __tablename__ = "tribes"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     athlete_id = Column(

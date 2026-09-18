@@ -1,4 +1,4 @@
-"""new streams
+"""New streams.
 
 Revision ID: 65e22ab36882
 Revises: 6cca33764ed5
