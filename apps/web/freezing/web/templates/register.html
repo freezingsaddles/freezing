@@ -302,3 +302,15 @@
         </div>
     {% endif %}
 {% endblock %}
+{% block foot %}
+    {% if step == "club" and not team %}
+        <script>
+            // Joining happens in a Strava tab, so re-check the club on the way back.
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible") {
+                    window.location.replace("/register?step=club&refresh=true");
+                }
+            });
+        </script>
+    {% endif %}
+{% endblock %}
