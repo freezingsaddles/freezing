@@ -231,29 +231,37 @@
             <h3 class="mb-3">
                 <strong>Step 4.</strong> <span>Fill Out the Registration Form</span>
             </h3>
-            <ul>
-                <li>
-                    Now that you've connected your Strava account you can proceed to fill out
-                    the registration form.
-                </li>
-                <li>
-                    The form will ask for your name, email address and
-                    various competition-related details.
-                </li>
-                <li>
-                    This information will be used when we
-                    organize teams or need to contact you.
-                    <ul>
-                        <li>
-                            If you are just playing as a <em>Friend of BAFS</em>, and not participating in the main competition,
-                            then you're already done. You don't need to fill
-                            out the registration form and may <a href="/">return to the home page</a>.
-                        </li>
-                    </ul>
-                </li>
-            </ul>
-            <a class="btn btn-primary mb-1"
-               href="{{ registration_site }}freezing-saddles-2027-registration/?stravanumber={{ athlete.id }}">Registration Form</a>
+            {% if athlete.registered %}
+                <ul>
+                    <li>Congratulations! You have already filled out the registration form.</li>
+                    <li>You can now continue to the next step.</li>
+                </ul>
+                <a class="btn btn-primary mb-1" href="/register?step=complete">Next</a>
+            {% else %}
+                <ul>
+                    <li>
+                        Now that you've connected your Strava account you can proceed to fill out
+                        the registration form.
+                    </li>
+                    <li>
+                        The form will ask for your name, email address and
+                        various competition-related details.
+                    </li>
+                    <li>
+                        This information will be used when we
+                        organize teams or need to contact you.
+                        <ul>
+                            <li>
+                                If you are just playing as a <em>Friend of BAFS</em>, and not participating in the main competition,
+                                then you're already done. You don't need to fill
+                                out the registration form and may <a href="/">return to the home page</a>.
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <a class="btn btn-primary mb-1"
+                   href="{{ registration_site }}freezing-saddles-2027-registration/?stravanumber={{ athlete.id }}">Registration Form</a>
+            {% endif %}
         </div>
     {% elif step == "complete" %}
         <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
