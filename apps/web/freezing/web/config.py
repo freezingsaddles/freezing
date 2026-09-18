@@ -51,6 +51,13 @@ class Config:
     OBSERVER_TEAMS: list[int] = env(
         "OBSERVER_TEAMS", cast=list, subcast=int, default=[]
     )
+    # The home page's registration card shows from here until the competition
+    # starts; unset, it never shows. /register is reachable either way.
+    REGISTRATION_DATE: datetime | None = env(
+        "REGISTRATION_DATE",
+        default="",
+        postprocessor=lambda val: arrow.get(val).datetime if val else None,
+    )
     REGISTRATION_SITE: str = env("REGISTRATION_SITE", "https://freezingsaddles.info/")
     SECRET_KEY = env("SECRET_KEY")
     SQLALCHEMY_URL: str = env("SQLALCHEMY_URL")

@@ -72,6 +72,8 @@ class Athlete(StravaEntity):
     profile_photo = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     expires_at = Column(BigInteger, default=0)
+    # Null, not false, for everyone who registered before this was recorded.
+    registered = Column(Boolean, nullable=True)
 
     rides: DynamicMapped["Ride"] = orm.relationship(
         "Ride", backref="athlete", lazy="dynamic", cascade="all, delete, delete-orphan"
