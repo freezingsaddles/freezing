@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from math import ceil
+from zoneinfo import ZoneInfo
 
 from flask import Blueprint, abort, render_template
-from pytz import timezone, utc
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -14,8 +14,7 @@ blueprint = Blueprint("people", __name__)
 
 
 def get_local_datetime() -> datetime:
-    # Thanks Stack Overflow https://stackoverflow.com/a/25265611/424301
-    return utc.localize(datetime.now(), is_dst=None).astimezone(config.TIMEZONE)
+    return datetime.now(config.TIMEZONE)
 
 
 def get_today() -> datetime:
@@ -45,7 +44,7 @@ def people_list_users():
         for r in u.rides:
             total_rides += 1
             total_dist += r.distance
-            ride_date = r.start_date.replace(tzinfo=timezone(r.timezone)).date()
+            ride_date = r.start_date.replace(tzinfo=ZoneInfo(r.timezone)).date()
             if week_start <= ride_date <= week_end:
                 weekly_dist += r.distance
                 weekly_rides += 1
@@ -88,7 +87,7 @@ def people_show_person(user_id):
     for r in our_user.rides:
         total_rides += 1
         total_dist += r.distance
-        ride_date = r.start_date.replace(tzinfo=timezone(r.timezone)).date()
+        ride_date = r.start_date.replace(tzinfo=ZoneInfo(r.timezone)).date()
         if week_start <= ride_date <= week_end:
             weekly_dist += r.distance
             weekly_rides += 1

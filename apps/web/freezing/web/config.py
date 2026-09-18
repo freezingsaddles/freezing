@@ -2,9 +2,9 @@ import logging
 import os
 from datetime import datetime, timedelta, tzinfo
 from importlib.metadata import version
+from zoneinfo import ZoneInfo
 
 import arrow
-import pytz
 from colorlog import ColoredFormatter
 from envparse import env
 
@@ -67,7 +67,7 @@ class Config:
     TIMEZONE: tzinfo = env(
         "TIMEZONE",
         default="America/New_York",
-        postprocessor=lambda val: pytz.timezone(val),
+        postprocessor=lambda val: ZoneInfo(val),
     )
     VERSION_NUM: str = version("freezing-web")
     VERSION_STRING: str = f"{VERSION_NUM}+{branch}.{commit}.{build_date}"

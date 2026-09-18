@@ -37,7 +37,6 @@ dependencies = [
     "colorlog>=6,<7",
     "envparse>=0.2",
     "marshmallow>=3.18,<5",
-    "pytz>=2024",
 ]
 
 [tool.fawltydeps]

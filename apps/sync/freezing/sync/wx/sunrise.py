@@ -5,8 +5,7 @@ from math import acos, asin, cos
 from math import degrees as deg
 from math import radians as rad
 from math import sin, tan
-
-import pytz
+from zoneinfo import ZoneInfo
 
 
 class Sun:
@@ -138,7 +137,7 @@ class Sun:
 
 if __name__ == "__main__":
     s = Sun(lat=39.45536859, lon=-77.4142634)
-    when = datetime.now(tz=pytz.timezone("America/New_York"))
+    when = datetime.now(tz=ZoneInfo("America/New_York"))
     print(datetime.today())  # noqa: T201
     print(s.sunrise(when))  # noqa: T201
     print(s.sunset(when))  # noqa: T201

@@ -29,7 +29,6 @@ dependencies = [
     "freezing-model",
     "greenstalk>=2.1.1,<3",
     "python-dateutil>=2.9.0,<3",
-    "pytz>=2026.3.post1",
     "requests>=2.33.1,<3",
     "stravalib>=2.4,<3",
 ]

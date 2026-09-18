@@ -1,8 +1,8 @@
 import logging
 import os
 from datetime import tzinfo
+from zoneinfo import ZoneInfo
 
-import pytz
 from colorlog import ColoredFormatter
 from envparse import env
 
@@ -24,7 +24,7 @@ class Config:
     TIMEZONE: tzinfo = env(
         "TIMEZONE",
         default="America/New_York",
-        postprocessor=lambda val: pytz.timezone(val),
+        postprocessor=lambda val: ZoneInfo(val),
     )
 
 
