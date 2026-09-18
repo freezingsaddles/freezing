@@ -57,10 +57,16 @@ Pull requests run lint, tests, a Bandit scan and a build of all four images
 without pushing; a pull request that touches `apps/freezebot` also runs its
 sbt tests.
 
-A push to `main` builds the images for whichever apps changed (a change under
-`packages/` or to the lock file rebuilds them all), pushes them to Docker Hub
-and runs the deploy job in the `production` environment. Until the cut-over the
-images are tagged `main` rather than `latest`, and the `docker compose` lines
-in the deploy script are commented out, so production still deploys from the
-individual repositories. Cutting over means changing the tag to `latest` and
-uncommenting those lines in `.github/workflows/deploy.yml`.
+A push to `main` builds the images for whichever apps changed, pushes them to
+Docker Hub tagged `main`, and deploys them in the `production` environment: the box's `.env` pins `FREEZING_<APP>_TAG=main` for
+all four services, so `main` is what production runs.
+
+Everything the apps share counts as a change to all four: `packages/`,
+`pyproject.toml`, `uv.lock`, `.python-version`, `.dockerignore`,
+`deploy/docker-compose.yml` and the two workflows that build and deploy.
+
+The deploy step fast-forwards the sparse clone at `/opt/freezing`, whose
+`deploy/` directory the box reaches through the `/opt/compose` symlink, then
+pulls and brings up the changed services. It finishes by spidering
+<https://freezingsaddles.org> as a smoke test. The retired per-app repositories
+still own the `latest` tags; nothing pulls those any more.
