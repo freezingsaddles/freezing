@@ -200,9 +200,17 @@ def index():
 
     athlete_id = session.get("athlete_id")
     yourself = _rider_stats(athlete_id) if athlete_id else _non_rider_stats()
+    athlete = meta.scoped_session().get(Athlete, athlete_id) if athlete_id else None
+
+    registration_open = (
+        config.REGISTRATION_DATE is not None
+        and config.REGISTRATION_DATE <= now_tz < config.START_DATE
+    )
 
     return render_template(
         "index.html",
+        show_registration=registration_open or "register" in request.args,
+        registered=bool(athlete and athlete.registered),
         year=config.START_DATE.year,
         winter_is_coming=post_autumnal_equinox,
         team_count=len(config.COMPETITION_TEAMS),
@@ -429,6 +437,11 @@ def register():
         if athlete_id
         else None
     )
+
+    # The form lives on the Wordpress site, which redirects back to this step.
+    if step == "complete" and athlete and not athlete.registered:
+        log.info(f"Athlete {athlete.id} ({athlete.name}) completed registration")
+        athlete.registered = True
 
     now_tz = datetime.now(config.START_DATE.tzinfo)
     return render_template(
