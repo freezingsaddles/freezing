@@ -72,7 +72,7 @@ class Config:
     )
     VERSION_NUM: str = version("freezing-web")
     VERSION_STRING: str = f"{VERSION_NUM}+{branch}.{commit}.{build_date}"
-    SEND_FILE_MAX_AGE_DEFAULT: int = (
+    SEND_FILE_MAX_AGE_DEFAULT: int | None = (
         None
         if ENVIRONMENT == "localdev"
         else 84600  # let the browser cache static files for 24 hours
@@ -94,6 +94,7 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
     ch = logging.StreamHandler()
     ch.setLevel(loglevel)
 
+    formatter: logging.Formatter
     if color:
         formatter = ColoredFormatter(
             "%(log_color)s%(levelname)-8s%(reset)s [%(name)s] %(message)s",

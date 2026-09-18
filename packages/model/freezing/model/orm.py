@@ -1,5 +1,6 @@
 import re
 import warnings
+from typing import List, Optional
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
@@ -15,7 +16,7 @@ from sqlalchemy import (
     Time,
     orm,
 )
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DynamicMapped, Mapped, declarative_base
 
 from . import meta, satypes
 
@@ -60,7 +61,7 @@ class StravaEntity(Base):
 
 class Team(StravaEntity):
     __tablename__ = "teams"
-    athletes = orm.relationship("Athlete", backref="team")
+    athletes: Mapped[List["Athlete"]] = orm.relationship("Athlete", backref="team")
     leaderboard_exclude = Column(Boolean, nullable=False, default=False)
     cover_photo = Column(String(255), nullable=True)
     profile_photo = Column(String(255), nullable=True)
@@ -75,7 +76,7 @@ class Athlete(StravaEntity):
     refresh_token = Column(String(255), nullable=True)
     expires_at = Column(BigInteger, default=0)
 
-    rides = orm.relationship(
+    rides: DynamicMapped["Ride"] = orm.relationship(
         "Ride", backref="athlete", lazy="dynamic", cascade="all, delete, delete-orphan"
     )
 
@@ -120,19 +121,19 @@ class Ride(StravaEntity):
 
     timezone = Column(String(255), nullable=True)
 
-    geo = orm.relationship(
+    geo: Mapped[Optional["RideGeo"]] = orm.relationship(
         "RideGeo", uselist=False, backref="ride", cascade="all, delete, delete-orphan"
     )
-    weather = orm.relationship(
+    weather: Mapped[Optional["RideWeather"]] = orm.relationship(
         "RideWeather",
         uselist=False,
         backref="ride",
         cascade="all, delete, delete-orphan",
     )
-    photos = orm.relationship(
+    photos: Mapped[List["RidePhoto"]] = orm.relationship(
         "RidePhoto", backref="ride", cascade="all, delete, delete-orphan"
     )
-    track = orm.relationship(
+    track: Mapped[Optional["RideTrack"]] = orm.relationship(
         "RideTrack", uselist=False, backref="ride", cascade="all, delete, delete-orphan"
     )
 

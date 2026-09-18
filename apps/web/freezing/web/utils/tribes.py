@@ -15,7 +15,7 @@ from freezing.web.exc import ObjectNotFound
 class TribalGroup(BaseMessage):
     name = None
     id = None
-    tribes: List[str] = None
+    tribes: List[str] | None = None
 
 
 class TribalGroupSchema(BaseSchema):
@@ -27,7 +27,7 @@ class TribalGroupSchema(BaseSchema):
 
 
 class TribalGroups(BaseMessage):
-    tribal_groups: List[TribalGroup] = None
+    tribal_groups: List[TribalGroup] | None = None
 
 
 class TribalGroupsSchema(BaseSchema):
@@ -45,7 +45,10 @@ def load_tribes() -> List[TribalGroup]:
         doc = yaml.safe_load(fp)
 
     schema = TribalGroupsSchema()
-    groups = schema.load(doc)
+    groups: TribalGroups = schema.load(doc)
+
+    if groups.tribal_groups is None:
+        raise ObjectNotFound("No tribal_groups in tribes definition {}".format(path))
 
     return groups.tribal_groups
 

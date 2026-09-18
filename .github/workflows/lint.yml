@@ -27,6 +27,8 @@ jobs:
         run: uv run --no-sync isort --check-only --diff .
       - name: flake8
         run: uv run --no-sync flake8 .
+      - name: mypy
+        run: uv run --no-sync mypy
       - name: fawltydeps
         run: |
           for member in packages/model packages/common apps/web apps/sync apps/nq; do

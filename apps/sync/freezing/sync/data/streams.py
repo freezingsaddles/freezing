@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from geoalchemy2.elements import WKTElement
 from sqlalchemy import and_
@@ -23,9 +23,9 @@ class StreamSync(BaseSync):
 
     def sync_streams(
         self,
-        athlete_id: int = None,
+        athlete_id: Optional[int] = None,
         rewrite: bool = False,
-        max_records: int = None,
+        max_records: Optional[int] = None,
         use_cache: bool = True,
         only_cache: bool = False,
     ):
@@ -137,9 +137,13 @@ class StreamSync(BaseSync):
         """
         session = meta.scoped_session()
         try:
-            streams_dict: Dict[str, List[Stream]] = {s.type: s for s in streams}
+            streams_dict: Dict[str, Stream] = {
+                s.type: s for s in streams if s.type is not None
+            }
 
-            lonlat_points = [(lon, lat) for (lat, lon) in streams_dict["latlng"].data]
+            lonlat_points = [
+                (lon, lat) for (lat, lon) in streams_dict["latlng"].data or []
+            ]
 
             # mysql does not admit the possibility of one point in a line
             if len(lonlat_points) < 2:

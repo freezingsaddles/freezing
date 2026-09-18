@@ -46,6 +46,23 @@ dev = [
 # check cannot parse that on 3.10.
 target-version = ["py310"]
 
+[tool.mypy]
+python_version = "3.10"
+# The packages; `mypy` with no arguments checks these, as CI does.
+files = [
+    "packages/model/freezing",
+    "packages/common/freezing",
+    "apps/web/freezing",
+    "apps/sync/freezing",
+    "apps/nq/freezing",
+]
+# The ORM is declarative_base() with Column attributes, which mypy reads only
+# with SQLAlchemy's plugin (deprecated in 2.0 in favour of Mapped[] annotations,
+# still shipped).
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+# Libraries without type information are Any rather than errors.
+ignore_missing_imports = true
+
 [tool.isort]
 profile = "black"
 known_first_party = ["freezing"]

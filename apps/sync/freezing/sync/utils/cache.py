@@ -2,14 +2,17 @@ import abc
 import json
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Generic, List, Optional, TypeVar
 
 from stravalib.client import Client
 from stravalib.exc import ObjectNotFound
-from stravalib.model import BoundClientEntity, DetailedActivity, Stream
+from stravalib.model import DetailedActivity, Stream
+
+# The object a fetcher builds from the cached JSON.
+T = TypeVar("T")
 
 
-class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
+class CachingAthleteObjectFetcher(Generic[T], metaclass=abc.ABCMeta):
     @property
     @abc.abstractmethod
     def object_type(self):
@@ -55,7 +58,9 @@ class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
 
         return cache_path
 
-    def get_cached_object_json(self, athlete_id: int, object_id: int) -> Dict[str, Any]:
+    def get_cached_object_json(
+        self, athlete_id: int, object_id: int
+    ) -> Optional[Dict[str, Any]]:
         """Retrieve raw object from cached directory."""
         directory = self.cache_dir(athlete_id)
 
@@ -84,8 +89,7 @@ class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
         object_id: int,
         use_cache: bool = True,
         only_cache: bool = False,
-        # ):
-    ) -> Optional[BoundClientEntity]:
+    ) -> Optional[T]:
         pass
 
     def retrieve_object_json(
@@ -160,7 +164,7 @@ class CachingAthleteObjectFetcher(metaclass=abc.ABCMeta):
         return object_json
 
 
-class CachingActivityFetcher(CachingAthleteObjectFetcher):
+class CachingActivityFetcher(CachingAthleteObjectFetcher[DetailedActivity]):
     object_type = "activity"
 
     def download_object_json(
@@ -197,7 +201,7 @@ class CachingActivityFetcher(CachingAthleteObjectFetcher):
         return None
 
 
-class CachingStreamFetcher(CachingAthleteObjectFetcher):
+class CachingStreamFetcher(CachingAthleteObjectFetcher[List[Stream]]):
     object_type = "streams"
 
     def download_object_json(

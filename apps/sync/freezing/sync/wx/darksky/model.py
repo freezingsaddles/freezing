@@ -38,7 +38,7 @@ class Forecast:
     latitude: float
     longitude: float
     daily: Day
-    hourly: [Hour]
+    hourly: list[Hour]
 
     def __init__(self, json):
         self.timezone = timezone(json["timezone"])

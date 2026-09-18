@@ -1,7 +1,9 @@
+from typing import Any
+
 from marshmallow import Schema, fields
 
 # shortcut
-optional = {"allow_none": True, "required": False}
+optional: dict[str, Any] = {"allow_none": True, "required": False}
 
 
 class AthleteSchema(Schema):
