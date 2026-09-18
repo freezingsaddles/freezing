@@ -59,7 +59,7 @@ class WebhookResource:
 
         # We only care about activities
         if result.object_type is not ObjectType.activity:
-            log.info("Ignoring non-activity webhook: {}".format(req.media))
+            log.info(f"Ignoring non-activity webhook: {req.media}")
         else:
             message = ActivityUpdate()
             message.athlete_id = result.owner_id
@@ -70,5 +70,5 @@ class WebhookResource:
 
             json_data = ActivityUpdateSchema().dump(message)
 
-            log.info("Publishing activity-update: {}".format(message))
+            log.info(f"Publishing activity-update: {message}")
             self.publisher.publish_message(json_data, dest=DefinedTubes.activity_update)

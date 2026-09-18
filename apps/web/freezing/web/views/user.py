@@ -44,7 +44,7 @@ def ride_refetch_photos():
         .one()
     )
     ride.photos_fetched = False
-    logging.info("Marking photos to be refetched for ride {}".format(ride))
+    logging.info(f"Marking photos to be refetched for ride {ride}")
     meta.scoped_session().commit()
     return jsonify(success=True)  # I don't really have anything useful to spit back.
 

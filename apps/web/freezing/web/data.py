@@ -1,7 +1,5 @@
 """Functions for interacting with the datastore and the strava apis."""
 
-from __future__ import division, unicode_literals
-
 from freezing.common import teams
 from freezing.model import meta
 from freezing.model.orm import Athlete
@@ -19,7 +17,7 @@ def register_athlete(strava_athlete, token_dict):
     if athlete is None:
         athlete = Athlete()
     athlete.id = strava_athlete.id
-    athlete.name = "{0} {1}".format(
+    athlete.name = "{} {}".format(
         strava_athlete.firstname, strava_athlete.lastname
     ).strip()
     # Temporary; we will update this in disambiguation phase.  (This isn't optimal; needs to be
@@ -38,7 +36,7 @@ def register_athlete(strava_athlete, token_dict):
         if strava_athlete.lastname is None:
             athlete.display_name = strava_athlete.firstname
         else:
-            athlete.display_name = "{0} {1}".format(
+            athlete.display_name = "{} {}".format(
                 strava_athlete.firstname.strip(),
                 strava_athlete.lastname.strip(),
             )

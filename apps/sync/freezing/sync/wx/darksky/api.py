@@ -71,7 +71,7 @@ class HistoDarkSky:
         if os.path.exists(path):
             self.logger.debug(f"Cache hit for {path}")
             try:
-                with open(path, "r") as file:
+                with open(path) as file:
                     return load(file)
             except Exception:
                 self.logger.warning(f"Error reading cache file {path}")

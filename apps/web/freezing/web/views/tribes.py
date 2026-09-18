@@ -69,7 +69,7 @@ def leaderboard():
 @blueprint.route("/individual")
 def individual():
     tribal_groups = load_tribes()
-    cur_group = next((group for group in tribal_groups if request.args.get(group.id)))
+    cur_group = next(group for group in tribal_groups if request.args.get(group.id))
     cur_tribe = request.args.get(cur_group.id)
     athlete_id = session.get("athlete_id")
 

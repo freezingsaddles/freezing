@@ -2,7 +2,7 @@ import abc
 import json
 import logging
 import os
-from typing import Any, Dict, Generic, List, TypeVar
+from typing import Any, Generic, TypeVar
 
 from stravalib.client import Client
 from stravalib.exc import ObjectNotFound
@@ -27,7 +27,7 @@ class CachingAthleteObjectFetcher(Generic[T], metaclass=abc.ABCMeta):
         self.client = client
 
     def filename(self, *, object_id: int):
-        return "{}_{}.json".format(object_id, self.object_type)
+        return f"{object_id}_{self.object_type}.json"
 
     def cache_dir(self, athlete_id: int) -> str:
         """Get the cache directory for specific athlete.
@@ -42,7 +42,7 @@ class CachingAthleteObjectFetcher(Generic[T], metaclass=abc.ABCMeta):
         return directory
 
     def cache_object_json(
-        self, *, athlete_id: int, object_id: int, object_json: Dict[str, Any]
+        self, *, athlete_id: int, object_id: int, object_json: dict[str, Any]
     ) -> str:
         """Write object (e.g. activity, stream) to cache dir.
 
@@ -60,7 +60,7 @@ class CachingAthleteObjectFetcher(Generic[T], metaclass=abc.ABCMeta):
 
     def get_cached_object_json(
         self, athlete_id: int, object_id: int
-    ) -> Dict[str, Any] | None:
+    ) -> dict[str, Any] | None:
         """Retrieve raw object from cached directory."""
         directory = self.cache_dir(athlete_id)
 
@@ -68,14 +68,14 @@ class CachingAthleteObjectFetcher(Generic[T], metaclass=abc.ABCMeta):
         cache_path = os.path.join(directory, object_fname)
 
         if os.path.exists(cache_path):
-            with open(cache_path, "r") as fp:
+            with open(cache_path) as fp:
                 return json.load(fp)
         return None
 
     @abc.abstractmethod
     def download_object_json(
         self, *, athlete_id: int, object_id: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Download object json.
 
         :return: The object json structure.
@@ -137,13 +137,13 @@ class CachingAthleteObjectFetcher(Generic[T], metaclass=abc.ABCMeta):
             )
 
             try:
-                self.logger.info("Caching {} {}".format(self.object_type, object_id))
+                self.logger.info(f"Caching {self.object_type} {object_id}")
                 self.cache_object_json(
                     athlete_id=athlete_id, object_id=object_id, object_json=object_json
                 )
             except ObjectNotFound:
                 self.logger.debug(
-                    "{} not found (ignoring): {}".format(self.object_type, object_id)
+                    f"{self.object_type} not found (ignoring): {object_id}"
                 )
                 return None
             except Exception:
@@ -169,7 +169,7 @@ class CachingActivityFetcher(CachingAthleteObjectFetcher[DetailedActivity]):
 
     def download_object_json(
         self, *, athlete_id: int, object_id: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self.client.protocol.get(
             "/activities/{id}", id=object_id, include_all_efforts=True
         )
@@ -201,12 +201,12 @@ class CachingActivityFetcher(CachingAthleteObjectFetcher[DetailedActivity]):
         return None
 
 
-class CachingStreamFetcher(CachingAthleteObjectFetcher[List[Stream]]):
+class CachingStreamFetcher(CachingAthleteObjectFetcher[list[Stream]]):
     object_type = "streams"
 
     def download_object_json(
         self, *, athlete_id: int, object_id: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self.client.protocol.get(
             "/activities/{id}/streams/{types}".format(
                 id=object_id, types="latlng,time,altitude"
@@ -221,7 +221,7 @@ class CachingStreamFetcher(CachingAthleteObjectFetcher[List[Stream]]):
         object_id: int,
         use_cache: bool = True,
         only_cache: bool = False,
-    ) -> List[Stream] | None:
+    ) -> list[Stream] | None:
         """Fetch activity and return it.
 
         :param athlete_id:

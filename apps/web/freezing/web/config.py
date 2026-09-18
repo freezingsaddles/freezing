@@ -2,7 +2,6 @@ import logging
 import os
 from datetime import datetime, timedelta, tzinfo
 from importlib.metadata import version
-from typing import List
 
 import arrow
 import pytz
@@ -29,7 +28,7 @@ class Config:
     BEANSTALKD_HOST: str = env("BEANSTALKD_HOST", default="localhost")
     BEANSTALKD_PORT: str = env("BEANSTALKD_PORT", cast=int, default=11300)
     BIND_INTERFACE: str = env("BIND_INTERFACE", default="127.0.0.1")
-    COMPETITION_TEAMS: List[int] = env("TEAMS", cast=list, subcast=int, default=[])
+    COMPETITION_TEAMS: list[int] = env("TEAMS", cast=list, subcast=int, default=[])
     COMPETITION_TITLE: str = env("COMPETITION_TITLE", default="Freezing Saddles")
     DEBUG: bool = env("DEBUG", cast=bool, default=False)
     END_DATE: datetime = env(
@@ -49,7 +48,7 @@ class Config:
         "LEADERBOARDS_DIR", default=os.path.join(_basedir, "leaderboards")
     )
     MAIN_TEAM: int = env("MAIN_TEAM", cast=int)
-    OBSERVER_TEAMS: List[int] = env(
+    OBSERVER_TEAMS: list[int] = env(
         "OBSERVER_TEAMS", cast=list, subcast=int, default=[]
     )
     REGISTRATION_SITE: str = env("REGISTRATION_SITE", "https://freezingsaddles.info/")

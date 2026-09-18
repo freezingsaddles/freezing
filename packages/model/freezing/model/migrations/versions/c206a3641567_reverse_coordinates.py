@@ -18,7 +18,7 @@ _point_rx = re.compile("^POINT\\((.+)\\)$")
 
 
 def point_wkt(lon, lat):
-    return "POINT({lon} {lat})".format(lon=lon, lat=lat)
+    return f"POINT({lon} {lat})"
 
 
 def parse_point_wkt(wkt):

@@ -55,7 +55,7 @@ custom_tag_pages = {
 def tag_page(tag):
     return next(
         (page for prefix, page in custom_tag_pages.items() if tag.startswith(prefix)),
-        "hashtag/{}".format(tag),
+        f"hashtag/{tag}",
     )
 
 
@@ -170,7 +170,7 @@ def index():
                 coalesce(sum(R.moving_time),0) as moving_time,
                 coalesce(sum(R.distance),0) as distance
             from rides R
-            where date(CONVERT_TZ(R.start_date, R.timezone,'{0}')) >= '{1}'
+            where date(CONVERT_TZ(R.start_date, R.timezone,'{}')) >= '{}'
             ;
         """.format(config.TIMEZONE, today.date()))
     today_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
@@ -515,7 +515,7 @@ def authorization():
         code = request.args.get("code")
         scope = request.args.get("scope")
         state = request.args.get("state")
-        log.info("Auth code: {}, scope: {}, state: {}".format(code, scope, state))
+        log.info(f"Auth code: {code}, scope: {scope}, state: {state}")
         client = Client()
         token_dict = client.exchange_code_for_token(
             client_id=config.STRAVA_CLIENT_ID,
@@ -555,7 +555,7 @@ def authorization():
     # Thanks https://stackoverflow.com/a/32926295/424301 for the hint on tzinfo aware compares
     after_competition_start = datetime.now(config.TIMEZONE) > config.START_DATE
     if message:
-        log.info("Authorization message: {}".format(message))
+        log.info(f"Authorization message: {message}")
 
     if state == "register":
         return redirect(url_for(".register", step="club"))
@@ -581,7 +581,7 @@ def webhook_challenge():
         k: request.args.get(k)
         for k in ("hub.challenge", "hub.mode", "hub.verify_token")
     }
-    log.info("Webhook challenge: {}".format(strava_request))
+    log.info(f"Webhook challenge: {strava_request}")
     challenge_resp = client.handle_subscription_callback(
         strava_request, verify_token=config.STRAVA_VERIFY_TOKEN
     )
@@ -590,5 +590,5 @@ def webhook_challenge():
 
 @blueprint.route("/webhook", methods=["POST"])
 def webhook_activity():
-    log.info("Activity webhook: {}".format(request.json))
+    log.info(f"Activity webhook: {request.json}")
     return jsonify()

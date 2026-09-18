@@ -33,7 +33,7 @@ def index():
     offset = page_size * (page - 1)
     limit = page_size
 
-    log.debug("Page = {0}, offset={1}, limit={2}".format(page, offset, limit))
+    log.debug(f"Page = {page}, offset={offset}, limit={limit}")
 
     total_q = (
         meta.scoped_session()

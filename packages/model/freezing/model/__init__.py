@@ -110,7 +110,7 @@ def init_model(sqlalchemy_url: str, drop: bool = False, check_version: bool = Tr
             else:
                 if latest != installed:
                     log.info(
-                        "Installed database ({0}) does not match latest available ({1}). (UPGRADING)".format(
+                        "Installed database ({}) does not match latest available ({}). (UPGRADING)".format(
                             installed, latest
                         ),
                         UserWarning,
@@ -128,7 +128,7 @@ class CreateView(Executable, ClauseElement):
 
 @compiles(CreateView, "mysql")
 def visit_create_view(element, compiler, **kw):
-    return "CREATE VIEW IF NOT EXISTS %s AS %s" % (
+    return "CREATE VIEW IF NOT EXISTS {} AS {}".format(
         element.name,
         compiler.process(element.select, literal_binds=True),
     )
@@ -158,7 +158,7 @@ def create_supplemental_db_objects(engine: Engine):
               (sum(R.distance) * sum(R.distance)))
             else 65 + sum(R.distance) - 10
           end as points,
-          date(CONVERT_TZ(R.start_date, R.timezone,'{0}')) as ride_date
+          date(CONVERT_TZ(R.start_date, R.timezone,'{}')) as ride_date
         from
           rides R join athletes A on A.id = R.athlete_id
         group by

@@ -25,12 +25,8 @@ class StravaClientForAthlete(Client):
             athlete_id = athlete
             athlete = meta.scoped_session().query(Athlete).get(athlete_id)
             if not athlete:
-                raise ValueError(
-                    "Athlete ID does not exist in database: {}".format(athlete_id)
-                )
-        super(StravaClientForAthlete, self).__init__(
-            access_token=athlete.access_token, rate_limit_requests=True
-        )
+                raise ValueError(f"Athlete ID does not exist in database: {athlete_id}")
+        super().__init__(access_token=athlete.access_token, rate_limit_requests=True)
         self.refresh_athlete_access_token(athlete)
 
     def refresh_athlete_access_token(self, athlete: Athlete):
@@ -57,9 +53,7 @@ class StravaClientForAthlete(Client):
             # https://developers.strava.com/docs/oauth-updates/#migration-instructions
             refresh_token = athlete.access_token
         else:
-            raise ValueError(
-                "athlete {} had no access or refresh token".format(athlete.id)
-            )
+            raise ValueError(f"athlete {athlete.id} had no access or refresh token")
         if refresh_token:
             self.logger.info("saving refresh token for athlete %s", athlete.id)
             token_dict = super().refresh_access_token(

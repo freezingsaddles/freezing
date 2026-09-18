@@ -8,7 +8,7 @@ LonLat = namedtuple("LonLat", ["lon", "lat"])
 
 
 def point_wkt(lon, lat):
-    return "POINT({lon} {lat})".format(lon=lon, lat=lat)
+    return f"POINT({lon} {lat})"
 
 
 def parse_point_wkt(wkt):
@@ -30,5 +30,5 @@ def parse_linestring(wkt):
 
 
 def linestring_wkt(points):
-    wkt_dims = ["{} {}".format(lon, lat) for (lon, lat) in points]
+    wkt_dims = [f"{lon} {lat}" for (lon, lat) in points]
     return "LINESTRING({})".format(", ".join(wkt_dims))

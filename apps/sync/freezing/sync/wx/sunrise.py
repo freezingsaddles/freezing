@@ -1,7 +1,5 @@
 """Adapted from http://michelanders.blogspot.com/2010/12/calulating-sunrise-and-sunset-in-python.html."""
 
-from __future__ import division
-
 from datetime import datetime, time
 from math import acos, asin, cos
 from math import degrees as deg
@@ -102,7 +100,7 @@ class Sun:
             23
             + (
                 26
-                + ((21.448 - Jcent * (46.815 + Jcent * (0.00059 - Jcent * 0.001813))))
+                + (21.448 - Jcent * (46.815 + Jcent * (0.00059 - Jcent * 0.001813)))
                 / 60
             )
             / 60

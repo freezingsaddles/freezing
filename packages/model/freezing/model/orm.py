@@ -1,6 +1,5 @@
 import re
 import warnings
-from typing import List
 
 from geoalchemy2 import Geometry
 from sqlalchemy import (
@@ -26,8 +25,6 @@ Base = declarative_base(metadata=meta.metadata)
 class _SqlView:
     """Empty class used to indicate that this is a SQL View and not to be created."""
 
-    pass
-
 
 class StravaEntity(Base):
     __abstract__ = True
@@ -48,20 +45,20 @@ class StravaEntity(Base):
                 setattr(self, k, v)
             except AttributeError as e:
                 raise AttributeError(
-                    "Unable to set attribute {0} on {1}".format(
+                    "Unable to set attribute {} on {}".format(
                         k, self.__class__.__name__
                     )
                 ) from e
 
     def __repr__(self):
-        return "<{0} id={1} name={2!r}>".format(
+        return "<{} id={} name={!r}>".format(
             self.__class__.__name__, self.id, self.name
         )
 
 
 class Team(StravaEntity):
     __tablename__ = "teams"
-    athletes: Mapped[List["Athlete"]] = orm.relationship("Athlete", backref="team")
+    athletes: Mapped[list["Athlete"]] = orm.relationship("Athlete", backref="team")
     leaderboard_exclude = Column(Boolean, nullable=False, default=False)
     cover_photo = Column(String(255), nullable=True)
     profile_photo = Column(String(255), nullable=True)
@@ -130,7 +127,7 @@ class Ride(StravaEntity):
         backref="ride",
         cascade="all, delete, delete-orphan",
     )
-    photos: Mapped[List["RidePhoto"]] = orm.relationship(
+    photos: Mapped[list["RidePhoto"]] = orm.relationship(
         "RidePhoto", backref="ride", cascade="all, delete, delete-orphan"
     )
     track: Mapped["RideTrack | None"] = orm.relationship(
@@ -161,7 +158,7 @@ class RideGeo(Base):
     end_geo = Column(Geometry("POINT"), nullable=False)
 
     def __repr__(self):
-        return "<{0} ride_id={1} start={2}>".format(
+        return "<{} ride_id={} start={}>".format(
             self.__class__.__name__, self.ride_id, self.start_geo
         )
 
@@ -180,7 +177,7 @@ class RideTrack(Base):
     time_stream = Column(satypes.JSONEncodedText, nullable=True)
 
     def __repr__(self):
-        return "<{0} ride_id={1}>".format(self.__class__.__name__, self.ride_id)
+        return f"<{self.__class__.__name__} ride_id={self.ride_id}>"
 
 
 class RideEffort(Base):
@@ -269,7 +266,7 @@ class RideWeather(Base):
     sunset = Column(Time, nullable=True)
 
     def __repr__(self):
-        return "<{0} ride_id={1}>".format(self.__class__.__name__, self.ride_id)
+        return f"<{self.__class__.__name__} ride_id={self.ride_id}>"
 
 
 class Tribe(Base):
@@ -285,6 +282,6 @@ class Tribe(Base):
     tribe_name = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "<{0} id={1} tribe_name={2}>".format(
+        return "<{} id={} tribe_name={}>".format(
             self.__class__.__name__, self.id, self.tribe_name
         )
