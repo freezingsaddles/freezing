@@ -69,6 +69,20 @@ class Config:
 config = Config()
 
 
+class _WithoutAutoRefreshWarning(logging.Filter):
+    """Drop stravalib's complaint that we did not hand it our refresh token.
+
+    We withhold it deliberately; see StravaClientForAthlete. stravalib warns
+    once per API call, through the module-level logging.warning, so the record
+    arrives on the root logger and only its call site identifies it.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not (
+            record.module == "protocol" and record.funcName == "refresh_expired_token"
+        )
+
+
 def init_logging(loglevel: int = logging.INFO, color: bool = False):
     """
     Initialize the logging subsystem and create a logger for this class, using passed in optparse options.
@@ -97,6 +111,7 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
         formatter = logging.Formatter("%(levelname)-8s [%(name)s] %(message)s")
 
     ch.setFormatter(formatter)
+    ch.addFilter(_WithoutAutoRefreshWarning())
 
     loggers = [
         logging.getLogger("freezing"),
