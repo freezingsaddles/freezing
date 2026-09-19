@@ -28,6 +28,7 @@ from freezing.sync.utils import wktutils
 from freezing.sync.utils.cache import CachingActivityFetcher
 
 from . import BaseSync, StravaClientForAthlete
+from .photos import schedule_fetch, schedule_one_more_fetch
 
 # Amount of activity overlap to permit
 _overlap_ignore = timedelta(minutes=3)
@@ -163,7 +164,7 @@ class ActivitySync(BaseSync):
         ride.timezone = getattr(tz, "key", None) or str(tz)
 
         if ride.photos_fetched is None and strava_activity.total_photo_count:
-            ride.photos_fetched = False
+            schedule_fetch(ride)
 
         # # Short-circuit things that might result in more obscure db errors later.
         if ride.elapsed_time is None:
@@ -417,7 +418,12 @@ class ActivitySync(BaseSync):
             )
 
     def fetch_and_store_activity_detail(
-        self, *, athlete_id: int, activity_id: int, use_cache: bool = False
+        self,
+        *,
+        athlete_id: int,
+        activity_id: int,
+        use_cache: bool = False,
+        photos_changed: bool = False,
     ):
         with meta.transaction_context() as session:
             self.logger.info(
@@ -461,6 +467,10 @@ class ActivitySync(BaseSync):
 
                 ride = self.write_ride(strava_activity)
                 self.update_ride_complete(strava_activity=strava_activity, ride=ride)
+                if photos_changed:
+                    # The rider is editing the ride, and captions land minutes
+                    # later, so go back to looking every couple of minutes.
+                    schedule_fetch(ride)
             except ObjectNotFound as e:
                 raise ActivityNotFound(
                     f"Activity {activity_id} not found, ignoring."
@@ -525,12 +535,10 @@ class ActivitySync(BaseSync):
             )
             raise
         ride.detail_fetched = True
-        # We don't get events when photo descriptions are updated, so instead
-        # every time we fetch the details we schedule a photo fetch. This will
-        # trigger alongside our automatic ride-effort re-sync. We don't gate
-        # this on activity.total_photo_count because if someone deletes their
-        # photos in Strava we probably want to resync and delete our photos.
-        ride.photos_fetched = False
+        # The effort re-sync runs long after the photo backoff has given up, so
+        # take the chance to look once more. Not gated on total_photo_count
+        # because photos deleted in Strava should be deleted here too.
+        schedule_one_more_fetch(ride)
 
     def check_activity(
         self,
@@ -786,7 +794,7 @@ class ActivitySync(BaseSync):
 
                 # update_ride_basic will do this anyway
                 if activity.total_photo_count:
-                    ride.photos_fetched = False
+                    schedule_fetch(ride)
 
                 session.add(ride)
 

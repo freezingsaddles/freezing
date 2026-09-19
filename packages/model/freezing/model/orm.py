@@ -152,7 +152,11 @@ class Ride(StravaEntity):
         "RideTrack", uselist=False, backref="ride", cascade="all, delete, delete-orphan"
     )
 
-    photos_fetched = Column(Boolean, default=None, nullable=True)
+    # How many times we have fetched this ride's photos. NULL means the ride has
+    # no photos to fetch; the count drives the interval to the next fetch.
+    photos_fetched = Column(Integer, default=None, nullable=True)
+    # When the next photo fetch falls due. NULL means we have stopped looking.
+    photos_resync_date = Column(DateTime, nullable=True, index=True)
     track_fetched = Column(Boolean, default=None, nullable=True)
     detail_fetched = Column(Boolean, default=False, nullable=False)
     resync_count = Column(Integer, default=0, nullable=False)
