@@ -54,13 +54,24 @@ docker exec "$NGINX_CONTAINER" sh -eu -c '
         fi
     done
     for ext in crt key; do
+        # Resolve to the file itself. $host.$ext is a link the companion keeps
+        # for as long as that vhost has a container, and it prunes it while the
+        # container is being replaced -- which is exactly when the catch-all
+        # server needs this to resolve. Pointing at the link leaves default.$ext
+        # dangling during a deploy, docker-gen then drops the catch-all, and the
+        # handshake falls to whichever vhost is left.
+        target=$(readlink -f "$host.$ext" || true)
+        if [ -z "$target" ] || [ ! -f "$target" ]; then
+            echo "link-default-cert: $host.$ext does not resolve to a file, skipping" >&2
+            exit 0
+        fi
         # Whatever was here before was the self-signed certificate the browser
         # complained about. Keep the first one aside rather than destroying it.
         if [ -e "default.$ext" ] && [ ! -L "default.$ext" ] && [ ! -e "default.$ext.orig" ]; then
             mv "default.$ext" "default.$ext.orig"
             echo "link-default-cert: kept the previous default.$ext as default.$ext.orig"
         fi
-        ln -sfn "$host.$ext" "default.$ext"
+        ln -sfn "$target" "default.$ext"
+        echo "link-default-cert: default.$ext -> $target"
     done
-    echo "link-default-cert: default.crt and default.key -> $host"
 ' sh "$host"
