@@ -11,6 +11,7 @@ from freezing.sync.config import config, init_logging
 from freezing.sync.data.activity import ActivitySync
 from freezing.sync.data.athlete import AthleteSync
 from freezing.sync.data.photos import POLL_INTERVAL, PhotoSync
+from freezing.sync.data.streams import StreamSync
 from freezing.sync.data.weather import WeatherSync
 from freezing.sync.exc import CompetitionOver
 from freezing.sync.subscribe import ActivityUpdateSubscriber
@@ -40,6 +41,7 @@ def main():
     weather_sync = WeatherSync()
     athlete_sync = AthleteSync()
     photo_sync = PhotoSync()
+    stream_sync = StreamSync()
 
     # Every hour run a sync on the activities for athletes
     # falling into the specified segment (those whose athlete_id modulo
@@ -65,6 +67,11 @@ def main():
     # Photo sync asks for one too when a ride has photos but none of them is
     # the primary.
     scheduler.add_job(activity_sync.sync_rides_detail, "interval", minutes=5)
+
+    # Fetch the GPS tracks of rides that have none. Strava serves streams
+    # late, so a ride often arrives without one, and a trimmed ride needs its
+    # track read again; the detail sync asks for both on its own schedule.
+    scheduler.add_job(stream_sync.sync_streams, "interval", minutes=5)
 
     # Sync weather every hour
     scheduler.add_job(weather_sync.sync_weather, "cron", minute="45")
