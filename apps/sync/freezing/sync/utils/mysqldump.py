@@ -9,7 +9,7 @@ import lzma
 import re
 from collections.abc import Iterator
 from pathlib import Path
-from typing import BinaryIO
+from typing import IO
 
 # mysqldump writes one statement per line, so a line is the unit of work, but a
 # line can be hundreds of megabytes. Read in pieces and keep only what matters.
@@ -32,7 +32,7 @@ _ESCAPES = {
 }
 
 
-def _open(path: Path) -> BinaryIO:
+def _open(path: Path) -> IO[bytes]:
     return lzma.open(path, "rb") if path.suffix == ".xz" else path.open("rb")
 
 
@@ -79,7 +79,9 @@ def _values(text: str) -> Iterator[list[str | None]]:
     hold a comma, a quote or an emoji, and pairing the wrong name with the
     wrong token is the one mistake that must not happen here.
     """
-    i, row, field = 0, [], None
+    i = 0
+    row: list[str | None] = []
+    field: str | None = None
     while i < len(text):
         c = text[i]
         if c == "(" and field is None and not row:
@@ -117,9 +119,7 @@ def _values(text: str) -> Iterator[list[str | None]]:
                 default=len(text),
             )
             literal = text[i:end].strip()
-            field = None if literal.upper() == "NULL" else literal
-            row.append(field)
-            field = None
+            row.append(None if literal.upper() == "NULL" else literal)
             i = end
     return
 

@@ -96,9 +96,10 @@ class DeauthorizeHistoryScript(BaseCommand):
                 athlete = int(row["id"])
                 seen[athlete][token] = max(seen[athlete].get(token, 0), expires)
                 count += 1
+            assert self.logger is not None
             self.logger.info(f"{backup.name}: {count} athletes with a token")
         return {
-            athlete: sorted(tokens, key=tokens.get, reverse=True)
+            athlete: sorted(tokens, key=lambda t: tokens[t], reverse=True)
             for athlete, tokens in seen.items()
         }
 
