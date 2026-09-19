@@ -10,7 +10,7 @@ from freezing.sync.autolog import log
 from freezing.sync.config import config, init_logging
 from freezing.sync.data.activity import ActivitySync
 from freezing.sync.data.athlete import AthleteSync
-from freezing.sync.data.photos import PhotoSync
+from freezing.sync.data.photos import POLL_INTERVAL, PhotoSync
 from freezing.sync.data.weather import WeatherSync
 from freezing.sync.subscribe import ActivityUpdateSubscriber
 
@@ -53,9 +53,11 @@ def main():
 
     scheduler.add_job(segmented_sync_activities, "cron", minute="50")
 
-    # Sync ride details every 5 minutes. This only fetches rides flagged
-    # for detail sync so won't hammer Strava. Mostly this only happens
-    # when photo sync identifies photos but no primary.
+    # Fetch ride details. A ride comes here either without them -- new from the
+    # hourly scan, or cropped since -- or because its efforts are due another
+    # look, which happens to every ride four times over its first eleven days.
+    # Photo sync asks for one too when a ride has photos but none of them is
+    # the primary.
     scheduler.add_job(activity_sync.sync_rides_detail, "interval", minutes=5)
 
     # Sync weather every hour
@@ -64,9 +66,14 @@ def main():
     # Sync athletes every hour
     scheduler.add_job(athlete_sync.sync_athletes, "cron", minute="30")
 
-    # Sync photos every 5 minutes. This only fetches rides flagged
-    # for sync so won't hammer Strava.
-    scheduler.add_job(photo_sync.sync_photos, "interval", minutes=5)
+    # Look for photos due a fetch. Only rides whose backoff has come round are
+    # read, so this costs one indexed query on the passes where none have.
+    scheduler.add_job(
+        photo_sync.sync_photos,
+        "interval",
+        seconds=POLL_INTERVAL.total_seconds(),
+        max_instances=1,
+    )
 
     scheduler.start()
 

@@ -18,6 +18,11 @@ SmallSize = 200
 FIRST_INTERVAL = timedelta(minutes=2)
 MAX_FETCHES = 14
 
+# How often the scheduler asks what has fallen due. A ride waits for the tick
+# after its due time, so anything coarser than FIRST_INTERVAL quietly stretches
+# the early steps of the backoff and there is no point asking for them.
+POLL_INTERVAL = timedelta(minutes=1)
+
 
 def schedule_fetch(ride: Ride) -> None:
     """Start the ride's photos over from the beginning of the backoff."""
