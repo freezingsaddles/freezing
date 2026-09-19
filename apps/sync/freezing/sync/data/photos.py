@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from stravalib.client import BatchedResultsIterator
 from stravalib.model import ActivityPhoto
 
@@ -9,6 +11,33 @@ from . import BaseSync
 
 BigSize = 1000
 SmallSize = 200
+
+# Strava tells us nothing when a caption is written, and riders caption minutes
+# after the ride appears, so look again soon and then back off: 2, 4, 8 ... 8192
+# minutes, giving up after eleven days.
+FIRST_INTERVAL = timedelta(minutes=2)
+MAX_FETCHES = 14
+
+
+def schedule_fetch(ride: Ride) -> None:
+    """Start the ride's photos over from the beginning of the backoff."""
+    ride.photos_fetched = 0
+    ride.photos_resync_date = datetime.now()
+
+
+def schedule_one_more_fetch(ride: Ride) -> None:
+    """Look once more without reopening the whole backoff."""
+    if ride.photos_fetched is not None:
+        ride.photos_resync_date = datetime.now()
+
+
+def _schedule_next_fetch(ride: Ride) -> None:
+    fetches = (ride.photos_fetched or 0) + 1
+    ride.photos_fetched = fetches
+    if fetches >= MAX_FETCHES:
+        ride.photos_resync_date = None
+    else:
+        ride.photos_resync_date = datetime.now() + FIRST_INTERVAL * 2 ** (fetches - 1)
 
 
 class PhotoSync(BaseSync):
@@ -22,34 +51,50 @@ class PhotoSync(BaseSync):
         force: bool = False,
         verbose: bool = False,
     ):
-        with meta.transaction_context() as sess:
-            q = sess.query(Ride)
-            q = q.filter_by(private=False)
-            if not force:
-                q = q.filter_by(photos_fetched=False)
-            if athlete_id:
-                q = q.filter_by(athlete_id=athlete_id)
-            if activity_id:
-                q = q.filter_by(id=activity_id)
+        session = meta.scoped_session()
 
-            for ride in q:
-                self.logger.info(f"Writing out photos for {ride!r}")
-                try:
-                    client = StravaClientForAthlete(ride.athlete)
-                    big_photos = client.get_activity_photos(ride.id, size=BigSize)
-                    if verbose:
-                        for photo in big_photos:
-                            self.logger.info(f"Big photo: {str(photo)}")
-                    self.write_ride_photos_nonprimary(big_photos, ride, BigSize)
-                    # We don't display thumbnails (SmallSize) because they are too
-                    # small, so don't sync them anymore.
-                except Exception:
-                    self.logger.exception(
-                        "Error fetching/writing "
-                        "non-primary photos activity "
-                        "{}, athlete {}".format(ride.id, ride.athlete),
-                        exc_info=True,
-                    )
+        q = session.query(Ride.id)
+        q = q.filter_by(private=False)
+        if not force:
+            q = q.filter(Ride.photos_resync_date <= datetime.now())
+        if athlete_id:
+            q = q.filter_by(athlete_id=athlete_id)
+        if activity_id:
+            q = q.filter_by(id=activity_id)
+
+        # Read the ids up front: the loop commits, and a query iterated across a
+        # commit is no longer safe to read from.
+        ride_ids = [row.id for row in q]
+        self.logger.info(f"Fetching photos for {len(ride_ids)} activities")
+
+        for ride_id in ride_ids:
+            ride = session.get(Ride, ride_id)
+            if ride is None:
+                continue
+            self.logger.info(f"Writing out photos for {ride!r}")
+            try:
+                client = StravaClientForAthlete(ride.athlete)
+                big_photos = client.get_activity_photos(ride.id, size=BigSize)
+                if verbose:
+                    for photo in big_photos:
+                        self.logger.info(f"Big photo: {str(photo)}")
+                self.write_ride_photos_nonprimary(big_photos, ride, BigSize)
+                # We don't display thumbnails (SmallSize) because they are too
+                # small, so don't sync them anymore.
+            except Exception:
+                self.logger.exception(
+                    "Error fetching/writing "
+                    "non-primary photos activity "
+                    "{}, athlete {}".format(ride.id, ride.athlete),
+                    exc_info=True,
+                )
+                session.rollback()
+                ride = session.get(Ride, ride_id)
+            # A ride whose fetch keeps failing backs off like any other, rather
+            # than being retried on every pass for the rest of the season.
+            _schedule_next_fetch(ride)
+            # Each ride stands alone: a restart mid-pass keeps what we have.
+            session.commit()
 
     def write_ride_photos_nonprimary(
         self,
@@ -111,8 +156,6 @@ class PhotoSync(BaseSync):
         for deleted_photo in existing_photos.values():
             self.logger.info(f"Deleting deleted photo {deleted_photo}")
             meta.scoped_session().delete(deleted_photo)
-
-        ride.photos_fetched = True
 
         # If there are photos but none primary then need to refetch the ride
         # to identify the primary.

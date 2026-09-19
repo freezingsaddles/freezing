@@ -43,7 +43,8 @@ def ride_refetch_photos():
         .filter(Ride.athlete_id == session.get("athlete_id"))
         .one()
     )
-    ride.photos_fetched = False
+    ride.photos_fetched = 0
+    ride.photos_resync_date = datetime.now()
     logging.info(f"Marking photos to be refetched for ride {ride}")
     meta.scoped_session().commit()
     return jsonify(success=True)  # I don't really have anything useful to spit back.

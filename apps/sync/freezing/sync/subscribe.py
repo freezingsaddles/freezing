@@ -59,7 +59,9 @@ class ActivityUpdateSubscriber:
                         tags=[f"team:{athlete.team_id}"],
                     )
                     self.activity_sync.fetch_and_store_activity_detail(
-                        athlete_id=message.athlete_id, activity_id=message.activity_id
+                        athlete_id=message.athlete_id,
+                        activity_id=message.activity_id,
+                        photos_changed=True,
                     )
                     self.streams_sync.fetch_and_store_activity_streams(
                         athlete_id=message.athlete_id, activity_id=message.activity_id
