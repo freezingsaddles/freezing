@@ -2,7 +2,7 @@
 # BUILD
 # =====
 
-FROM ubuntu:22.04 AS buildstep
+FROM ubuntu:25.10 AS buildstep
 LABEL maintainer="Richard Bullington-McGuire <richard.bullington.mcguire@gmail.com>"
 
 ENV BEANSTALKD_VERSION="1.13"
@@ -16,7 +16,7 @@ RUN cp beanstalkd /tmp/
 # DEPLOY
 # =====
 
-FROM ubuntu:22.04 AS deploystep
+FROM ubuntu:25.10 AS deploystep
 LABEL maintainer="Richard Bullington-McGuire <richard.bullington.mcguire@gmail.com>"
 
 COPY --from=buildstep /tmp/beanstalkd /usr/bin/beanstalkd
