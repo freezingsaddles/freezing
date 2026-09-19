@@ -10,6 +10,8 @@ Create Date: 2026-09-19 14:10:00.000000
 revision = "9a1c4e7b02d5"
 down_revision = "536a0f435c79"
 
+from datetime import datetime
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -30,15 +32,19 @@ def upgrade():
     # The count records a budget spent, not fetches made: a ride already done
     # goes straight to the cap so that nothing looks at it again.
     op.execute(
-        f"update rides set photos_fetched = {MAX_FETCHES} where photos_fetched = 1"
+        sa.text(
+            "update rides set photos_fetched = :cap where photos_fetched = 1"
+        ).bindparams(cap=MAX_FETCHES)
     )
     # A ride still waiting has been waiting since its own season, and its
     # captions are long settled, so it gets the last look of the backoff rather
     # than the first: the backlog drains once and then stops. Any past timestamp
     # makes it due; the epoch avoids guessing at the server's timezone.
     op.execute(
-        f"update rides set photos_fetched = {MAX_FETCHES - 1},"
-        " photos_resync_date = '1970-01-01' where photos_fetched = 0"
+        sa.text(
+            "update rides set photos_fetched = :last, photos_resync_date = :epoch"
+            " where photos_fetched = 0"
+        ).bindparams(last=MAX_FETCHES - 1, epoch=datetime(1970, 1, 1))
     )
 
 
