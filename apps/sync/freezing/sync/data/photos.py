@@ -5,7 +5,7 @@ from stravalib.model import ActivityPhoto
 
 from freezing.model import meta
 from freezing.model.orm import Ride, RidePhoto
-from freezing.sync.data import StravaClientForAthlete
+from freezing.sync.data import StravaClientForAthlete, has_strava_authorization
 
 from . import BaseSync
 
@@ -55,6 +55,7 @@ class PhotoSync(BaseSync):
 
         q = session.query(Ride.id)
         q = q.filter_by(private=False)
+        q = q.filter(Ride.athlete.has(has_strava_authorization()))
         if not force:
             q = q.filter(Ride.photos_resync_date <= datetime.now())
         if athlete_id:

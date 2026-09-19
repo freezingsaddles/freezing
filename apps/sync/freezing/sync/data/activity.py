@@ -20,6 +20,7 @@ from freezing.model.orm import Athlete, Ride, RideEffort, RideError, RideGeo, Ri
 from freezing.sync.config import config, statsd
 from freezing.sync.exc import (
     ActivityNotFound,
+    AthleteDeauthorized,
     CommandError,
     DataEntryError,
     IneligibleActivity,
@@ -27,7 +28,7 @@ from freezing.sync.exc import (
 from freezing.sync.utils import wktutils
 from freezing.sync.utils.cache import CachingActivityFetcher
 
-from . import BaseSync, StravaClientForAthlete
+from . import BaseSync, StravaClientForAthlete, has_strava_authorization
 from .photos import schedule_fetch, schedule_one_more_fetch
 
 # Amount of activity overlap to permit
@@ -346,6 +347,7 @@ class ActivitySync(BaseSync):
 
         # TODO: Construct a more complex query to catch photos_fetched=False, track_fetched=False, etc.
         q = q.filter(Ride.private == False)  # noqa: E712
+        q = q.filter(Ride.athlete.has(has_strava_authorization()))
 
         if not rewrite:
             no_detail = Ride.detail_fetched == False  # noqa: E712
@@ -471,6 +473,9 @@ class ActivitySync(BaseSync):
                     # The rider is editing the ride, and captions land minutes
                     # later, so go back to looking every couple of minutes.
                     schedule_fetch(ride)
+            except AthleteDeauthorized:
+                # Nothing to log a traceback over: they have disconnected us.
+                raise
             except ObjectNotFound as e:
                 raise ActivityNotFound(
                     f"Activity {activity_id} not found, ignoring."

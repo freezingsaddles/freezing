@@ -13,7 +13,7 @@ from freezing.sync.exc import ActivityNotFound
 from freezing.sync.utils import wktutils
 from freezing.sync.utils.cache import CachingStreamFetcher
 
-from . import BaseSync, StravaClientForAthlete
+from . import BaseSync, StravaClientForAthlete, has_strava_authorization
 
 
 class StreamSync(BaseSync):
@@ -34,6 +34,7 @@ class StreamSync(BaseSync):
 
         # We do not fetch streams for private rides.
         q = q.filter(and_(Ride.private == False))  # noqa: E712
+        q = q.filter(Ride.athlete.has(has_strava_authorization()))
 
         if not rewrite:
             q = q.filter(

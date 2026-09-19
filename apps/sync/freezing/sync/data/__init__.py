@@ -2,11 +2,37 @@ import abc
 import logging
 import time
 
+from sqlalchemy import or_
 from stravalib import Client
+from stravalib.exc import Fault
 
 from freezing.model import meta
 from freezing.model.orm import Athlete
 from freezing.sync.config import Config
+from freezing.sync.exc import AthleteDeauthorized
+
+
+def has_strava_authorization():
+    """Match the athletes we can still fetch for."""
+    return or_(
+        Athlete.refresh_token.isnot(None),
+        Athlete.access_token.isnot(None),
+    )
+
+
+def _refresh_token_rejected(fault: Fault) -> bool:
+    """Say whether Strava refused the refresh token itself, not just the call."""
+    response = getattr(fault, "response", None)
+    if response is None or response.status_code != 400:
+        return False
+    try:
+        errors = response.json().get("errors", [])
+    except ValueError:
+        return False
+    return any(
+        error.get("field") == "refresh_token" and error.get("code") == "invalid"
+        for error in errors
+    )
 
 
 class StravaClientForAthlete(Client):
@@ -53,20 +79,42 @@ class StravaClientForAthlete(Client):
             # https://developers.strava.com/docs/oauth-updates/#migration-instructions
             refresh_token = athlete.access_token
         else:
-            raise ValueError(f"athlete {athlete.id} had no access or refresh token")
-        if refresh_token:
-            self.logger.info("saving refresh token for athlete %s", athlete.id)
-            token_dict = super().refresh_access_token(
-                Config.STRAVA_CLIENT_ID,
-                Config.STRAVA_CLIENT_SECRET,
-                refresh_token,
+            raise AthleteDeauthorized(
+                f"athlete {athlete.id} had no access or refresh token"
             )
+        if refresh_token:
+            self.logger.info("refreshing access token for athlete %s", athlete.id)
+            try:
+                token_dict = super().refresh_access_token(
+                    Config.STRAVA_CLIENT_ID,
+                    Config.STRAVA_CLIENT_SECRET,
+                    refresh_token,
+                )
+            except Fault as fault:
+                if not _refresh_token_rejected(fault):
+                    raise
+                self.forget_athlete(athlete)
+                raise AthleteDeauthorized(
+                    f"athlete {athlete.id} has disconnected the application"
+                ) from fault
             self.access_token = token_dict["access_token"]
             athlete.access_token = token_dict["access_token"]
             athlete.refresh_token = token_dict["refresh_token"]
             athlete.expires_at = token_dict["expires_at"]
             meta.scoped_session().add(athlete)
             meta.scoped_session().commit()
+
+    def forget_athlete(self, athlete: Athlete):
+        """Throw away tokens Strava will not honour again."""
+        self.logger.info(
+            "athlete %s has disconnected the application, forgetting their tokens",
+            athlete.id,
+        )
+        athlete.access_token = None
+        athlete.refresh_token = None
+        athlete.expires_at = 0
+        meta.scoped_session().add(athlete)
+        meta.scoped_session().commit()
 
 
 class BaseSync(metaclass=abc.ABCMeta):

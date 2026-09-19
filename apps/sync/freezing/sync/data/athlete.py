@@ -8,9 +8,13 @@ from freezing.common import athletes, teams
 from freezing.model import meta
 from freezing.model.orm import Athlete, Team
 from freezing.sync.config import config
-from freezing.sync.exc import MultipleTeamsError, NoTeamsError
+from freezing.sync.exc import (
+    AthleteDeauthorized,
+    MultipleTeamsError,
+    NoTeamsError,
+)
 
-from . import BaseSync, StravaClientForAthlete
+from . import BaseSync, StravaClientForAthlete, has_strava_authorization
 
 
 class AthleteSync(BaseSync):
@@ -28,7 +32,7 @@ class AthleteSync(BaseSync):
             # (We can't fetch anything for those that don't.)
 
             q = sess.query(Athlete)
-            q = q.filter(Athlete.access_token is not None)
+            q = q.filter(has_strava_authorization())
             if max_records:
                 self.logger.info(f"Limiting to {max_records} records.")
                 q = q.limit(max_records)
@@ -41,6 +45,8 @@ class AthleteSync(BaseSync):
                     self.register_athlete(strava_athlete, athlete.access_token)
                     if not self.all_done():
                         self.register_athlete_team(strava_athlete, athlete)
+                except AthleteDeauthorized as ex:
+                    self.logger.info(f"Skipping athlete {athlete}: {ex}")
                 except NoTeamsError as ex:
                     self.logger.info(
                         f'Athlete "{athlete}" is not on a registered team: {ex}'
