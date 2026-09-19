@@ -238,31 +238,32 @@ def index():
     )
 
 
-# The days of tagging the homepage's tag cloud is built from. At a couple of
-# hundred rides a day this is a few hundred rows, and it moves with the
-# competition instead of being a fixed count.
-_TRENDING_DAYS = 3
+# The days of tagging the homepage's tag cloud is built from. A season tags
+# about five thousand rides over eighty days, so a week is roughly the five
+# hundred the old fixed count gave, and it moves with the competition.
+_TRENDING_DAYS = 7
 
 
 # Find the top 16 trending tags of the last few days, from ride titles and photo
 # descriptions alike; the cloud does not care which kind of tag a board wants.
 def _trending_tags():
+    # Anchored on the competition rather than on the newest row, so one ride
+    # with a bad clock cannot empty the window, and so the cloud still shows
+    # the closing week once the season is over.
+    until = min(datetime.now(config.TIMEZONE), config.END_DATE).date()
+    since = until - timedelta(days=_TRENDING_DAYS)
     q = text("""
                 select R.name as tagged
                 from rides R
                 where R.name like '%#%'
-                  and R.competition_date >= (
-                      select max(competition_date) - interval :days day from rides
-                  )
+                  and R.competition_date between :since and :until
                 union all
                 select P.caption as tagged
                 from ride_photos P join rides R on R.id = P.ride_id
                 where P.caption like '%#%'
-                  and R.competition_date >= (
-                      select max(competition_date) - interval :days day from rides
-                  )
+                  and R.competition_date between :since and :until
                 ;
-            """).bindparams(days=_TRENDING_DAYS)
+            """).bindparams(since=since, until=until)
     tag_count = {}
     original_tag = {}
     for res in meta.scoped_session().execute(q).fetchall():
