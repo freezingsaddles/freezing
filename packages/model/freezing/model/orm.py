@@ -111,6 +111,9 @@ class Ride(StravaEntity):
     maximum_speed = Column(Float)  # mph
     average_temp = Column(Integer, nullable=True)  # 99 (F)
     start_date = Column(DateTime, nullable=False, index=True)  # 2010-02-28T08:31:35Z
+    # The rider's wall clock, for questions about the time of day they rode.
+    # Strava reports this and the instant separately, so neither is derived.
+    local_start_date = Column(DateTime, nullable=True, index=True)
     distance = Column(Float, nullable=False, index=True)  # 82369.1 (meters)
     location = Column(String(255), nullable=True)
 

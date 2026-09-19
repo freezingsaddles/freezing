@@ -73,6 +73,7 @@ def test_update_ride_basic(activity_sync, detailed_activity, ride):
         assert ride.name == detailed_activity.name
         assert ride.private == detailed_activity.private
         assert ride.start_date == detailed_activity.start_date_local
+        assert ride.local_start_date == detailed_activity.start_date_local
         # Use approximate comparisons for float values from unit conversions
         assert ride.distance == pytest.approx(0.621, rel=1e-3)  # 1000m to miles
         assert ride.average_speed == pytest.approx(22.369, rel=1e-3)  # 10 m/s to mph
