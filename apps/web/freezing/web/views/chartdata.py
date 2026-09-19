@@ -853,8 +853,8 @@ def riders_vs_weather():
             max(W.wind_gust) as wind_gust,
             count(distinct R.athlete_id) as riders
             from rides R join ride_weather W on W.ride_id = R.id
-            group by start_date
-            order by start_date;
+            group by R.competition_date
+            order by R.competition_date;
             """)
 
     rows = []
@@ -890,8 +890,8 @@ def distance_by_lowtemp():
             cast(sum(W.ride_snow) * 3600 / sum(R.moving_time) as float) as snowiness,
             sum(R.distance) as distance
             from rides R join ride_weather W on W.ride_id = R.id
-            group by start_date
-            order by start_date;
+            group by R.competition_date
+            order by R.competition_date;
             """)
 
     rows = []
