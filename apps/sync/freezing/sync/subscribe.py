@@ -13,7 +13,11 @@ from freezing.sync.config import Config, statsd
 from freezing.sync.data.activity import ActivitySync
 from freezing.sync.data.photos import PhotoSync
 from freezing.sync.data.streams import StreamSync
-from freezing.sync.exc import ActivityNotFound, IneligibleActivity
+from freezing.sync.exc import (
+    ActivityNotFound,
+    AthleteDeauthorized,
+    IneligibleActivity,
+)
 
 
 class ActivityUpdateSubscriber:
@@ -86,7 +90,7 @@ class ActivityUpdateSubscriber:
                     self.photos_sync.sync_photos(
                         athlete_id=message.athlete_id, activity_id=message.activity_id
                     )
-            except (ActivityNotFound, IneligibleActivity) as x:
+            except (ActivityNotFound, AthleteDeauthorized, IneligibleActivity) as x:
                 log.info(str(x))
 
     def run_forever(self):
