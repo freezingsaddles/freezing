@@ -18,8 +18,10 @@ from freezing.model import meta
 from freezing.model.orm import Athlete, Ride, RidePhoto, RideTrack
 from freezing.web import config
 from freezing.web.autolog import log
+from freezing.web.exc import ObjectNotFound
 from freezing.web.serialize import RidePhotoSchema
 from freezing.web.utils import auth
+from freezing.web.utils.hashboard import load_hashtag
 from freezing.web.utils.wktutils import parse_linestring, parse_point_wkt
 
 blueprint = Blueprint("api", __name__)
@@ -308,6 +310,26 @@ def _parse_point(wkt):
 
 
 # The full geojson structure is triple the size of what we need
+def _hashtag_filter(hash_tag) -> str:
+    """Match a ride to a hashtag, by title and, on a photo board, by caption.
+
+    A board whose photos are the point takes the tag from a photo's description,
+    so the map has to find those rides the same way the other tabs do.
+    """
+    if not hash_tag:
+        return "true"
+    try:
+        board = load_hashtag(hash_tag)
+    except ObjectNotFound:
+        board = None
+    if board and board.default_view == "photos":
+        return (
+            "(R.name like :hash_tag or R.id in "
+            "(select P.ride_id from ride_photos P where lower(P.caption) like :hash_tag))"
+        )
+    return "R.name like :hash_tag"
+
+
 def _track_map(
     team_id=None,
     athlete_id=None,
@@ -332,7 +354,7 @@ def _track_map(
                {'true' if include_private else "not(R.private) and R.visibility = 'everyone'"}
                and {'A.id = :athlete_id' if athlete_id else 'true'}
                and {'A.team_id = :team_id' if team_id else 'true'}
-               and {'R.name like :hash_tag' if hash_tag else 'true'}
+               and {_hashtag_filter(hash_tag)}
                and {'FIND_IN_SET(hex(R.id), :ride_ids) > 0' if ride_ids else 'true'}
              order by R.start_date DESC
              {'limit :limit' if limit else ''}
