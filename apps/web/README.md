@@ -201,7 +201,20 @@ cp .env $HOME/backups/.env-$(date +'%Y-%m-%d')
 vim /opt/compose/.env
 ```
 
+* Stop Freezebot, so that it is not watching while the photos go:
+
+```bash
+cd /opt/compose
+docker compose stop freezing-freezebot
+```
+
+  It keeps Discord in step with `ride_photos`, and reads photos that have gone
+  as photos to take down. Left running through the wipe, it would delete a
+  season of pictures from the Discord channels. Start it again once the new
+  season's dates are in `.env`.
+
 * Delete all the data in the following MySQL tables: (see [freezing/sql/year-start.sql](freezing/sql/year-start.sql))
+  * freezebot_posts
   * athletes
   * rides
   * ride_efforts
@@ -210,6 +223,11 @@ vim /opt/compose/.env
   * ride_tracks
   * ride_weather
   * teams
+
+  `tribes` is not in the list because it has a foreign key on `athletes` with
+  `on delete cascade`, so it goes when they do. That is also why the script
+  deletes from `athletes` rather than truncating it: a truncate would leave the
+  tribes behind.
 * Insert a new record into the `teams` table matching the MAIN_TEAM id:
 
     insert into teams values (567288, 'Freezing Saddles 2020', 1);
