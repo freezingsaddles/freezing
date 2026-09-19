@@ -1,7 +1,6 @@
 import math
 
 from flask import Blueprint, render_template, request
-from sqlalchemy import func
 
 from freezing.model import meta
 from freezing.model.orm import Ride, RidePhoto
@@ -27,7 +26,7 @@ def index():
         .query(RidePhoto)
         .join(Ride)
         .order_by(
-            func.convert_tz(Ride.start_date, Ride.timezone, "GMT").desc(),
+            Ride.start_date.desc(),
             RidePhoto.id.asc(),
         )
     )

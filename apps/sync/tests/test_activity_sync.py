@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from zoneinfo import ZoneInfo
@@ -28,6 +28,7 @@ def detailed_activity():
     activity.photo_count = 1
     activity.total_photo_count = 1
     activity.start_date_local = datetime.now()
+    activity.start_date = datetime.now(UTC)
     activity.distance = Distance(1000.0)
     activity.average_speed = Velocity(10.0)
     activity.average_temp = 99
@@ -72,7 +73,7 @@ def test_update_ride_basic(activity_sync, detailed_activity, ride):
         activity_sync.update_ride_basic(detailed_activity, ride)
         assert ride.name == detailed_activity.name
         assert ride.private == detailed_activity.private
-        assert ride.start_date == detailed_activity.start_date_local
+        assert ride.start_date == detailed_activity.start_date.replace(tzinfo=None)
         assert ride.local_start_date == detailed_activity.start_date_local
         # Use approximate comparisons for float values from unit conversions
         assert ride.distance == pytest.approx(0.621, rel=1e-3)  # 1000m to miles

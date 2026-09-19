@@ -49,7 +49,7 @@ class WeatherSync(BaseSync):
             join ride_geo G on G.ride_id = R.id
             left join ride_weather W on W.ride_id = R.id
             where W.ride_id is null
-            and date_add(CONVERT_TZ(R.start_date, R.timezone, 'SYSTEM'), INTERVAL R.elapsed_time SECOND) < (NOW() - INTERVAL 1 HOUR)
+            and date_add(R.start_date, INTERVAL R.elapsed_time SECOND) < (UTC_TIMESTAMP() - INTERVAL 1 HOUR)
             ;
             """)
 
@@ -89,12 +89,14 @@ class WeatherSync(BaseSync):
 
                 self.logger.debug(
                     "Ride metadata: time={} dur={} loc={}/{}".format(
-                        ride.start_date, ride.elapsed_time, lat, lon
+                        ride.local_start_date, ride.elapsed_time, lat, lon
                     )
                 )
 
                 ride_today = datetime.now(ZoneInfo(ride.timezone))
-                start_date = ride.start_date.replace(tzinfo=ZoneInfo(ride.timezone))
+                start_date = ride.local_start_date.replace(
+                    tzinfo=ZoneInfo(ride.timezone)
+                )
                 fetch_date = start_date + timedelta(seconds=ride.elapsed_time)
                 # For caching purposes we're saying we want weather as of the end of the ride, so if
                 # we have weather from earlier in the day we don't use it. Because we're lame and

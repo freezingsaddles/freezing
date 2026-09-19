@@ -1,7 +1,7 @@
 package org.freezingsaddles.freezebot
 
 import java.nio.file.{Files, Path}
-import java.time.{Duration, LocalDateTime, OffsetDateTime, ZoneId}
+import java.time.{Duration, LocalDateTime, OffsetDateTime, ZoneId, ZoneOffset}
 
 /** Everything Freezebot reads from the environment. The names it shares with the Python apps
   * (`SQLALCHEMY_URL`, `START_DATE`, `TIMEZONE`) mean the one `.env` on the host serves this
@@ -38,7 +38,7 @@ object Config:
     val zone                   = get("TIMEZONE").map(ZoneId.of).getOrElse(ZoneId.of("America/New_York"))
     val since                  = get("FREEZEBOT_SINCE")
       .orElse(get("START_DATE"))
-      .map(localTime(_, zone))
+      .map(utcTime)
       .getOrElse(sys.error("missing environment variable FREEZEBOT_SINCE or START_DATE"))
     Config(
       db = DbConfig.fromUrl(required("SQLALCHEMY_URL")),
@@ -54,10 +54,9 @@ object Config:
     )
   end fromEnv
 
-  /** `START_DATE` is an instant with an offset (`2019-01-01T00:00:00-05:00`); `rides.start_date` is
-    * the ride's local wall time. The cutoff is that instant as a wall time in the competition's
-    * zone, which is right for every ride in it and within hours for the rare one elsewhere.
+  /** `START_DATE` is an instant with an offset (`2019-01-01T00:00:00-05:00`), and
+    * `rides.start_date` is the same instant without one, so the cutoff is simply that in UTC.
     */
-  def localTime(text: String, zone: ZoneId): LocalDateTime =
-    OffsetDateTime.parse(text).atZoneSameInstant(zone).toLocalDateTime
+  def utcTime(text: String): LocalDateTime =
+    OffsetDateTime.parse(text).atZoneSameInstant(ZoneOffset.UTC).toLocalDateTime
 end Config

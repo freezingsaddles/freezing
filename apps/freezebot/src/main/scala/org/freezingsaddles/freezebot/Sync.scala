@@ -110,7 +110,7 @@ object Sync:
                       Forum
                         .choose(
                           k,
-                          photo.startDate.toLocalDate,
+                          photo.localStartDate.toLocalDate,
                           threads.map(t => t -> Forum.parseTitle(t.name)),
                         )
                         .map(t => desire(t.id, Some(channel)))

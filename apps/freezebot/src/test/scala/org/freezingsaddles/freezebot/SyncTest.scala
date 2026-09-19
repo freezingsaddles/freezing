@@ -19,7 +19,8 @@ class SyncTest extends munit.FunSuite:
     sql"""create table athletes (id bigint primary key, name varchar(1000) not null,
             display_name varchar(255), profile_photo varchar(255))""".update.run()
     sql"""create table rides (id bigint primary key, athlete_id bigint not null, name varchar(1000) not null,
-            start_date datetime not null, timezone varchar(255), private boolean not null default false)""".update
+            start_date datetime not null, local_start_date datetime not null,
+            timezone varchar(255), private boolean not null default false)""".update
       .run()
     sql"""create table ride_photos (id varchar(191) primary key, ride_id bigint, caption text,
             img_l varchar(255), `primary` boolean not null)""".update.run()
@@ -88,7 +89,7 @@ class SyncTest extends munit.FunSuite:
       start: LocalDateTime,
       priv: Boolean = false,
   )(using DbCon)                                                =
-    sql"insert into rides values ($id, $athlete, $name, $start, 'America/New_York', $priv)".update
+    sql"insert into rides values ($id, $athlete, $name, $start, $start, 'America/New_York', $priv)".update
       .run()
   private def photo(id: String, ride: Long, caption: Option[String], primary: Boolean = false)(using
       DbCon
@@ -283,7 +284,8 @@ class SyncTest extends munit.FunSuite:
     assert(p.unmatched.find(_.photoId == "p2").exists(_.reason.contains("more than one")))
     // The ride's date settles which flag.
     transact(ds)(
-      sql"update rides set start_date = ${LocalDateTime.of(2026, 3, 24, 9, 0)}".update.run()
+      sql"""update rides set start_date = ${LocalDateTime.of(2026, 3, 24, 9, 0)},
+              local_start_date = ${LocalDateTime.of(2026, 3, 24, 9, 0)}""".update.run()
     )
     assertEquals(cycle(discord).creates.map(_.channelId), List(303L))
 

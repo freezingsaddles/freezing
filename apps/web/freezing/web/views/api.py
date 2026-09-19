@@ -195,12 +195,12 @@ def team_leaderboard():
 
 
 def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
-    # These dates  must be made naive, since we don't have TZ info stored in our ride columns.
+    # Ride.start_date is naive UTC, so shift to UTC before dropping the offset.
     if start_date is not None:
-        start_date = arrow.get(start_date).datetime.replace(tzinfo=None)
+        start_date = arrow.get(start_date).to("UTC").naive
 
     if end_date is not None:
-        end_date = arrow.get(end_date).datetime.replace(tzinfo=None)
+        end_date = arrow.get(end_date).to("UTC").naive
 
     log.debug(f"Filtering on start_date: {start_date}")
     log.debug(f"Filtering on end_date: {end_date}")
@@ -237,7 +237,7 @@ def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
 
         coordinates = []
         for i, (lon, lat) in enumerate(parse_linestring(wkt)):
-            elapsed_time = ride_track.ride.start_date + timedelta(
+            elapsed_time = ride_track.ride.local_start_date + timedelta(
                 seconds=ride_track.time_stream[i]
             )
 

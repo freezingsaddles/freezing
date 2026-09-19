@@ -11,13 +11,12 @@ class ConfigTest extends munit.FunSuite:
     assertEquals(DbConfig.fromUrl("mysql://freezing:secret@localhost/freezing").port, 3306)
     assert(db.url.startsWith("jdbc:mysql://mysql.example.com:3307/freezing?"))
 
-  test("START_DATE becomes a wall time in the competition's zone"):
-    val zone = ZoneId.of("America/New_York")
+  test("START_DATE becomes the same instant in UTC, however it was written"):
     assertEquals(
-      Config.localTime("2026-01-01T00:00:00-05:00", zone),
-      LocalDateTime.of(2026, 1, 1, 0, 0),
+      Config.utcTime("2026-01-01T00:00:00-05:00"),
+      LocalDateTime.of(2026, 1, 1, 5, 0),
     )
-    assertEquals(Config.localTime("2026-01-01T05:00:00Z", zone), LocalDateTime.of(2026, 1, 1, 0, 0))
+    assertEquals(Config.utcTime("2026-01-01T05:00:00Z"), LocalDateTime.of(2026, 1, 1, 5, 0))
 
   test("the environment, with defaults"):
     val config = Config.fromEnv(
@@ -28,7 +27,7 @@ class ConfigTest extends munit.FunSuite:
       )
     )
     assertEquals(config.token, None)
-    assertEquals(config.since, LocalDateTime.of(2026, 1, 1, 0, 0))
+    assertEquals(config.since, LocalDateTime.of(2026, 1, 1, 5, 0))
     assertEquals(config.poll.toSeconds, 60L)
     assertEquals(config.maxPosts, 10)
     assertEquals(config.rideTags, false)
@@ -44,5 +43,5 @@ class ConfigTest extends munit.FunSuite:
         "TIMEZONE"        -> "America/Chicago",
       )
     )
-    assertEquals(config.since, LocalDateTime.of(2026, 2, 1, 11, 0))
+    assertEquals(config.since, LocalDateTime.of(2026, 2, 1, 17, 0))
 end ConfigTest
