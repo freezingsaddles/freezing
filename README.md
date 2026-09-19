@@ -66,7 +66,15 @@ Everything the apps share counts as a change to all four: `packages/`,
 `deploy/docker-compose.yml` and the two workflows that build and deploy.
 
 The deploy step fast-forwards the sparse clone at `/opt/freezing`, whose
-`deploy/` directory the box reaches through the `/opt/compose` symlink, then
-pulls and brings up the changed services. It finishes by spidering
-<https://freezingsaddles.org> as a smoke test. The retired per-app repositories
+`deploy/` directory the box reaches through the `/opt/compose` symlink, points
+nginx's default certificate at the main site's with
+[deploy/bin/link-default-cert.sh](deploy/bin/link-default-cert.sh), then pulls
+and brings up the changed services. It finishes by spidering
+<https://freezingsaddles.org> as a smoke test.
+
+While a container is being replaced its host has no server block, so nginx
+answers on the default certificate and serves
+[deploy/web/maintenance.html](deploy/web/maintenance.html); the same page stands
+in for the 502 between the new container starting and the app listening. Real
+error responses from an app are passed through untouched. The retired per-app repositories
 still own the `latest` tags; nothing pulls those any more.
