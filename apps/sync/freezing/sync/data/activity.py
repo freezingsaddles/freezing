@@ -2,7 +2,6 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import TypeVar
 
-import arrow
 from geoalchemy2.elements import WKTElement
 from sqlalchemy import and_, func, text
 from sqlalchemy.orm import Session, joinedload
@@ -1011,7 +1010,7 @@ class ActivitySync(BaseSync):
             if end_date is None:
                 end_date = config.END_DATE
 
-            if start_date > arrow.now():
+            if start_date > datetime.now(UTC):
                 return
 
             self.logger.debug(
@@ -1020,7 +1019,9 @@ class ActivitySync(BaseSync):
                 )
             )
 
-            if (arrow.now() > (end_date + config.UPLOAD_GRACE_PERIOD)) and not force:
+            if (
+                datetime.now(UTC) > (end_date + config.UPLOAD_GRACE_PERIOD)
+            ) and not force:
                 raise CommandError(
                     "Current time is after competition end date + grace "
                     "period, not syncing rides. (Use `force` to override.)"

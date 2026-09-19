@@ -33,7 +33,6 @@ dependencies = [
     "PyMySQL>=1.0,<2",
     "SQLAlchemy>=2.0,<3",
     "alembic>=1.13,<2",
-    "arrow>=1.0,<2",
     "colorlog>=6,<7",
     "envparse>=0.2",
     "marshmallow>=3.18,<5",

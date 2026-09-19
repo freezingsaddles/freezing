@@ -1,5 +1,4 @@
-import arrow
-
+from freezing.common.times import parse_instant
 from freezing.sync.config import config
 from freezing.sync.data.activity import ActivitySync
 
@@ -20,7 +19,7 @@ class SyncActivitiesScript(BaseCommand):
             dest="start_date",
             help="Date to begin fetching (default is to fetch all since configured start date)",
             default=config.START_DATE,
-            type=lambda v: arrow.get(v).datetime,
+            type=parse_instant,
             metavar="YYYY-MM-DD",
         )
 

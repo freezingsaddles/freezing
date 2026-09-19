@@ -1,8 +1,7 @@
 import enum
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
-import arrow
 from marshmallow import fields, pre_load
 
 from . import BaseMessage, BaseSchema
@@ -96,6 +95,9 @@ class SubscriptionUpdateSchema(BaseSchema):
 
     @pre_load
     def parse_dt(self, in_data, **kwargs):
-        if in_data.get("event_time"):
-            in_data["event_time"] = arrow.get(in_data["event_time"]).isoformat()
+        # Strava sends this as seconds since the epoch; anything already written
+        # out is left for the field itself to read.
+        event_time = in_data.get("event_time")
+        if isinstance(event_time, (int, float)):
+            in_data["event_time"] = datetime.fromtimestamp(event_time, UTC).isoformat()
         return in_data

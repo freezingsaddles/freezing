@@ -1,6 +1,6 @@
 import threading
+from datetime import datetime
 
-import arrow
 from apscheduler.schedulers.background import BackgroundScheduler
 from greenstalk import Client
 
@@ -48,7 +48,7 @@ def main():
     # calculation a little trickier.
     def segmented_sync_activities():
         activity_sync.sync_rides_distributed(
-            total_segments=4, segment=(arrow.now().hour % 4)
+            total_segments=4, segment=(datetime.now().hour % 4)
         )
 
     scheduler.add_job(segmented_sync_activities, "cron", minute="50")

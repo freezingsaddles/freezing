@@ -4,16 +4,16 @@ import gzip
 import hashlib
 import json
 import os
-from datetime import timedelta
+from datetime import UTC, timedelta
 from decimal import Decimal
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import arrow
 from flask import Blueprint, abort, jsonify, make_response, request, session
 from sqlalchemy import func, text
 from werkzeug.utils import secure_filename
 
+from freezing.common.times import parse_instant
 from freezing.model import meta
 from freezing.model.orm import Athlete, Ride, RidePhoto, RideTrack
 from freezing.web import config
@@ -197,10 +197,10 @@ def team_leaderboard():
 def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
     # Ride.start_date is naive UTC, so shift to UTC before dropping the offset.
     if start_date is not None:
-        start_date = arrow.get(start_date).to("UTC").naive
+        start_date = parse_instant(start_date).astimezone(UTC).replace(tzinfo=None)
 
     if end_date is not None:
-        end_date = arrow.get(end_date).to("UTC").naive
+        end_date = parse_instant(end_date).astimezone(UTC).replace(tzinfo=None)
 
     log.debug(f"Filtering on start_date: {start_date}")
     log.debug(f"Filtering on end_date: {end_date}")
