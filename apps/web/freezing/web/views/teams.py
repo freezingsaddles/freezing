@@ -40,7 +40,7 @@ def teams_show_team(team_id):
 
     q = text("""
            with daily_rides as (
-            select date(CONVERT_TZ(R.start_date, 'UTC', :timezone)) as ride_date,
+            select R.competition_date as ride_date,
             A.id as athlete_id,
             sum(R.distance) as distance
             from rides R inner join athletes A on A.id = R.athlete_id
@@ -52,7 +52,7 @@ def teams_show_team(team_id):
             where distance >= 1
             group by ride_date
             order by ride_date;
-            """).bindparams(team_id=team_id, timezone=config.TIMEZONE)
+            """).bindparams(team_id=team_id)
 
     indiv_q = meta.scoped_session().execute(q).fetchall()
     start = config.START_DATE - timedelta(days=(config.START_DATE.weekday() + 1) % 7)

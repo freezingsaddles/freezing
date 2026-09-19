@@ -6,6 +6,8 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Computed,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -18,6 +20,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import DynamicMapped, Mapped, declarative_base
 
 from . import meta, satypes
+from .config import config
 
 Base = declarative_base(metadata=meta.metadata)
 
@@ -114,6 +117,16 @@ class Ride(StravaEntity):
     # The rider's wall clock, for questions about the time of day they rode.
     # Strava reports this and the instant separately, so neither is derived.
     local_start_date = Column(DateTime, nullable=True, index=True)
+    # Which day of the competition the ride counts towards. The database works
+    # it out, so it cannot drift from start_date and nothing has to remember to
+    # write it. A change of TIMEZONE is an alter, which is where it belongs.
+    competition_date = Column(
+        Date,
+        Computed(
+            f"date(CONVERT_TZ(start_date, 'UTC', '{config.TIMEZONE}'))", persisted=True
+        ),
+        index=True,
+    )
     distance = Column(Float, nullable=False, index=True)  # 82369.1 (meters)
     location = Column(String(255), nullable=True)
 

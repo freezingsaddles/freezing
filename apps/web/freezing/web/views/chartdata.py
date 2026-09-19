@@ -844,7 +844,7 @@ def riders_vs_weather():
     A better metric would probably be total rain/snow at DCA on the day, but this is the measure we have.
     """
     q = text("""
-            select date(CONVERT_TZ(R.start_date, 'UTC', :tz)) as start_date,
+            select R.competition_date as start_date,
             avg(W.day_temp_min) as low_temp,
             avg(W.ride_windchill_avg) as wind_chill,
             cast(sum(W.ride_rain) * 3600 / sum(R.moving_time) as float) as raininess,
@@ -855,7 +855,7 @@ def riders_vs_weather():
             from rides R join ride_weather W on W.ride_id = R.id
             group by start_date
             order by start_date;
-            """).bindparams(tz=str(config.TIMEZONE))
+            """)
 
     rows = []
     for res in meta.scoped_session().execute(q):  # @UndefinedVariable
@@ -883,7 +883,7 @@ def riders_vs_weather():
 @blueprint.route("/distance_by_lowtemp")
 def distance_by_lowtemp():
     q = text("""
-            select date(CONVERT_TZ(R.start_date, 'UTC', :tz)) as start_date,
+            select R.competition_date as start_date,
             avg(W.day_temp_min) as low_temp,
             avg(W.ride_windchill_avg) as wind_chill,
             cast(sum(W.ride_rain) * 3600 / sum(R.moving_time) as float) as raininess,
@@ -892,7 +892,7 @@ def distance_by_lowtemp():
             from rides R join ride_weather W on W.ride_id = R.id
             group by start_date
             order by start_date;
-            """).bindparams(tz=str(config.TIMEZONE))
+            """)
 
     rows = []
     for res in meta.scoped_session().execute(q):  # @UndefinedVariable

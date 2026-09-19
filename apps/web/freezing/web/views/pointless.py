@@ -113,7 +113,7 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
                 R.id,
                 R.athlete_id,
                 R.distance,
-                date(convert_tz(R.start_date, 'UTC', :tz)) as start_date
+                R.competition_date as start_date
             from
                 rides R
             where
@@ -153,7 +153,6 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
         order by
             H.{rank_by} desc, lower(H.athlete_name) asc
         """).bindparams(
-        tz=config.TIMEZONE,
         hashtag=hashtag,
         alttag=alttag or hashtag,
         min_miles=min_miles or 0.0,
@@ -200,7 +199,7 @@ def _get_phototag_tdata(request, hashtag):
             where
                 R.name like :tag and
                 (:myself is null or A.id = :myself) and
-                (:date is null or date(convert_tz(R.start_date, 'UTC', :tz)) = :date)
+                (:date is null or R.competition_date = :date)
         ), primary_photos as (
             select
                 P.id, P.caption, P.img_l, R.*

@@ -87,8 +87,11 @@ def upgrade():
 
 
 def downgrade():
+    # From local_start_date rather than from start_date itself: converting a
+    # column in place is only right if it is in the state this expects, and
+    # doing it twice quietly moves every ride again.
     op.execute(
-        "update rides set start_date = CONVERT_TZ(start_date, 'UTC', timezone) "
-        "where timezone is not null"
+        "update rides set start_date = local_start_date "
+        "where local_start_date is not null"
     )
     _rebuild_views("R.timezone", "start_date")

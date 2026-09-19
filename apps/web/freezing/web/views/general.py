@@ -171,9 +171,9 @@ def index():
                 coalesce(sum(R.moving_time),0) as moving_time,
                 coalesce(sum(R.distance),0) as distance
             from rides R
-            where date(CONVERT_TZ(R.start_date, 'UTC','{}')) >= '{}'
+            where R.competition_date >= '{}'
             ;
-        """.format(config.TIMEZONE, today.date()))
+        """.format(today.date()))
     today_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
     today_riders = int(today_res._mapping["riders"])
     today_hours = round(today_res._mapping["moving_time"]) / 3600
