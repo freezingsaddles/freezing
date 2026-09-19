@@ -15,7 +15,7 @@ from freezing.model.msg.mq import (
 from freezing.model.msg.strava import AspectType
 from freezing.model.orm import Athlete
 from freezing.sync.autolog import log
-from freezing.sync.config import Config, statsd
+from freezing.sync.config import Config, config, statsd
 from freezing.sync.data import forget_athlete
 from freezing.sync.data.activity import ActivitySync
 from freezing.sync.data.photos import PhotoSync
@@ -25,6 +25,21 @@ from freezing.sync.exc import (
     AthleteDeauthorized,
     IneligibleActivity,
 )
+
+
+def too_late_to_matter(message: ActivityUpdate) -> bool:
+    """Say whether this event is past everything the competition will take.
+
+    Strava keeps sending events for as long as a rider leaves us authorised,
+    and riders go on riding, so out of season every upload in the field arrives
+    here. Reading one costs a Strava call and a cache file to decide it is not
+    a competition ride. The upload grace period is the last date the scores
+    move, so nothing after it is worth the fetch.
+    """
+    return (
+        message.event_time is not None
+        and message.event_time > config.END_DATE + config.UPLOAD_GRACE_PERIOD
+    )
 
 
 class ActivityUpdateSubscriber:
@@ -43,6 +58,12 @@ class ActivityUpdateSubscriber:
 
     def handle_message(self, message: ActivityUpdate):
         self.logger.info(f"Processing activity update {message}")
+
+        # A deletion is ours to honour whenever it comes: it costs no Strava
+        # call, and a ride a rider has removed should not stay in our database.
+        if message.operation is not AspectType.delete and too_late_to_matter(message):
+            self.logger.info(f"Out of season, ignoring {message}")
+            return
 
         with meta.transaction_context() as session:
             athlete: Athlete = session.get(Athlete, message.athlete_id)
