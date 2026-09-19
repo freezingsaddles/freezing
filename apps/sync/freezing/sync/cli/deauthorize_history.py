@@ -12,7 +12,7 @@ from stravalib.exc import AccessUnauthorized, Fault
 from freezing.sync.config import Config
 from freezing.sync.data import _refresh_token_rejected
 from freezing.sync.exc import CommandError
-from freezing.sync.utils.mysqldump import rows
+from freezing.sync.utils.mysqldump import STDIN, rows
 
 from . import BaseCommand
 
@@ -32,7 +32,15 @@ class DeauthorizeHistoryScript(BaseCommand):
     database has been wiped takes its tokens with it, but the backups still
     hold them, so this reads the athletes straight out of a mysqldump.
 
-    Nothing here touches the competition database.
+    Nothing here touches the competition database. A dump may also be piped in,
+    which is how one reaches a container that cannot see the backups::
+
+        docker exec -i freezing-sync freezing-deauthorize-history - < dump.sql.xz
+
+    Note the lone -i: asking for a terminal as well leaves nothing on the pipe.
+    Piped one at a time, pass the newest season first. The ledger settles an
+    athlete as soon as one of their tokens is answered for, so the later dumps
+    only ask about the riders the earlier ones did not reach.
     """
 
     name = "deauthorize-history"
@@ -48,7 +56,10 @@ class DeauthorizeHistoryScript(BaseCommand):
             "backups",
             nargs="+",
             type=Path,
-            help="mysqldump files, plain or .xz, in any order.",
+            help=(
+                "mysqldump files, plain or .xz, in any order. "
+                "Use - to read one from standard input."
+            ),
             metavar="DUMP",
         )
 
@@ -84,8 +95,10 @@ class DeauthorizeHistoryScript(BaseCommand):
         put a stale token first.
         """
         seen: dict[int, dict[str, int]] = defaultdict(dict)
+        if backups.count(STDIN) > 1:
+            raise CommandError("standard input can only be read once")
         for backup in backups:
-            if not backup.exists():
+            if backup != STDIN and not backup.exists():
                 raise CommandError(f"no such backup: {backup}")
             count = 0
             for row in rows(backup, "athletes"):
@@ -97,7 +110,15 @@ class DeauthorizeHistoryScript(BaseCommand):
                 seen[athlete][token] = max(seen[athlete].get(token, 0), expires)
                 count += 1
             assert self.logger is not None
-            self.logger.info(f"{backup.name}: {count} athletes with a token")
+            named = "standard input" if backup == STDIN else backup.name
+            if not count:
+                # `docker exec` without -i hands the command an empty stdin and
+                # says nothing, so silence here would read as work well done.
+                raise CommandError(
+                    f"{named} held no athlete with a token. If it was piped in,"
+                    " check that docker exec was given -i and only -i."
+                )
+            self.logger.info(f"{named}: {count} athletes with a token")
         return {
             athlete: sorted(tokens, key=lambda t: tokens[t], reverse=True)
             for athlete, tokens in seen.items()

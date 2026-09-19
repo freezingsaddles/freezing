@@ -1,6 +1,7 @@
 """Reading one table out of a mysqldump, without a database to load it into."""
 
 import lzma
+from types import SimpleNamespace
 
 import pytest
 
@@ -82,3 +83,39 @@ def test_null_is_none_not_the_word(tmp_path):
 def test_a_missing_table_says_so(tmp_path):
     with pytest.raises(LookupError):
         columns(dump(tmp_path), "nosuchtable")
+
+
+def test_a_dump_can_arrive_on_a_pipe(tmp_path, monkeypatch):
+    """One pass, front to back: a pipe cannot be rewound to find the columns."""
+    import io
+
+    from freezing.sync.utils.mysqldump import STDIN
+
+    data = dump(tmp_path).read_bytes()
+    monkeypatch.setattr("sys.stdin", SimpleNamespace(buffer=io.BytesIO(data)))
+    assert [r["id"] for r in rows(STDIN, "athletes")] == ["1", "2", "3", "4", "5"]
+
+
+def test_a_compressed_dump_on_a_pipe_is_recognised(tmp_path, monkeypatch):
+    """Piping the .xz straight in saves decompressing it first."""
+    import io
+
+    from freezing.sync.utils.mysqldump import STDIN
+
+    data = dump(tmp_path, compress=True).read_bytes()
+    monkeypatch.setattr("sys.stdin", SimpleNamespace(buffer=io.BytesIO(data)))
+    assert [r["id"] for r in rows(STDIN, "athletes")] == ["1", "2", "3", "4", "5"]
+
+
+def test_rows_before_a_definition_are_refused(tmp_path, monkeypatch):
+    """Without the columns there is no way to tell a name from a token."""
+    import io
+
+    from freezing.sync.utils.mysqldump import STDIN
+
+    headless = "INSERT INTO `athletes` VALUES (1,'A',1,'tok');\n"
+    monkeypatch.setattr(
+        "sys.stdin", SimpleNamespace(buffer=io.BytesIO(headless.encode()))
+    )
+    with pytest.raises(LookupError):
+        list(rows(STDIN, "athletes"))
