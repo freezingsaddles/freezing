@@ -21,7 +21,7 @@ from freezing.sync.config import config, statsd
 from freezing.sync.exc import (
     ActivityNotFound,
     AthleteDeauthorized,
-    CommandError,
+    CompetitionOver,
     DataEntryError,
     IneligibleActivity,
 )
@@ -997,7 +997,7 @@ class ActivitySync(BaseSync):
         """
         with meta.transaction_context() as sess:
             q = sess.query(Athlete)
-            q = q.filter(Athlete.access_token is not None)
+            q = q.filter(has_strava_authorization())
             q = q.filter(func.mod(Athlete.id, total_segments) == segment)
             athletes: list[Athlete] = q.all()
             self.logger.info(
@@ -1039,9 +1039,10 @@ class ActivitySync(BaseSync):
             if (
                 datetime.now(UTC) > (end_date + config.UPLOAD_GRACE_PERIOD)
             ) and not force:
-                raise CommandError(
-                    "Current time is after competition end date + grace "
-                    "period, not syncing rides. (Use `force` to override.)"
+                raise CompetitionOver(
+                    "the competition ended {}, and its upload grace period "
+                    "with it, so there are no rides to sync. Pass force to "
+                    "sync anyway.".format(end_date.date())
                 )
 
             if rewrite:
@@ -1050,7 +1051,7 @@ class ActivitySync(BaseSync):
             # We iterate over all of our athletes that have access tokens.  (We can't fetch anything
             # for those that don't.)
             q = sess.query(Athlete)
-            q = q.filter(Athlete.access_token is not None)
+            q = q.filter(has_strava_authorization())
 
             if athlete_ids is not None:
                 q = q.filter(Athlete.id.in_(athlete_ids))
@@ -1060,7 +1061,7 @@ class ActivitySync(BaseSync):
             # without teams.
             # (The way the athlete sync works, athletes will only be configured for a single team
             # that is one of the configured competition teams.)
-            q = q.filter(Athlete.team_id is not None)
+            q = q.filter(Athlete.team_id.isnot(None))
 
             for athlete in q.all():
                 assert isinstance(athlete, Athlete)
