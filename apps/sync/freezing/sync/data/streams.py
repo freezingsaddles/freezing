@@ -16,6 +16,19 @@ from freezing.sync.utils.cache import CachingStreamFetcher
 from . import BaseSync, StravaClientForAthlete, has_strava_authorization
 
 
+def schedule_track_retry(ride: Ride) -> None:
+    """Ask for the ride's track again, unless we already have one.
+
+    Strava is eventually consistent about streams and a ride can be trimmed
+    after we have read it, so a ride without a track is worth another look.
+    The effort re-sync passes this way four times over a ride's first eleven
+    days and that is the whole budget: after it, a ride with no track is a
+    ride with no track.
+    """
+    if ride.track_fetched is not True:
+        ride.track_fetched = False
+
+
 class StreamSync(BaseSync):
     name = "sync-activity-streams"
     description = "Sync activity streams (GPS, etc.) JSON."
@@ -51,9 +64,15 @@ class StreamSync(BaseSync):
 
         use_cache = use_cache or only_cache
 
-        self.logger.info(f"Fetching gps tracks for {q.count()} activities")
+        # Read the ids up front: the loop commits, and a query iterated across
+        # a commit is no longer safe to read from.
+        ride_ids = [ride.id for ride in q]
+        self.logger.info(f"Fetching gps tracks for {len(ride_ids)} activities")
 
-        for ride in q:
+        for ride_id in ride_ids:
+            ride = session.get(Ride, ride_id)
+            if ride is None:
+                continue
             try:
                 client = StravaClientForAthlete(ride.athlete)
                 sf = CachingStreamFetcher(
@@ -75,9 +94,9 @@ class StreamSync(BaseSync):
                 )
                 if streams:
                     self.write_ride_streams(streams, ride)
-                    session.commit()
                 else:
-                    self.logger.debug(f"No streams for {ride!r} (skipping)")
+                    self.logger.info(f"No streams for {ride!r} yet")
+                    ride.track_fetched = None
             except Exception:
                 self.logger.exception(
                     "Error fetching/writing activity streams for "
@@ -85,6 +104,11 @@ class StreamSync(BaseSync):
                     exc_info=True,
                 )
                 session.rollback()
+                ride = session.get(Ride, ride_id)
+                # Out of the queue either way; the effort re-sync brings back
+                # anything still worth asking about.
+                ride.track_fetched = None
+            session.commit()
 
     def fetch_and_store_activity_streams(
         self, *, athlete_id: int, activity_id: int, use_cache: bool = False

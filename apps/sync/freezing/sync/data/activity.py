@@ -30,6 +30,7 @@ from freezing.sync.utils.cache import CachingActivityFetcher
 
 from . import BaseSync, StravaClientForAthlete, has_strava_authorization
 from .photos import schedule_fetch, schedule_one_more_fetch
+from .streams import schedule_track_retry
 
 # Strava is late and sometimes partial with a ride's efforts, so each one is
 # read again on a backoff of 1, 6, 36 and 216 hours -- eleven days in all --
@@ -548,6 +549,8 @@ class ActivitySync(BaseSync):
         # take the chance to look once more. Not gated on total_photo_count
         # because photos deleted in Strava should be deleted here too.
         schedule_one_more_fetch(ride)
+        # The same four visits are all the retries a missing track gets.
+        schedule_track_retry(ride)
 
     def check_activity(
         self,
@@ -859,9 +862,6 @@ class ActivitySync(BaseSync):
 
         num_rides = len(api_ride_entries)
 
-        ride_ids_needing_detail = []
-        ride_ids_needing_streams = []
-
         for i, strava_activity in enumerate(api_ride_entries):
             self.logger.debug(
                 "Processing ride: {} ({}/{})".format(
@@ -932,12 +932,6 @@ class ActivitySync(BaseSync):
                         sess.commit()
                     except Exception:
                         self.logger.exception("Error maybe-clearing ride-error entry.")
-
-                    if ride.detail_fetched is False:
-                        ride_ids_needing_detail.append(ride.id)
-
-                    if ride.track_fetched is False:
-                        ride_ids_needing_streams.append(ride.id)
 
             else:
                 ride = db_rides_by_id[strava_activity.id]
