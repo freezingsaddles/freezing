@@ -1,4 +1,4 @@
-"""additional athlete columns
+"""Additional athlete columns.
 
 Revision ID: 180c13f61b54
 Revises: 4874dd6f743c

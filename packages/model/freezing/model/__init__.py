@@ -13,7 +13,6 @@ from sqlalchemy.sql.expression import ClauseElement, Executable
 from freezing.model import meta, migrationsutil
 from freezing.model.autolog import log
 from freezing.model.config import config
-from freezing.model.meta import engine
 from freezing.model.monkeypatch import collections
 from freezing.model.orm import (
     Athlete,
@@ -51,7 +50,7 @@ def init_db():
 
 def init_model(sqlalchemy_url: str, drop: bool = False, check_version: bool = True):
     """
-    Initializes the tables and classes of the model using configured engine.
+    Initialize the tables and classes of the model using configured engine.
 
     :param sqlalchemy_url: The database URI.
     :param drop: Whether to drop the tables first.
@@ -105,12 +104,13 @@ def init_model(sqlalchemy_url: str, drop: bool = False, check_version: bool = Tr
                 warnings.warn(
                     "Unknown db revision {} installed, ignoring db upgrade.".format(
                         installed
-                    )
+                    ),
+                    stacklevel=2,
                 )
             else:
                 if latest != installed:
                     log.info(
-                        "Installed database ({0}) does not match latest available ({1}). (UPGRADING)".format(
+                        "Installed database ({}) does not match latest available ({}). (UPGRADING)".format(
                             installed, latest
                         ),
                         UserWarning,
@@ -128,17 +128,18 @@ class CreateView(Executable, ClauseElement):
 
 @compiles(CreateView, "mysql")
 def visit_create_view(element, compiler, **kw):
-    return "CREATE VIEW IF NOT EXISTS %s AS %s" % (
+    return "CREATE VIEW IF NOT EXISTS {} AS {}".format(
         element.name,
         compiler.process(element.select, literal_binds=True),
     )
 
 
 def drop_supplemental_db_objects(engine: Engine):
-    engine.execute("drop view if exists daily_scores")
-    engine.execute("drop view if exists ride_daylight")
-    engine.execute("drop view if exists _build_ride_daylight")
-    engine.execute("drop view if exists lbd_athletes")
+    with engine.begin() as conn:
+        conn.execute(sa.text("drop view if exists daily_scores"))
+        conn.execute(sa.text("drop view if exists ride_daylight"))
+        conn.execute(sa.text("drop view if exists _build_ride_daylight"))
+        conn.execute(sa.text("drop view if exists lbd_athletes"))
 
 
 def create_supplemental_db_objects(engine: Engine):
@@ -157,7 +158,7 @@ def create_supplemental_db_objects(engine: Engine):
               (sum(R.distance) * sum(R.distance)))
             else 65 + sum(R.distance) - 10
           end as points,
-          date(CONVERT_TZ(R.start_date, R.timezone,'{0}')) as ride_date
+          R.competition_date as ride_date
         from
           rides R join athletes A on A.id = R.athlete_id
         group by
@@ -165,24 +166,26 @@ def create_supplemental_db_objects(engine: Engine):
           A.team_id,
           ride_date
         ;
-    """.format(config.TIMEZONE))
+    """)
 
-    engine.execute(_v_daily_scores_create)
+    with engine.begin() as conn:
+        conn.execute(_v_daily_scores_create)
 
     _v_buid_ride_daylight = sa.DDL("""
         create view _build_ride_daylight as
-        select R.id as ride_id, date(R.start_date) as ride_date,
+        select R.id as ride_id, date(R.local_start_date) as ride_date,
         sec_to_time(R.elapsed_time) as elapsed,
         sec_to_time(R.moving_time) as moving,
-        TIME(R.start_date) as start_time,
-        TIME(date_add(R.start_date, interval R.elapsed_time second)) as end_time,
+        TIME(R.local_start_date) as start_time,
+        TIME(date_add(R.local_start_date, interval R.elapsed_time second)) as end_time,
         W.sunrise, W.sunset
         from rides R
         join ride_weather W on W.ride_id = R.id
         ;
         """)
 
-    engine.execute(_v_buid_ride_daylight)
+    with engine.begin() as conn:
+        conn.execute(_v_buid_ride_daylight)
 
     _v_ride_daylight = sa.DDL("""
         create view ride_daylight as
@@ -193,7 +196,8 @@ def create_supplemental_db_objects(engine: Engine):
         ;
         """)
 
-    engine.execute(_v_ride_daylight)
+    with engine.begin() as conn:
+        conn.execute(_v_ride_daylight)
 
     _v_leaderboard_athletes = sa.DDL("""
        create view lbd_athletes as select a.id, a.name, a.display_name, a.team_id from athletes a
@@ -201,7 +205,8 @@ def create_supplemental_db_objects(engine: Engine):
         ;
         """)
 
-    engine.execute(_v_leaderboard_athletes)
+    with engine.begin() as conn:
+        conn.execute(_v_leaderboard_athletes)
 
     _v_100_mile_team_score = sa.DDL("""
         create or replace VIEW `weekly_stats` AS
@@ -238,7 +243,8 @@ def create_supplemental_db_objects(engine: Engine):
         ;
         """)
 
-    engine.execute(_v_100_mile_team_score)
+    with engine.begin() as conn:
+        conn.execute(_v_100_mile_team_score)
 
     _v_daily_variance = sa.DDL("""
              create or replace view variance_by_day as
@@ -265,4 +271,5 @@ def create_supplemental_db_objects(engine: Engine):
                 group by ds.athlete_id;
             """)
 
-    engine.execute(_v_daily_variance)
+    with engine.begin() as conn:
+        conn.execute(_v_daily_variance)

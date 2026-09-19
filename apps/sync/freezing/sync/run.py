@@ -1,6 +1,6 @@
 import threading
+from datetime import datetime
 
-import arrow
 from apscheduler.schedulers.background import BackgroundScheduler
 from greenstalk import Client
 
@@ -12,8 +12,6 @@ from freezing.sync.data.activity import ActivitySync
 from freezing.sync.data.athlete import AthleteSync
 from freezing.sync.data.photos import PhotoSync
 from freezing.sync.data.weather import WeatherSync
-
-# from freezing.sync.workflow import configured_publisher
 from freezing.sync.subscribe import ActivityUpdateSubscriber
 
 
@@ -37,22 +35,20 @@ def main():
 
     scheduler = BackgroundScheduler()
 
-    # workflow_publisher = configured_publisher()
-
     activity_sync = ActivitySync()
     weather_sync = WeatherSync()
     athlete_sync = AthleteSync()
     photo_sync = PhotoSync()
 
     # Every hour run a sync on the activities for athletes
-    # falling into the specified segment
-    # athlete_id % total_segments == segment
+    # falling into the specified segment (those whose athlete_id modulo
+    # total_segments equals the segment).
     # TODO: Probably it would be more prudent to split into 15-minute segments,
     # to match rate limits.  Admittedly that will make the time-based segment
     # calculation a little trickier.
     def segmented_sync_activities():
         activity_sync.sync_rides_distributed(
-            total_segments=4, segment=(arrow.now().hour % 4)
+            total_segments=4, segment=(datetime.now().hour % 4)
         )
 
     scheduler.add_job(segmented_sync_activities, "cron", minute="50")
@@ -94,7 +90,7 @@ def main():
         # This is here to simulate application activity
         # (which keeps the main thread alive).
         subscriber.run_forever()
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt, SystemExit:
         log.info("Exiting on user request.")
     except Exception:
         log.exception("Error running sync/listener.")

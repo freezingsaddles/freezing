@@ -1,26 +1,12 @@
 import math
 
-from flask import Blueprint, render_template, request, send_file
-from sqlalchemy import func
+from flask import Blueprint, render_template, request
 
 from freezing.model import meta
 from freezing.model.orm import Ride, RidePhoto
 from freezing.web.autolog import log
-from freezing.web.utils import insta
 
 blueprint = Blueprint("photos", __name__)
-
-
-@blueprint.route("/<uid>.jpg")
-def instagram_photo(uid):
-    photopath = insta.photo_cache_path(uid, resolution=insta.STANDARD)
-    return send_file(photopath, mimetype="image/jpeg")
-
-
-@blueprint.route("/<uid>_thumb.jpg")
-def instagram_photo_thumb(uid):
-    photopath = insta.photo_cache_path(uid, resolution=insta.THUMBNAIL)
-    return send_file(photopath, mimetype="image/jpeg")
 
 
 @blueprint.route("/")
@@ -33,14 +19,14 @@ def index():
     offset = page_size * (page - 1)
     limit = page_size
 
-    log.debug("Page = {0}, offset={1}, limit={2}".format(page, offset, limit))
+    log.debug(f"Page = {page}, offset={offset}, limit={limit}")
 
     total_q = (
         meta.scoped_session()
         .query(RidePhoto)
         .join(Ride)
         .order_by(
-            func.convert_tz(Ride.start_date, Ride.timezone, "GMT").desc(),
+            Ride.start_date.desc(),
             RidePhoto.id.asc(),
         )
     )

@@ -1,10 +1,8 @@
-import abc
 import enum
-from datetime import datetime
-from typing import Any, Callable, Dict
+from datetime import UTC, datetime
+from typing import Any
 
-import arrow
-from marshmallow import Schema, fields, post_load, pre_load
+from marshmallow import fields, pre_load
 
 from . import BaseMessage, BaseSchema
 
@@ -26,12 +24,12 @@ class Subscription(BaseMessage):
     http://strava.github.io/api/partner/v3/events/
     """
 
-    application_id: int = None
-    object_type: ObjectType = None
-    aspect_type: AspectType = None
-    callback_url: str = None
-    created_at: datetime = None
-    updated_at: datetime = None
+    application_id: int | None = None
+    object_type: ObjectType | None = None
+    aspect_type: AspectType | None = None
+    callback_url: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class SubscriptionSchema(BaseSchema):
@@ -52,19 +50,15 @@ class SubscriptionSchema(BaseSchema):
 
 
 class SubscriptionCallback(BaseMessage):
-    """
-    Represents a Webhook Event Subscription Callback.
-    """
+    """Represents a Webhook Event Subscription Callback."""
 
-    hub_mode: str = None
-    hub_verify_token: str = None
-    hub_challenge: str = None
+    hub_mode: str | None = None
+    hub_verify_token: str | None = None
+    hub_challenge: str | None = None
 
 
 class SubscriptionCallbackSchema(BaseSchema):
-    """
-    Represents a Webhook Event Subscription Callback.
-    """
+    """Represents a Webhook Event Subscription Callback."""
 
     _model_class = SubscriptionCallback
 
@@ -74,23 +68,20 @@ class SubscriptionCallbackSchema(BaseSchema):
 
 
 class SubscriptionUpdate(BaseMessage):
-    """
-    Represents a Webhook Event Subscription Update.
-    """
+    """Represents a Webhook Event Subscription Update."""
 
-    subscription_id: int = None
-    owner_id: int = None
-    object_id: int = None
-    object_type: ObjectType = None
-    aspect_type: str = None
-    event_time: datetime = None
-    updates: Dict[str, Any] = None
+    subscription_id: int | None = None
+    owner_id: int | None = None
+    object_id: int | None = None
+    object_type: ObjectType | None = None
+    # The schema loads this with fields.Enum(AspectType), not as a str.
+    aspect_type: AspectType | None = None
+    event_time: datetime | None = None
+    updates: dict[str, Any] | None = None
 
 
 class SubscriptionUpdateSchema(BaseSchema):
-    """
-    Represents a Webhook Event Subscription Update.
-    """
+    """Represents a Webhook Event Subscription Update."""
 
     _model_class = SubscriptionUpdate
 
@@ -104,6 +95,9 @@ class SubscriptionUpdateSchema(BaseSchema):
 
     @pre_load
     def parse_dt(self, in_data, **kwargs):
-        if in_data.get("event_time"):
-            in_data["event_time"] = arrow.get(in_data["event_time"]).isoformat()
+        # Strava sends this as seconds since the epoch; anything already written
+        # out is left for the field itself to read.
+        event_time = in_data.get("event_time")
+        if isinstance(event_time, (int, float)):
+            in_data["event_time"] = datetime.fromtimestamp(event_time, UTC).isoformat()
         return in_data

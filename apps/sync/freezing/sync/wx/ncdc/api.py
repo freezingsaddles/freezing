@@ -22,25 +22,23 @@ http://www.ncdc.noaa.gov/cdo-services/services/datasets/GHCND/locationsearch.xml
 
 
 class Fault(Exception):
-    """
-    Container for exceptions raised by the remote server.
-    """
+    """Container for exceptions raised by the remote server."""
 
     name = None
     message = None
 
-    def __init__(self, p1, p2=None):
+    def __init__(self, p1, p2=None):  # noqa: B042 (message built from args)
         if p1 and p2:
             self.name = p1
             self.message = p2
-            msg = "{0}: {1}".format(self.name, self.message)
+            msg = f"{self.name}: {self.message}"
         else:
             self.message = p1
             msg = self.message
-        super(Fault, self).__init__(msg)
+        super().__init__(msg)
 
 
-class Client(object):
+class Client:
     base_url = urllib.parse.urlparse("http://www.ncdc.noaa.gov/cdo-services/services")
 
     def __init__(self, token, cache_dir=None):
@@ -53,9 +51,7 @@ class Client(object):
             os.makedirs(self.cache_dir)
 
     def _handle_protocol_error(self, response):
-        """
-        Parses the JSON response from the server, raising a :class:`stravatools.api.Fault` if the
-        server returned an error.
+        """Parse the JSON response from the server, raising a :class:`stravatools.api.Fault` if the server returned an error.
 
         :param response: The response JSON
         :raises Fault: If the response contains an error.
@@ -65,25 +61,19 @@ class Client(object):
         return response
 
     def get(self, *args, **kwargs):
-        """
-        Construct a URL built on top of the base where args are the path elements
-        and kwargs are any keywords.
-        """
+        """Construct a URL built on top of the base where args are the path elements and kwargs are any keywords."""
         path = self.base_url.path
         if not path.endswith("/"):
             path += "/"
 
         path_components = list(args)
-        if path_components:
-            if not path_components[-1].endswith(".json"):
-                path_components[-1] += ".json"
+        if path_components and not path_components[-1].endswith(".json"):
+            path_components[-1] += ".json"
 
         path += "/".join(path_components)
 
-        params = dict(token=self.token)
+        params = {"token": self.token}
         params.update(kwargs)
-        # query_params.update(urllib.urlencode(kwargs))
-        # new_query_string = urllib.urlencode(query_params)
 
         url = urllib.parse.urlunsplit(
             (
@@ -95,7 +85,7 @@ class Client(object):
             )
         )
 
-        self.log.debug("GET {0!r} with params {1!r}".format(url, params))
+        self.log.debug(f"GET {url!r} with params {params!r}")
         raw = requests.get(url, params=params)
         raw.raise_for_status()
         self._handle_protocol_error(raw.json())
@@ -106,9 +96,7 @@ class Client(object):
         return raw
 
     def datasets(self):
-        """
-        Enumerate the datasets.
-        """
+        """Enumerate the datasets."""
         # We know this one is just a single page (always?), so we can probably make some shortcuts here?
         return self.get("datasets").json()["dataSetCollection"]["dataSet"]
 
@@ -125,8 +113,7 @@ class Client(object):
         res = data_getter(page=page)
 
         response_obj = res.json()
-        collection = model.LocationSearchResultCollection(data_getter, response_obj)
-        return collection
+        return model.LocationSearchResultCollection(data_getter, response_obj)
 
     def locationtypes(self):
         pass
@@ -144,23 +131,17 @@ class Client(object):
         return path
 
     def _check_cache(self, dataset, station, date):
-        data = None
         if self.cache_dir:
             basedir = self._cache_dir(dataset, station)
             filename = date.strftime("%Y-%m-%d") + ".json"
             filepath = os.path.join(basedir, filename)
             if os.path.exists(filepath):
-                self.log.debug(
-                    "Cache hit for {0}/{1}/{2}".format(dataset, station, date)
-                )
-                with open(filepath, "r") as fp:
-                    data = json.loads(fp.read())
-            else:
-                self.log.debug(
-                    "Cache miss for {0}/{1}/{2}".format(dataset, station, date)
-                )
+                self.log.debug(f"Cache hit for {dataset}/{station}/{date}")
+                with open(filepath) as fp:
+                    return json.loads(fp.read())
+            self.log.debug(f"Cache miss for {dataset}/{station}/{date}")
 
-        return data
+        return None
 
     def _write_cache(self, dataset, station, date, response_json):
         if self.cache_dir:
@@ -192,8 +173,7 @@ class Client(object):
             data = res.json()
             self._write_cache(dataset, station, date, data)
 
-        collection = model.DataCollection(data_getter, data)
-        return collection
+        return model.DataCollection(data_getter, data)
 
 
 if __name__ == "__main__":
@@ -209,16 +189,18 @@ if __name__ == "__main__":
             break
         if r.type == "station":
             if desired_date <= r.maxDate and desired_date >= r.minDate:
-                print("Getting station data for %r" % r)
+                print("Getting station data for %r" % r)  # noqa: T201
                 coll = c.station_data(station=r.id, date=desired_date)
                 desired_data.fill(coll)
                 time.sleep(1.0)
             else:
-                print("Skipping station %r because date doesn't match." % r)
+                print(  # noqa: T201
+                    "Skipping station %r because date doesn't match." % r
+                )
     else:
-        print(
+        print(  # noqa: T201
             "Exhausted search without filling observations.  (missing = %r)"
             % (desired_data.observations_needed,)
         )
 
-    print(desired_data.observations)
+    print(desired_data.observations)  # noqa: T201

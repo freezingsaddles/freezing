@@ -16,5 +16,5 @@ def parse_competition_timestamp(ts):
     """
     dt = date_parser.parse(ts)
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=config.TIMEZONE)
+        return dt.replace(tzinfo=config.TIMEZONE)
     return dt

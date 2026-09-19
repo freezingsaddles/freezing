@@ -12,7 +12,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        app: [web, sync, nq]
+        app: [web, sync, nq, freezebot]
     uses: ./.github/workflows/build-docker.yml
     with:
       app: ${{ matrix.app }}

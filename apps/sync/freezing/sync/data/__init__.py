@@ -1,7 +1,6 @@
 import abc
 import logging
 import time
-from typing import Union
 
 from stravalib import Client
 
@@ -11,14 +10,12 @@ from freezing.sync.config import Config
 
 
 class StravaClientForAthlete(Client):
-    """
-    Creates a StravaClient for the specified athlete.
-    """
+    """Creates a StravaClient for the specified athlete."""
 
     def __init__(
         self,
-        athlete: Union[int, Athlete],
-        logger: logging.Logger = None,
+        athlete: int | Athlete,
+        logger: logging.Logger | None = None,
     ):
         self.logger = logger or logging.getLogger(__name__)
         assert athlete, "No athlete ID or Athlete object provided."
@@ -28,15 +25,11 @@ class StravaClientForAthlete(Client):
             athlete_id = athlete
             athlete = meta.scoped_session().query(Athlete).get(athlete_id)
             if not athlete:
-                raise ValueError(
-                    "Athlete ID does not exist in database: {}".format(athlete_id)
-                )
-        super(StravaClientForAthlete, self).__init__(
-            access_token=athlete.access_token, rate_limit_requests=True
-        )
-        self.refresh_access_token(athlete)
+                raise ValueError(f"Athlete ID does not exist in database: {athlete_id}")
+        super().__init__(access_token=athlete.access_token, rate_limit_requests=True)
+        self.refresh_athlete_access_token(athlete)
 
-    def refresh_access_token(self, athlete: Athlete):
+    def refresh_athlete_access_token(self, athlete: Athlete):
         assert athlete, "No athlete ID or Athlete object provided."
         if athlete.refresh_token is not None:
             an_hour_from_now = time.time() + 60 * 60
@@ -60,9 +53,7 @@ class StravaClientForAthlete(Client):
             # https://developers.strava.com/docs/oauth-updates/#migration-instructions
             refresh_token = athlete.access_token
         else:
-            raise ValueError(
-                "athlete %s had no access or refresh token".format(athlete.id)
-            )
+            raise ValueError(f"athlete {athlete.id} had no access or refresh token")
         if refresh_token:
             self.logger.info("saving refresh token for athlete %s", athlete.id)
             token_dict = super().refresh_access_token(
@@ -89,5 +80,5 @@ class BaseSync(metaclass=abc.ABCMeta):
     def description(self):
         pass
 
-    def __init__(self, logger: logging.Logger = None):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)

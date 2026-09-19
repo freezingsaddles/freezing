@@ -4,16 +4,16 @@ import gzip
 import hashlib
 import json
 import os
-from datetime import timedelta
+from datetime import UTC, timedelta
 from decimal import Decimal
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
-import arrow
-import pytz
 from flask import Blueprint, abort, jsonify, make_response, request, session
 from sqlalchemy import func, text
 from werkzeug.utils import secure_filename
 
+from freezing.common.times import parse_instant
 from freezing.model import meta
 from freezing.model.orm import Athlete, Ride, RidePhoto, RideTrack
 from freezing.web import config
@@ -124,15 +124,13 @@ def list_photos():
     for p in photos:
         results.append(schema.dump(p))
 
-    return jsonify(dict(result=results, count=len(results)))
+    return jsonify({"result": results, "count": len(results)})
 
 
 @blueprint.route("/leaderboard/team")
 @auth.crossdomain(origin="*")
 def team_leaderboard():
-    """
-    Loads the leaderboard data broken down by team.
-    """
+    """Load the leaderboard data broken down by team."""
     q = text("""
              select T.id as team_id, T.name as team_name, sum(DS.points) as total_score,
              sum(DS.distance) as total_distance
@@ -162,7 +160,8 @@ def team_leaderboard():
         team_members.setdefault(indiv_row["team_id"], []).append(indiv_row)
 
     for team_id in team_members:
-        team_members[team_id] = reversed(
+        # noqa: C413 -- reverse=True would flip the order of tied scores.
+        team_members[team_id] = reversed(  # noqa: C413
             sorted(team_members[team_id], key=lambda m: m["total_score"])
         )
 
@@ -192,19 +191,19 @@ def team_leaderboard():
             }
         )
 
-    return jsonify(dict(leaderboard=rows))
+    return jsonify({"leaderboard": rows})
 
 
 def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
-    # These dates  must be made naive, since we don't have TZ info stored in our ride columns.
+    # Ride.start_date is naive UTC, so shift to UTC before dropping the offset.
     if start_date is not None:
-        start_date = arrow.get(start_date).datetime.replace(tzinfo=None)
+        start_date = parse_instant(start_date).astimezone(UTC).replace(tzinfo=None)
 
     if end_date is not None:
-        end_date = arrow.get(end_date).datetime.replace(tzinfo=None)
+        end_date = parse_instant(end_date).astimezone(UTC).replace(tzinfo=None)
 
-    log.debug("Filtering on start_date: {}".format(start_date))
-    log.debug("Filtering on end_date: {}".format(end_date))
+    log.debug(f"Filtering on start_date: {start_date}")
+    log.debug(f"Filtering on end_date: {end_date}")
 
     sess = meta.scoped_session()
 
@@ -234,11 +233,11 @@ def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
     for ride_track, wkt in q:
         assert isinstance(ride_track, RideTrack)
         assert isinstance(wkt, str)
-        ride_tz = pytz.timezone(ride_track.ride.timezone)
+        ride_tz = ZoneInfo(ride_track.ride.timezone)
 
         coordinates = []
         for i, (lon, lat) in enumerate(parse_linestring(wkt)):
-            elapsed_time = ride_track.ride.start_date + timedelta(
+            elapsed_time = ride_track.ride.local_start_date + timedelta(
                 seconds=ride_track.time_stream[i]
             )
 
@@ -246,7 +245,7 @@ def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
                 float(Decimal(lon)),
                 float(Decimal(lat)),
                 float(Decimal(ride_track.elevation_stream[i])),
-                ride_tz.localize(elapsed_time).isoformat(),
+                elapsed_time.replace(tzinfo=ride_tz).isoformat(),
             )
 
             coordinates.append(point)
@@ -273,7 +272,7 @@ def geo_tracks_all():
 @blueprint.route("/teams/<int:team_id>/tracks.geojson")
 @auth.crossdomain(origin="*")
 def geo_tracks_team(team_id):
-    log.info("Fetching gps tracks for team {}".format(team_id))
+    log.info(f"Fetching gps tracks for team {team_id}")
 
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
@@ -314,8 +313,8 @@ def _track_map(
 ):
     teamsq = text("select id, name from teams order by id asc")
     teams = [
-        {"id": id, "name": name}
-        for [id, name] in meta.scoped_session().execute(teamsq).fetchall()
+        {"id": team_id, "name": name}
+        for [team_id, name] in meta.scoped_session().execute(teamsq).fetchall()
     ]
 
     q = text(f"""
@@ -339,7 +338,7 @@ def _track_map(
     if athlete_id:
         q = q.bindparams(athlete_id=athlete_id)
     if hash_tag:
-        q = q.bindparams(hash_tag="%#{}%".format(hash_tag))
+        q = q.bindparams(hash_tag=f"%#{hash_tag}%")
     if ride_ids:
         q = q.bindparams(ride_ids=ride_ids)
     if limit:

@@ -1,4 +1,4 @@
-"""reverse coordinates
+"""Reverse coordinates.
 
 Revision ID: c206a3641567
 Revises: a77103b34b0b
@@ -12,14 +12,13 @@ down_revision = "a77103b34b0b"
 
 import re
 
-import sqlalchemy as sa
 from alembic import op
 
 _point_rx = re.compile("^POINT\\((.+)\\)$")
 
 
 def point_wkt(lon, lat):
-    return "POINT({lon} {lat})".format(lon=lon, lat=lat)
+    return f"POINT({lon} {lat})"
 
 
 def parse_point_wkt(wkt):

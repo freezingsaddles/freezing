@@ -31,7 +31,7 @@ env/
 *.iml
 .DS_Store
 
-# Scala / sbt (teams/, infra/) and the CDK app
+# Scala / sbt (teams/, infra/, apps/freezebot/) and the CDK app
 **/target/
 **/.bsp/
 **/.bloop/

@@ -1,4 +1,4 @@
-"""photos_fetched null
+"""Photos_fetched null.
 
 Revision ID: 54627e8199c9
 Revises: 1259f25794b5

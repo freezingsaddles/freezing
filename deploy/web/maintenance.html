@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+    <head>
+        <title>Freezing Saddles</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="refresh" content="15" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/ico/favicon-32x32.png" />
+        <style>
+            :root { color-scheme: dark; }
+            body {
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #212529;
+                color: #dee2e6;
+                font-family: Montserrat, system-ui, -apple-system, sans-serif;
+                text-align: center;
+            }
+            main { padding: 1rem; max-width: 30rem; }
+            h1 { font-weight: 500; font-size: 1.75rem; margin: 0 0 0.75rem; }
+            p { margin: 0; line-height: 1.6; color: #adb5bd; }
+            .spinner {
+                width: 2.5rem;
+                height: 2.5rem;
+                margin: 0 auto 1.5rem;
+                border: 3px solid #495057;
+                border-top-color: #0d9bd4;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+            @keyframes spin { to { transform: rotate(360deg); } }
+            @media (prefers-reduced-motion: reduce) {
+                .spinner { animation: none; border-top-color: #495057; }
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <div class="spinner"></div>
+            <h1>Just a moment</h1>
+            <p>
+                Freezing Saddles is being updated. This page will reload itself in a
+                few seconds.
+            </p>
+        </main>
+    </body>
+</html>

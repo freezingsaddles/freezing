@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from marshmallow import fields
 
@@ -13,15 +13,13 @@ class DefinedTubes(enum.Enum):
 
 
 class ActivityUpdate(BaseMessage):
-    """
-    Represents a Webhook Event Subscription Update.
-    """
+    """Represents a Webhook Event Subscription Update."""
 
-    operation: AspectType = None
-    athlete_id: int = None
-    activity_id: int = None
-    event_time: datetime = None
-    updates: Dict[str, Any] = None
+    operation: AspectType | None = None
+    athlete_id: int | None = None
+    activity_id: int | None = None
+    event_time: datetime | None = None
+    updates: dict[str, Any] | None = None
 
     def __repr__(self):
         return "[Activity {} id={} athlete={}]".format(
@@ -32,9 +30,7 @@ class ActivityUpdate(BaseMessage):
 
 
 class ActivityUpdateSchema(BaseSchema):
-    """
-    Represents a Webhook Event Subscription Update.
-    """
+    """Represents a Webhook Event Subscription Update."""
 
     _model_class = ActivityUpdate
 

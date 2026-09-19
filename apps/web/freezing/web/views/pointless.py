@@ -67,6 +67,7 @@ def generic(leaderboard):
 def points_per_mile():
     """
     Note: set num_days to the minimum number of ride days to be eligible for the prize.
+
     This was 33 in 2017, 36 in 2018, and 40 in 2019.
 
     (@hozn noted: I didn't pay enough attention to determine if this is something we can calculate.)
@@ -99,9 +100,7 @@ def points_per_mile():
 
 
 def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
-    """
-    orderby 'miles', 'rides' or 'days'
-    """
+    """Build the hashtag table data; orderby is 'miles', 'rides' or 'days'."""
     sess = meta.scoped_session()
     rank_by = "hashtag_miles"
     if orderby == "days":
@@ -114,7 +113,7 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
                 R.id,
                 R.athlete_id,
                 R.distance,
-                date(convert_tz(R.start_date, R.timezone, :tz)) as start_date
+                R.competition_date as start_date
             from
                 rides R
             where
@@ -154,7 +153,6 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
         order by
             H.{rank_by} desc, lower(H.athlete_name) asc
         """).bindparams(
-        tz=config.TIMEZONE,
         hashtag=hashtag,
         alttag=alttag or hashtag,
         min_miles=min_miles or 0.0,
@@ -194,14 +192,14 @@ def _get_phototag_tdata(request, hashtag):
                 R.id AS ride_id,
                 R.name,
                 R.athlete_id,
-                convert_tz(R.start_date, R.timezone, :tz) AS start_date,
+                convert_tz(R.start_date, 'UTC', :tz) AS start_date,
                 A.display_name
             from
                 rides R join athletes A on A.id = R.athlete_id
             where
                 R.name like :tag and
                 (:myself is null or A.id = :myself) and
-                (:date is null or date(convert_tz(R.start_date, R.timezone, :tz)) = :date)
+                (:date is null or R.competition_date = :date)
         ), primary_photos as (
             select
                 P.id, P.caption, P.img_l, R.*
@@ -276,7 +274,7 @@ def _get_phototag_tdata(request, hashtag):
         page = total_pages
 
     return {
-        "photos": [photo for photo in photos],
+        "photos": list(photos),
         "page": page,
         "total_pages": total_pages,
         "date": datetime.fromisoformat(date) if date else "",
@@ -362,7 +360,7 @@ def _get_segment_tdata(segment):
         group by
             A.id, A.display_name, E.segment_name;
         """)
-    rs = sess.execute(q, params=dict(segment=segment))
+    rs = sess.execute(q, params={"segment": segment})
     retval = [
         (
             x._mapping["id"],
@@ -496,8 +494,8 @@ def arlington():
         for d in load_multisegment_board_data(load_board("arlington-ccw"))
     }
     data = [
-        combine(data_cw.get(id), data_ccw.get(id))
-        for id in set(data_cw.keys()).union(data_ccw.keys())
+        combine(data_cw.get(athlete_id), data_ccw.get(athlete_id))
+        for athlete_id in set(data_cw.keys()).union(data_ccw.keys())
     ]
     data.sort(key=lambda d: (-d["segment_rides"], d["athlete_name"]))
     formatted = format_rows([FakeRow(d) for d in data], board)
@@ -538,10 +536,12 @@ def load_multisegment_board_data(board):
     }
     # athlete_id -> segment_id
     worst_segments = {
-        id: min(segments.keys(), key=lambda s: segment_rides.get((id, s), 0))
-        for id in athletes.keys()
+        athlete_id: min(
+            segments.keys(), key=lambda s: segment_rides.get((athlete_id, s), 0)
+        )
+        for athlete_id in athletes.keys()
     }
-    data = [
+    return [
         {
             "athlete_id": athlete_id,
             "athlete_name": athletes[athlete_id],
@@ -551,7 +551,6 @@ def load_multisegment_board_data(board):
         }
         for athlete_id, segment in worst_segments.items()
     ]
-    return data
 
 
 @blueprint.route("/daily_variance")

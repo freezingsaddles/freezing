@@ -2,8 +2,8 @@ import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
 from statistics import mean
+from zoneinfo import ZoneInfo
 
-from pytz import timezone
 from sqlalchemy import text
 
 from freezing.model import meta, orm
@@ -21,15 +21,13 @@ from freezing.sync.wx.visualcrossing.api import HistoVisualCrossing
 # the start day of the ride, so an epic century that starts just before midnight will receive no
 # credit for the blizzard that starts at one minute past midnight.
 class WeatherSync(BaseSync):
-    """
-    Synchronize rides from data with the database.
-    """
+    """Synchronize rides from data with the database."""
 
     name = "sync-weather"
     description = "Sync all ride weather"
 
     def sync_weather(
-        self, clear: bool = False, limit: int = None, cache_only: bool = False
+        self, clear: bool = False, limit: int | None = None, cache_only: bool = False
     ):
         sess = meta.scoped_session()
 
@@ -38,7 +36,7 @@ class WeatherSync(BaseSync):
             sess.query(orm.RideWeather).delete()
 
         if limit:
-            self.logger.info("Fetching weather for first {0} rides".format(limit))
+            self.logger.info(f"Fetching weather for first {limit} rides")
         else:
             self.logger.info("Fetching weather for all rides")
 
@@ -51,7 +49,7 @@ class WeatherSync(BaseSync):
             join ride_geo G on G.ride_id = R.id
             left join ride_weather W on W.ride_id = R.id
             where W.ride_id is null
-            and date_add(CONVERT_TZ(R.start_date, R.timezone, 'SYSTEM'), INTERVAL R.elapsed_time SECOND) < (NOW() - INTERVAL 1 HOUR)
+            and date_add(R.start_date, INTERVAL R.elapsed_time SECOND) < (UTC_TIMESTAMP() - INTERVAL 1 HOUR)
             ;
             """)
 
@@ -67,22 +65,21 @@ class WeatherSync(BaseSync):
 
         for i, r in enumerate(rows):
             if limit and i >= limit:
-                logging.info("Limit ({0}) reached".format(limit))
+                logging.info(f"Limit ({limit}) reached")
                 break
 
             ride = sess.get(orm.Ride, r._mapping["id"])
             start_geo_wkt = r._mapping["start_geo"]
             self.logger.info(
-                "Processing ride: {0} ({1}/{2}) ({3})".format(
+                "Processing ride: {} ({}/{}) ({})".format(
                     ride.id, i, num_rides, start_geo_wkt
                 )
             )
 
             try:
                 # If you can't reproduce the ancient infrastructure required by all this and so can't run any of the
-                # geoalchemy stuff you can hardcode this to debug
-                # start_geo_wkt = "POINT(-76.96 38.96)"
-                # start_geo_wkt = meta.scoped_session().scalar(ride.geo.start_geo.wkt)
+                # geoalchemy stuff you can hardcode start_geo_wkt here to a fixed
+                # point, e.g. POINT(-76.96 38.96), to debug.
                 point = parse_point_wkt(start_geo_wkt)
 
                 # We round lat/lon to decrease the granularity and allow better re-use of cache data.
@@ -91,13 +88,15 @@ class WeatherSync(BaseSync):
                 lat = round(Decimal(point.lat), 1)
 
                 self.logger.debug(
-                    "Ride metadata: time={0} dur={1} loc={2}/{3}".format(
-                        ride.start_date, ride.elapsed_time, lat, lon
+                    "Ride metadata: time={} dur={} loc={}/{}".format(
+                        ride.local_start_date, ride.elapsed_time, lat, lon
                     )
                 )
 
-                ride_today = datetime.now(timezone(ride.timezone))
-                start_date = ride.start_date.replace(tzinfo=timezone(ride.timezone))
+                ride_today = datetime.now(ZoneInfo(ride.timezone))
+                start_date = ride.local_start_date.replace(
+                    tzinfo=ZoneInfo(ride.timezone)
+                )
                 fetch_date = start_date + timedelta(seconds=ride.elapsed_time)
                 # For caching purposes we're saying we want weather as of the end of the ride, so if
                 # we have weather from earlier in the day we don't use it. Because we're lame and
@@ -118,7 +117,7 @@ class WeatherSync(BaseSync):
                     time=fetch_date, latitude=lat, longitude=lon
                 )
 
-                self.logger.debug("Got response in timezone {0}".format(hist.timezone))
+                self.logger.debug(f"Got response in timezone {hist.timezone}")
 
                 ride_start = start_date.astimezone(tz=hist.timezone)
                 ride_end = ride_start + timedelta(seconds=ride.elapsed_time)
@@ -153,7 +152,7 @@ class WeatherSync(BaseSync):
                     )
 
                 for x in ride_observations:
-                    self.logger.debug("Observation: {0}".format(x.__dict__))
+                    self.logger.debug(f"Observation: {x.__dict__}")
 
                 rw = orm.RideWeather()
                 rw.ride_id = ride.id
@@ -176,8 +175,8 @@ class WeatherSync(BaseSync):
                 rw.ride_precip = (
                     sum([o.precip_accumulation for o in ride_observations]) * scale
                 )
-                rw.ride_rain = any([o.precip_type == "rain" for o in ride_observations])
-                rw.ride_snow = any([o.precip_type == "snow" for o in ride_observations])
+                rw.ride_rain = any(o.precip_type == "rain" for o in ride_observations)
+                rw.ride_snow = any(o.precip_type == "snow" for o in ride_observations)
 
                 rw.wind_speed = mean([o.wind_speed for o in ride_observations])
                 rw.wind_gust = max([o.wind_gust for o in ride_observations])
@@ -188,15 +187,13 @@ class WeatherSync(BaseSync):
                 rw.sunrise = hist.day.sunrise.time()
                 rw.sunset = hist.day.sunset.time()
 
-                self.logger.debug("Ride weather: {0}".format(rw.__dict__))
+                self.logger.debug(f"Ride weather: {rw.__dict__}")
 
                 sess.add(rw)
                 sess.flush()
 
-            except:
-                self.logger.exception(
-                    "Error getting weather data for ride: {0}".format(ride)
-                )
+            except Exception:
+                self.logger.exception(f"Error getting weather data for ride: {ride}")
                 sess.rollback()
 
             else:

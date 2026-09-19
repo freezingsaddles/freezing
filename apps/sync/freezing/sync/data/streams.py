@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, List
 
 from geoalchemy2.elements import WKTElement
 from sqlalchemy import and_
@@ -23,9 +22,9 @@ class StreamSync(BaseSync):
 
     def sync_streams(
         self,
-        athlete_id: int = None,
+        athlete_id: int | None = None,
         rewrite: bool = False,
-        max_records: int = None,
+        max_records: int | None = None,
         use_cache: bool = True,
         only_cache: bool = False,
     ):
@@ -34,24 +33,24 @@ class StreamSync(BaseSync):
         q = session.query(Ride).options(joinedload(Ride.athlete))
 
         # We do not fetch streams for private rides.
-        q = q.filter(and_(Ride.private == False))
+        q = q.filter(and_(Ride.private == False))  # noqa: E712
 
         if not rewrite:
             q = q.filter(
-                Ride.track_fetched == False,
+                Ride.track_fetched == False,  # noqa: E712
             )
 
         if athlete_id:
-            self.logger.info("Filtering activity details for {}".format(athlete_id))
+            self.logger.info(f"Filtering activity details for {athlete_id}")
             q = q.filter(Ride.athlete_id == athlete_id)
 
         if max_records:
-            self.logger.info("Limiting to {} records".format(max_records))
+            self.logger.info(f"Limiting to {max_records} records")
             q = q.limit(max_records)
 
         use_cache = use_cache or only_cache
 
-        self.logger.info("Fetching gps tracks for {} activities".format(q.count()))
+        self.logger.info(f"Fetching gps tracks for {q.count()} activities")
 
         for ride in q:
             try:
@@ -77,7 +76,7 @@ class StreamSync(BaseSync):
                     self.write_ride_streams(streams, ride)
                     session.commit()
                 else:
-                    self.logger.debug("No streams for {!r} (skipping)".format(ride))
+                    self.logger.debug(f"No streams for {ride!r} (skipping)")
             except Exception:
                 self.logger.exception(
                     "Error fetching/writing activity streams for "
@@ -115,11 +114,11 @@ class StreamSync(BaseSync):
                     self.write_ride_streams(streams, ride)
                     session.commit()
                 else:
-                    self.logger.debug("No streams for {!r} (skipping)".format(ride))
-            except ObjectNotFound:
+                    self.logger.debug(f"No streams for {ride!r} (skipping)")
+            except ObjectNotFound as e:
                 raise ActivityNotFound(
-                    "Streams not found for {}, athlete {}".format(ride, ride.athlete)
-                )
+                    f"Streams not found for {ride}, athlete {ride.athlete}"
+                ) from e
             except Exception:
                 self.logger.exception(
                     "Error fetching/writing activity streams for "
@@ -128,7 +127,7 @@ class StreamSync(BaseSync):
                 )
                 raise
 
-    def write_ride_streams(self, streams: List[Stream], ride: Ride):
+    def write_ride_streams(self, streams: list[Stream], ride: Ride):
         """
         Store GPS track for activity as geometry (linestring) and json types in db.
 
@@ -137,9 +136,13 @@ class StreamSync(BaseSync):
         """
         session = meta.scoped_session()
         try:
-            streams_dict: Dict[str, List[Stream]] = {s.type: s for s in streams}
+            streams_dict: dict[str, Stream] = {
+                s.type: s for s in streams if s.type is not None
+            }
 
-            lonlat_points = [(lon, lat) for (lat, lon) in streams_dict["latlng"].data]
+            lonlat_points = [
+                (lon, lat) for (lat, lon) in streams_dict["latlng"].data or []
+            ]
 
             # mysql does not admit the possibility of one point in a line
             if len(lonlat_points) < 2:
@@ -147,7 +150,7 @@ class StreamSync(BaseSync):
 
         except (KeyError, ValueError) as x:
             self.logger.info(
-                "No GPS track for activity {} (skipping): {}".format(ride, x),
+                f"No GPS track for activity {ride} (skipping): {x}",
                 exc_info=self.logger.isEnabledFor(logging.DEBUG),
             )
             ride.track_fetched = None

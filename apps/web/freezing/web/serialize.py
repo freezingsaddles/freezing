@@ -1,7 +1,9 @@
+from typing import Any
+
 from marshmallow import Schema, fields
 
 # shortcut
-optional = dict(allow_none=True, required=False)
+optional: dict[str, Any] = {"allow_none": True, "required": False}
 
 
 class AthleteSchema(Schema):
@@ -14,8 +16,6 @@ class AthleteSchema(Schema):
     expires_at = fields.Integer()
     profile_photo = fields.String(**optional)
 
-    # rides = orm.relationship("Ride", backref="athlete", lazy="dynamic", cascade="all, delete, delete-orphan")
-
 
 class TeamSchema(Schema):
     id = fields.Integer()
@@ -25,9 +25,7 @@ class TeamSchema(Schema):
 
 class RidePhotoSchema(Schema):
     id = fields.String()
-    source = fields.Integer()
     ride_id = fields.Integer()
-    ref = fields.String(**optional)
     caption = fields.String(**optional)
 
     img_t = fields.String(**optional)

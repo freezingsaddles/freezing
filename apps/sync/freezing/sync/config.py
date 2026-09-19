@@ -1,13 +1,13 @@
 import logging
 import os
 from datetime import timedelta, tzinfo
-from typing import List
+from zoneinfo import ZoneInfo
 
-import arrow
-import pytz
 from colorlog import ColoredFormatter
 from datadog import DogStatsd
 from envparse import env
+
+from freezing.common.times import parse_instant
 
 envfile = os.environ.get("APP_SETTINGS", os.path.join(os.getcwd(), ".env"))
 
@@ -36,13 +36,13 @@ class Config:
     OBSERVER_TEAMS = env("OBSERVER_TEAMS", cast=list, subcast=int, default=[])
     MAIN_TEAM = env("MAIN_TEAM", cast=int, default=0)
 
-    START_DATE = env("START_DATE", postprocessor=lambda val: arrow.get(val).datetime)
-    END_DATE = env("END_DATE", postprocessor=lambda val: arrow.get(val).datetime)
+    START_DATE = env("START_DATE", postprocessor=parse_instant)
+    END_DATE = env("END_DATE", postprocessor=parse_instant)
 
     TIMEZONE: tzinfo = env(
         "TIMEZONE",
         default="America/New_York",
-        postprocessor=lambda val: pytz.timezone(val),
+        postprocessor=lambda val: ZoneInfo(val),
     )
 
     UPLOAD_GRACE_PERIOD: timedelta = env(
@@ -52,7 +52,7 @@ class Config:
         postprocessor=lambda val: timedelta(days=val),
     )
 
-    EXCLUDE_KEYWORDS: List[str] = env(
+    EXCLUDE_KEYWORDS: list[str] = env(
         "EXCLUDE_KEYWORDS", cast=list, subcast=str, default=["#NoBAFS"]
     )
 
@@ -79,6 +79,7 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
     ch = logging.StreamHandler()
     ch.setLevel(loglevel)
 
+    formatter: logging.Formatter
     if color:
         formatter = ColoredFormatter(
             "%(log_color)s%(levelname)-8s%(reset)s [%(name)s] %(message)s",
@@ -106,15 +107,15 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
 
     logging.root.addHandler(ch)
 
-    for l in loggers:
-        if l is logging.root:
-            l.setLevel(logging.DEBUG)
+    for logger in loggers:
+        if logger is logging.root:
+            logger.setLevel(logging.DEBUG)
         else:
-            l.setLevel(logging.INFO)
+            logger.setLevel(logging.INFO)
 
     # The stravalib.attributes logger is very noisy and spits out
-    # WARNING level messages that are not very useful, such as:
-    # "WARNING  [stravalib.attributes.EntityAttribute] Unable to set attribute visibility on entity <Activity id=13209828474 name=None>"
+    # WARNING level messages that are not very useful, such as "Unable to set
+    # attribute visibility on entity <Activity ...>" from EntityAttribute.
     # Silence it except for CRITICAL messages.
     logging.getLogger("stravalib.attributes").setLevel(logging.CRITICAL)
     # stravalib.protocl leaks client_secrets into logs, which is bad in production especially

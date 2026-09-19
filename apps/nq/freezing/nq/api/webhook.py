@@ -21,7 +21,7 @@ class WebhookResource:
 
     def on_get(self, req: falcon.Request, resp: falcon.Response):
         """
-        The GET request is used by Strava, when the webhook is initially registered, to validate this endpoint.
+        Validate this endpoint for Strava, which sends the GET request when the webhook is initially registered.
 
         See: https://developers.strava.com/docs/webhooks/
         """
@@ -59,7 +59,7 @@ class WebhookResource:
 
         # We only care about activities
         if result.object_type is not ObjectType.activity:
-            log.info("Ignoring non-activity webhook: {}".format(req.media))
+            log.info(f"Ignoring non-activity webhook: {req.media}")
         else:
             message = ActivityUpdate()
             message.athlete_id = result.owner_id
@@ -70,5 +70,5 @@ class WebhookResource:
 
             json_data = ActivityUpdateSchema().dump(message)
 
-            log.info("Publishing activity-update: {}".format(message))
+            log.info(f"Publishing activity-update: {message}")
             self.publisher.publish_message(json_data, dest=DefinedTubes.activity_update)

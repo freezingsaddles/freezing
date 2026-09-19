@@ -1,11 +1,10 @@
 from datetime import date, datetime, time
-
-from pytz import timezone
+from zoneinfo import ZoneInfo
 
 # A minimal model with just the data we need.
 
 
-class Hour(object):
+class Hour:
     time: datetime
     temperature: float
     apparent_temperature: float
@@ -41,13 +40,13 @@ class Hour(object):
         self.source = json["source"]
 
 
-class Day(object):
+class Day:
     date: date
     sunrise: datetime
     sunset: datetime
     temperature_min: float
     temperature_max: float
-    hours: [Hour]
+    hours: list[Hour]
 
     def __init__(self, json, tz):
         self.date = date.fromisoformat(json["datetime"])
@@ -62,14 +61,14 @@ class Day(object):
         self.hours = [Hour(d, self.date, tz) for d in json["hours"]]
 
 
-class Forecast(object):
-    timezone: str
+class Forecast:
+    timezone: ZoneInfo
     latitude: float
     longitude: float
     day: Day
 
     def __init__(self, json):
-        self.timezone = timezone(json["timezone"])
+        self.timezone = ZoneInfo(json["timezone"])
         self.latitude = json["latitude"]
         self.longitude = json["longitude"]
         self.day = Day(json["days"][0], self.timezone)

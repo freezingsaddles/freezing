@@ -15,18 +15,15 @@ class RequireJSON:
                 href="http://docs.examples.com/api/json",
             )
 
-        if req.method in ("POST", "PUT"):
-            if "application/json" not in req.content_type:
-                raise falcon.HTTPUnsupportedMediaType(
-                    "This API only supports requests encoded as JSON.",
-                    href="http://docs.examples.com/api/json",
-                )
+        if req.method in ("POST", "PUT") and "application/json" not in req.content_type:
+            raise falcon.HTTPUnsupportedMediaType(
+                "This API only supports requests encoded as JSON.",
+                href="http://docs.examples.com/api/json",
+            )
 
 
 def make_app(publisher: ActivityPublisher = None) -> falcon.App:
-    """
-    Builds the WSGI application we'll be serving.
-    """
+    """Build the WSGI application we'll be serving."""
     if publisher is None:
         publisher = configured_publisher()
 
@@ -47,5 +44,9 @@ def make_app(publisher: ActivityPublisher = None) -> falcon.App:
 # auto-restart workers when it detects a code change, and it also works
 # with pdb.
 if __name__ == "__main__":
-    httpd = simple_server.make_server("127.0.0.1", 8000, make_app())
+    # falcon annotates App.__call__'s start_response more narrowly than
+    # wsgiref's StartResponse protocol (no optional exc_info argument).
+    httpd = simple_server.make_server(
+        "127.0.0.1", 8000, make_app()  # type: ignore[arg-type]
+    )
     httpd.serve_forever()

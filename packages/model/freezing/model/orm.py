@@ -6,6 +6,8 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Computed,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -15,17 +17,16 @@ from sqlalchemy import (
     Time,
     orm,
 )
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DynamicMapped, Mapped, declarative_base
 
 from . import meta, satypes
+from .config import config
 
 Base = declarative_base(metadata=meta.metadata)
 
 
 class _SqlView:
     """Empty class used to indicate that this is a SQL View and not to be created."""
-
-    pass
 
 
 class StravaEntity(Base):
@@ -38,38 +39,35 @@ class StravaEntity(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=False)
     name = Column(String(1000), nullable=False)
 
-    def __init__(self, id=None, name=None, **kwargs):
+    # Callers pass id= by keyword, so the parameter keeps the builtin's name.
+    def __init__(self, id=None, name=None, **kwargs):  # noqa: A002
         self.id = id
         self.name = name
         for k, v in kwargs.items():
             try:
                 setattr(self, k, v)
-            except AttributeError:
+            except AttributeError as e:
                 raise AttributeError(
-                    "Unable to set attribute {0} on {1}".format(
+                    "Unable to set attribute {} on {}".format(
                         k, self.__class__.__name__
                     )
-                )
+                ) from e
 
     def __repr__(self):
-        return "<{0} id={1} name={2!r}>".format(
+        return "<{} id={} name={!r}>".format(
             self.__class__.__name__, self.id, self.name
         )
 
 
 class Team(StravaEntity):
-    """ """
-
     __tablename__ = "teams"
-    athletes = orm.relationship("Athlete", backref="team")
+    athletes: Mapped[list["Athlete"]] = orm.relationship("Athlete", backref="team")
     leaderboard_exclude = Column(Boolean, nullable=False, default=False)
     cover_photo = Column(String(255), nullable=True)
     profile_photo = Column(String(255), nullable=True)
 
 
 class Athlete(StravaEntity):
-    """ """
-
     __tablename__ = "athletes"
     display_name = Column(String(255), nullable=True)
     team_id = Column(BigInteger, ForeignKey("teams.id", ondelete="set null"))
@@ -77,8 +75,10 @@ class Athlete(StravaEntity):
     profile_photo = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
     expires_at = Column(BigInteger, default=0)
+    # Null, not false, for everyone who registered before this was recorded.
+    registered = Column(Boolean, nullable=True)
 
-    rides = orm.relationship(
+    rides: DynamicMapped["Ride"] = orm.relationship(
         "Ride", backref="athlete", lazy="dynamic", cascade="all, delete, delete-orphan"
     )
 
@@ -118,8 +118,6 @@ class Registration(Base):
 
 
 class RideError(StravaEntity):
-    """ """
-
     __tablename__ = "ride_errors"
     athlete_id = Column(
         BigInteger,
@@ -133,8 +131,6 @@ class RideError(StravaEntity):
 
 
 class Ride(StravaEntity):
-    """ """
-
     __tablename__ = "rides"
     athlete_id = Column(
         BigInteger,
@@ -144,14 +140,27 @@ class Ride(StravaEntity):
     )
     description = Column(String(1024), nullable=True)
     elapsed_time = Column(Integer, nullable=False)  # Seconds
-    # in case we want to conver that to a TIME type ... (using time for interval is kinda mysql-specific brokenness, though)
-    # time.strftime('%H:%M:%S', time.gmtime(12345))
+    # in case we want to convert that to a TIME type, time.strftime with time.gmtime
+    # would do it (using time for interval is kinda mysql-specific brokenness, though)
     moving_time = Column(Integer, nullable=False, index=True)  #
     elevation_gain = Column(Integer, nullable=True)  # 270 (feet)
     average_speed = Column(Float)  # mph
     maximum_speed = Column(Float)  # mph
     average_temp = Column(Integer, nullable=True)  # 99 (F)
     start_date = Column(DateTime, nullable=False, index=True)  # 2010-02-28T08:31:35Z
+    # The rider's wall clock, for questions about the time of day they rode.
+    # Strava reports this and the instant separately, so neither is derived.
+    local_start_date = Column(DateTime, nullable=True, index=True)
+    # Which day of the competition the ride counts towards. The database works
+    # it out, so it cannot drift from start_date and nothing has to remember to
+    # write it. A change of TIMEZONE is an alter, which is where it belongs.
+    competition_date = Column(
+        Date,
+        Computed(
+            f"date(CONVERT_TZ(start_date, 'UTC', '{config.TIMEZONE}'))", persisted=True
+        ),
+        index=True,
+    )
     distance = Column(Float, nullable=False, index=True)  # 82369.1 (meters)
     location = Column(String(255), nullable=True)
 
@@ -161,19 +170,19 @@ class Ride(StravaEntity):
 
     timezone = Column(String(255), nullable=True)
 
-    geo = orm.relationship(
+    geo: Mapped["RideGeo | None"] = orm.relationship(
         "RideGeo", uselist=False, backref="ride", cascade="all, delete, delete-orphan"
     )
-    weather = orm.relationship(
+    weather: Mapped["RideWeather | None"] = orm.relationship(
         "RideWeather",
         uselist=False,
         backref="ride",
         cascade="all, delete, delete-orphan",
     )
-    photos = orm.relationship(
+    photos: Mapped[list["RidePhoto"]] = orm.relationship(
         "RidePhoto", backref="ride", cascade="all, delete, delete-orphan"
     )
-    track = orm.relationship(
+    track: Mapped["RideTrack | None"] = orm.relationship(
         "RideTrack", uselist=False, backref="ride", cascade="all, delete, delete-orphan"
     )
 
@@ -201,7 +210,7 @@ class RideGeo(Base):
     end_geo = Column(Geometry("POINT"), nullable=False)
 
     def __repr__(self):
-        return "<{0} ride_id={1} start={2}>".format(
+        return "<{} ride_id={} start={}>".format(
             self.__class__.__name__, self.ride_id, self.start_geo
         )
 
@@ -220,7 +229,7 @@ class RideTrack(Base):
     time_stream = Column(satypes.JSONEncodedText, nullable=True)
 
     def __repr__(self):
-        return "<{0} ride_id={1}>".format(self.__class__.__name__, self.ride_id)
+        return f"<{self.__class__.__name__} ride_id={self.ride_id}>"
 
 
 class RideEffort(Base):
@@ -247,9 +256,7 @@ class RidePhoto(Base):
     __tablename__ = "ride_photos"
 
     id = Column(String(191), primary_key=True, autoincrement=False)
-    source = Column(Integer, nullable=False, default=2)
     ride_id = Column(BigInteger, ForeignKey("rides.id", ondelete="cascade"), index=True)
-    ref = Column(String(255), nullable=True)
     caption = Column(Text, nullable=True)
 
     img_t = Column(String(255), nullable=True)
@@ -257,26 +264,20 @@ class RidePhoto(Base):
 
     @property
     def img_l_dimensions(self):
+        """The image's dimensions, if Strava spelled them into the URL."""
         width, height = (None, None)
         if self.img_l:
-            if self.source == 1:
-                try:
-                    width, height = re.match(
-                        ".+-(\\d+)x(\\d+)\\.\\w+$", self.img_l
-                    ).groups()
-                except AttributeError:
-                    warnings.warn(
-                        "Unable to get width and height from source=1 image url: {}".format(
-                            self.img_l
-                        )
-                    )
+            match = re.match(".+-(\\d+)x(\\d+)\\.\\w+$", self.img_l)
+            if match:
+                width, height = match.groups()
             else:
-                width, height = (612, 612)
+                warnings.warn(
+                    f"Unable to get width and height from image url: {self.img_l}",
+                    stacklevel=2,
+                )
         return (width, height)
 
     primary = Column(Boolean, nullable=False, default=False)
-
-    # upload_date = Column(DateTime, nullable=False, index=True) # 2010-02-28T08:31:35Z
 
     def __repr__(self):
         return "<{} id={} primary={!r}>".format(
@@ -310,12 +311,10 @@ class RideWeather(Base):
     sunset = Column(Time, nullable=True)
 
     def __repr__(self):
-        return "<{0} ride_id={1}>".format(self.__class__.__name__, self.ride_id)
+        return f"<{self.__class__.__name__} ride_id={self.ride_id}>"
 
 
 class Tribe(Base):
-    """ """
-
     __tablename__ = "tribes"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     athlete_id = Column(
@@ -328,6 +327,6 @@ class Tribe(Base):
     tribe_name = Column(String(255), nullable=False)
 
     def __repr__(self):
-        return "<{0} id={1} tribe_name={2}>".format(
+        return "<{} id={} tribe_name={}>".format(
             self.__class__.__name__, self.id, self.tribe_name
         )

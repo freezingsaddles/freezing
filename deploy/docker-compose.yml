@@ -65,6 +65,7 @@ services:
       - 'nginx-config:/etc/nginx/conf.d'
       - 'nginx-vhosts:/etc/nginx/vhost.d'
       - 'nginx-webroot:/usr/share/nginx/html'
+      - './web/maintenance.html:/usr/share/nginx/html/maintenance.html:ro'
     labels:
       - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy"
       - "com.github.nginx-proxy.nginx"
@@ -202,6 +203,7 @@ services:
       LETSENCRYPT_HOST: ${FREEZING_WEB_FQDN}
       MAIN_TEAM: ${MAIN_TEAM}
       OBSERVER_TEAMS: ${OBSERVER_TEAMS}
+      REGISTRATION_DATE: ${REGISTRATION_DATE}
       SECRET_KEY: ${SECRET_KEY}
       SQLALCHEMY_SILENCE_UBER_WARNING: ${SQLALCHEMY_SILENCE_UBER_WARNING:-false}
       SQLALCHEMY_URL: ${SQLALCHEMY_URL}
@@ -227,6 +229,24 @@ services:
       options:
         awslogs-group: logspout
         awslogs-stream: freezing-web
+
+  freezing-freezebot:
+    image: freezingsaddles/freezing-freezebot:${FREEZING_FREEZEBOT_TAG:-latest}
+    hostname: freezing-freezebot
+    container_name: freezing-freezebot
+    environment:
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      SQLALCHEMY_URL: ${SQLALCHEMY_URL}
+      START_DATE: ${START_DATE}
+      TIMEZONE: ${TIMEZONE:-America/New_York}
+      FREEZEBOT_SINCE: ${FREEZEBOT_SINCE}
+      FREEZEBOT_RIDE_TAGS: ${FREEZEBOT_RIDE_TAGS:-false}
+    restart: always
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: logspout
+        awslogs-stream: freezing-freezebot
 
   wordpress:
     image: wordpress:5.8.2

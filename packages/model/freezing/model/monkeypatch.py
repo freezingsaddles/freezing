@@ -3,7 +3,7 @@ import sys
 
 def collections():
     """
-    Monkeypatch collections to get Alembic to work
+    Monkeypatch collections to get Alembic to work.
 
     The alembic package is throwing errors because some aliases in collections
     were removed in Python 3.10.
@@ -17,7 +17,7 @@ def collections():
         import collections
         from collections import abc
 
-        collections.Iterable = abc.Iterable
-        collections.Mapping = abc.Mapping
-        collections.MutableSet = abc.MutableSet
-        collections.MutableMapping = abc.MutableMapping
+        collections.abc.Iterable = abc.Iterable
+        collections.abc.Mapping = abc.Mapping
+        collections.abc.MutableSet = abc.MutableSet
+        collections.abc.MutableMapping = abc.MutableMapping

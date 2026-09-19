@@ -48,7 +48,7 @@ query: |
       ride_efforts E on E.ride_id = R.id
     where
       (E.segment_id = 40946952 or E.segment_id = 40946977)
-      and date(convert_tz(R.start_date, R.timezone, 'America/New_York')) >= '2026-02-19'
+      and R.competition_date >= '2026-02-19'
    group by
       athlete_id, athlete_name, ride_id
   ),

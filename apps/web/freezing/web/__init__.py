@@ -12,7 +12,6 @@ import os
 from datetime import datetime
 from socket import gethostbyname
 from time import sleep
-from typing import List
 from urllib.parse import urlparse
 
 import yaml
@@ -155,10 +154,10 @@ class PointlessPrizeSchema(BaseSchema):
 
 
 class PointlessPrizes(BaseMessage):
-    categories: List[PointlessCategory] = []
-    prizes: List[PointlessPrize] = []
+    categories: list[PointlessCategory] = []
+    prizes: list[PointlessPrize] = []
 
-    def get(self, category: str) -> List[PointlessPrize]:
+    def get(self, category: str) -> list[PointlessPrize]:
         prizes = [p for p in self.prizes if p.category == category]
         prizes.sort(key=lambda p: (p.name or "").lower())
         return prizes
@@ -174,7 +173,7 @@ class PointlessPrizesSchema(BaseSchema):
 def _load_pointless():
     # doesn't belong in leaderboards but guess what? idk
     path = os.path.join(config.LEADERBOARDS_DIR, "pointless.yml")
-    with open(path, "rt", encoding="utf-8") as fp:
+    with open(path, encoding="utf-8") as fp:
         doc = yaml.safe_load(fp)
     schema = PointlessPrizesSchema()
     prizes: PointlessPrizes = schema.load(doc)
@@ -220,9 +219,7 @@ def inject_config():
 
 
 def init_db():
-    """
-    Initialize the database. If the database is not available, keep trying for a bit.
-    """
+    """Initialize the database. If the database is not available, keep trying for a bit."""
     TRIES = 6
     delay = 2
     for x in range(1, TRIES + 1):
@@ -236,7 +233,7 @@ def init_db():
             break
         except Exception as ex:
             if x == TRIES:
-                raise ex from None
+                raise
             log.warning(
                 f"Failed to connect to database, retrying in {delay}s ({x}) - error was {str(ex)}"
             )

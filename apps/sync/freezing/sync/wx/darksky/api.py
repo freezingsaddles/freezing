@@ -12,17 +12,15 @@ from .model import Forecast
 # there are also not-so-nice dark sky libraries.
 
 
-class HistoDarkSky(object):
-    """
-    Histomorphic dark sky.
-    """
+class HistoDarkSky:
+    """Histomorphic dark sky."""
 
     def __init__(
         self,
         api_key: str,
-        cache_dir: str = None,
+        cache_dir: str | None = None,
         cache_only: bool = False,
-        logger: Logger = None,
+        logger: Logger | None = None,
     ):
         self.api_key = api_key
         self.cache_dir = cache_dir
@@ -54,7 +52,7 @@ class HistoDarkSky(object):
             headers={"Accept-Encoding": "gzip"},
             timeout=15,
         )
-        if response.status_code is not 200:
+        if response.status_code != 200:
             raise HTTPError(
                 f"Bad response: {response.status_code} {response.reason}: {response.text}"
             )
@@ -73,9 +71,9 @@ class HistoDarkSky(object):
         if os.path.exists(path):
             self.logger.debug(f"Cache hit for {path}")
             try:
-                with open(path, "r") as file:
+                with open(path) as file:
                     return load(file)
-            except:
+            except Exception:
                 self.logger.warning(f"Error reading cache file {path}")
                 os.remove(path)
 

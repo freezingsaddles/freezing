@@ -37,14 +37,20 @@ jobs:
           fi
           echo "$changed"
           apps=""
-          if [ "$changed" = "ALL" ] || echo "$changed" | grep -q -E '^(packages/|pyproject\.toml$|uv\.lock$|\.python-version$|\.github/workflows/(deploy|build-docker)\.yml$)'; then
-            apps="web sync nq"
+          # Shared code, the resolved dependencies, what the build context holds,
+          # how an image is built, and the file compose runs them from: each of
+          # these reaches every app.
+          if [ "$changed" = "ALL" ] || echo "$changed" | grep -q -E '^(packages/|pyproject\.toml$|uv\.lock$|\.python-version$|\.dockerignore$|deploy/docker-compose\.yml$|\.github/workflows/(deploy|build-docker)\.yml$)'; then
+            apps="web sync nq freezebot"
           else
-            for app in web sync nq; do
+            for app in web sync nq freezebot; do
               if echo "$changed" | grep -q "^apps/$app/"; then apps="$apps $app"; fi
             done
+            # Freezebot's image carries the web app's hashtag.yml, so that changing rebuilds it.
+            if echo "$changed" | grep -q "^apps/web/leaderboards/" && ! echo "$apps" | grep -q freezebot; then apps="$apps freezebot"; fi
           fi
-          json="$(echo "$apps" | xargs -n1 | jq -R . | jq -s -c .)"
+          # An empty list must come out as [] and not [""], or the matrix runs with no app.
+          json="$(printf '%s\n' $apps | jq -R . | jq -s -c 'map(select(length > 0))')"
           echo "apps=$json" >> "$GITHUB_OUTPUT"
           echo "Building: $json"
 
@@ -59,8 +65,8 @@ jobs:
     uses: ./.github/workflows/build-docker.yml
     with:
       app: ${{ matrix.app }}
-      # Change to "latest" at cut-over. Until then the old repositories own the
-      # "latest" tags that production pulls, so the monorepo publishes "main".
+      # The tag production runs: the box's .env pins FREEZING_<APP>_TAG=main for
+      # all four services. The retired repositories still own "latest".
       tag: main
       push: true
     secrets:
@@ -89,13 +95,18 @@ jobs:
           envs: APPS
           script: |
             set -euo pipefail
+            # /opt/compose is a symlink to deploy/ in the sparse clone at
+            # /opt/freezing, so the compose file and the nginx template come from
+            # this repository. Pull before composing with them. --ff-only fails
+            # the deploy rather than merging if the box has diverged.
+            git -C /opt/freezing pull --ff-only
             cd /opt/compose
+            bin/link-default-cert.sh
             services=""
             for app in $APPS; do services="$services freezing-$app"; done
-            echo "Would deploy:$services"
-            # Uncomment at cut-over; these are the lines that change production.
-            # docker compose pull $services
-            # docker compose up -d $services
+            echo "Deploying:$services"
+            docker compose pull $services
+            docker compose up -d $services
             docker image prune -f
 
   test:

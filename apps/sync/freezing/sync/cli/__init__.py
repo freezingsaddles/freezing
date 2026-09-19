@@ -2,29 +2,23 @@ import abc
 import argparse
 import logging
 
-from colorlog import ColoredFormatter
-
 from freezing.model import init_model
 from freezing.sync.config import config, init_logging
 from freezing.sync.exc import CommandError
 
 
 class BaseCommand(metaclass=abc.ABCMeta):
-    logger: logging.Logger = None
+    logger: logging.Logger | None = None
 
     @property
     @abc.abstractmethod
     def name(self) -> str:
-        """
-        :return: The short name for the command.
-        """
+        """:return: The short name for the command."""
 
     @property
     @abc.abstractmethod
     def description(self) -> str:
-        """
-        :return: The description for this command
-        """
+        """:return: The description for this command."""
 
     def build_parser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description=self.description)
@@ -93,7 +87,7 @@ class BaseCommand(metaclass=abc.ABCMeta):
             self.execute(args)
         except CommandError as ce:
             parser.error(str(ce))
-            raise SystemExit(127)
+            raise SystemExit(127) from ce
 
     @abc.abstractmethod
     def execute(self, args):

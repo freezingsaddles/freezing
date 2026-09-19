@@ -31,7 +31,7 @@ class ActivityUpdateSubscriber:
         self._THROTTLE_DELAY = 3.0
 
     def handle_message(self, message: ActivityUpdate):
-        self.logger.info("Processing activity update {}".format(message))
+        self.logger.info(f"Processing activity update {message}")
 
         with meta.transaction_context() as session:
             athlete: Athlete = session.get(Athlete, message.athlete_id)
@@ -47,7 +47,7 @@ class ActivityUpdateSubscriber:
                 if message.operation is AspectType.delete:
                     statsd.increment(
                         "strava.activity.delete",
-                        tags=["team:{}".format(athlete.team_id)],
+                        tags=[f"team:{athlete.team_id}"],
                     )
                     self.activity_sync.delete_activity(
                         athlete_id=message.athlete_id, activity_id=message.activity_id
@@ -56,7 +56,7 @@ class ActivityUpdateSubscriber:
                 elif message.operation is AspectType.update:
                     statsd.increment(
                         "strava.activity.update",
-                        tags=["team:{}".format(athlete.team_id)],
+                        tags=[f"team:{athlete.team_id}"],
                     )
                     self.activity_sync.fetch_and_store_activity_detail(
                         athlete_id=message.athlete_id, activity_id=message.activity_id
@@ -73,7 +73,7 @@ class ActivityUpdateSubscriber:
                 elif message.operation is AspectType.create:
                     statsd.increment(
                         "strava.activity.create",
-                        tags=["team:{}".format(athlete.team_id)],
+                        tags=[f"team:{athlete.team_id}"],
                     )
                     self.activity_sync.fetch_and_store_activity_detail(
                         athlete_id=message.athlete_id, activity_id=message.activity_id
@@ -96,7 +96,7 @@ class ActivityUpdateSubscriber:
             while not self.shutdown_event.is_set():
                 try:
                     job = self.client.reserve(timeout=30)
-                except (KeyboardInterrupt, SystemExit):
+                except KeyboardInterrupt, SystemExit:
                     raise
                 except greenstalk.TimedOutError:
                     self.logger.debug(
@@ -105,7 +105,7 @@ class ActivityUpdateSubscriber:
                     continue
                 else:
                     try:
-                        self.logger.info("Received message: {!r}".format(job.body))
+                        self.logger.info(f"Received message: {job.body!r}")
                         update = schema.loads(job.body)
                         self.handle_message(update)
                     except Exception:
@@ -120,7 +120,7 @@ class ActivityUpdateSubscriber:
                         # Throttle requests to avoid hitting rate limits
                         sleep(self._THROTTLE_DELAY)
 
-        except (KeyboardInterrupt, SystemExit):
+        except KeyboardInterrupt, SystemExit:
             raise
         except Exception:
             self.logger.exception("Unhandled error in tube subscriber loop, exiting.")

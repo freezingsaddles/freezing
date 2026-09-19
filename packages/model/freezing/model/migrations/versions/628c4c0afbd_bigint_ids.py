@@ -1,4 +1,4 @@
-"""bigint ids
+"""Bigint ids.
 
 Revision ID: 628c4c0afbd
 Revises: a3aee1eb0fb
@@ -15,10 +15,8 @@ from alembic import op
 
 
 def upgrade():
-    # We are actually skipping the ones that shouldn't matter ...
-    # op.alter_column('teams', 'id', type_=sa.BigInteger, existing_nullable=False)
-    # op.alter_column('athletes', 'id', existing_type=sa.Integer, type_=sa.BigInteger, existing_nullable=False)
-    # op.alter_column('athletes', 'team_id', existing_type=sa.Integer, type_=sa.BigInteger, existing_nullable=False)
+    # We are actually skipping the ones that shouldn't matter: teams.id,
+    # athletes.id, athletes.team_id and rides.athlete_id stay as they are.
     op.alter_column(
         "rides",
         "id",
@@ -26,7 +24,6 @@ def upgrade():
         type_=sa.BigInteger,
         existing_nullable=False,
     )
-    # op.alter_column('rides', 'athlete_id', existing_type=sa.Integer, type_=sa.BigInteger, existing_nullable=False)
     op.alter_column(
         "ride_efforts",
         "id",

@@ -1,6 +1,4 @@
-"""
-Some authentication-related utility functions/classes.
-"""
+"""Some authentication-related utility functions/classes."""
 
 import logging
 from datetime import timedelta
@@ -21,7 +19,8 @@ def login_athlete(strava_athlete):
 
 def requires_auth(f):
     """
-    Decorator for view functions that require authentication.
+    Require authentication for a view function.
+
     :param f:
     :return:
     """
@@ -31,8 +30,7 @@ def requires_auth(f):
         if not g.logged_in:
             logging.error("Unauthorized access.")
             raise Forbidden("This page requires authentication.")
-        else:
-            logging.info("User is logged in! {}".format(session.get("athlete_id")))
+        logging.info("User is logged in! {}".format(session.get("athlete_id")))
         return f(*args, **kwargs)
 
     return wrapper
@@ -50,7 +48,9 @@ def crossdomain(
         methods = ", ".join(sorted(x.upper() for x in methods))
     if headers is not None and not isinstance(headers, str):
         headers = ", ".join(x.upper() for x in headers)
-    if not isinstance(origin, str):
+    if origin is None:
+        origin = "*"
+    elif not isinstance(origin, str):
         origin = ", ".join(origin)
     if isinstance(max_age, timedelta):
         max_age = max_age.total_seconds()

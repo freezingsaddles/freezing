@@ -1,13 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+from zoneinfo import ZoneInfo
 
 import pytest
-from stravalib.model import ActivityPhotoPrimary, DetailedActivity
 
-from freezing.model.orm import Athlete, Ride, RideEffort, RidePhoto
 from freezing.sync.data.activity import ActivitySync
-from freezing.sync.utils.cache import CachingActivityFetcher
 
 
 @pytest.fixture
@@ -30,6 +28,7 @@ def detailed_activity():
     activity.photo_count = 1
     activity.total_photo_count = 1
     activity.start_date_local = datetime.now()
+    activity.start_date = datetime.now(UTC)
     activity.distance = Distance(1000.0)
     activity.average_speed = Velocity(10.0)
     activity.average_temp = 99
@@ -46,9 +45,7 @@ def detailed_activity():
     # Provide a timezone-like object matching production access pattern
     class _TZ:
         def timezone(self):
-            import pytz
-
-            return pytz.timezone("UTC")
+            return ZoneInfo("UTC")
 
     activity.timezone = _TZ()
     # Photos container with primary attribute
@@ -76,7 +73,8 @@ def test_update_ride_basic(activity_sync, detailed_activity, ride):
         activity_sync.update_ride_basic(detailed_activity, ride)
         assert ride.name == detailed_activity.name
         assert ride.private == detailed_activity.private
-        assert ride.start_date == detailed_activity.start_date_local
+        assert ride.start_date == detailed_activity.start_date.replace(tzinfo=None)
+        assert ride.local_start_date == detailed_activity.start_date_local
         # Use approximate comparisons for float values from unit conversions
         assert ride.distance == pytest.approx(0.621, rel=1e-3)  # 1000m to miles
         assert ride.average_speed == pytest.approx(22.369, rel=1e-3)  # 10 m/s to mph
@@ -89,7 +87,7 @@ def test_update_ride_basic(activity_sync, detailed_activity, ride):
         assert ride.ride_type == detailed_activity.sport_type
         assert ride.visibility == detailed_activity.visibility
         assert ride.elevation_gain == pytest.approx(328.084, rel=1e-3)  # 100m to feet
-        assert ride.timezone == detailed_activity.timezone.timezone().zone
+        assert ride.timezone == detailed_activity.timezone.timezone().key
 
 
 def test_write_ride_efforts(activity_sync, detailed_activity, ride):
@@ -117,7 +115,6 @@ def test_write_ride_efforts(activity_sync, detailed_activity, ride):
 def test_write_ride_photo_primary(activity_sync, detailed_activity, ride):
     session = MagicMock()
     primary_photo = SimpleNamespace(
-        source=1,
         unique_id="test_photo_123",
         urls={
             "100": "https://example.com/100.jpg",

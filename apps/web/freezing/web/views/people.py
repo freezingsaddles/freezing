@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from math import ceil
 
 from flask import Blueprint, abort, render_template
-from pytz import timezone, utc
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -14,14 +13,11 @@ blueprint = Blueprint("people", __name__)
 
 
 def get_local_datetime() -> datetime:
-    # Thanks Stack Overflow https://stackoverflow.com/a/25265611/424301
-    return utc.localize(datetime.now(), is_dst=None).astimezone(config.TIMEZONE)
+    return datetime.now(config.TIMEZONE)
 
 
 def get_today() -> datetime:
-    """
-    Sometimes you have an old database for testing and you need to set today to be something that is not actually today
-    """
+    """Sometimes you have an old database for testing and you need to set today to be something that is not actually today."""
     if False:
         return datetime(2024, 3, 18, tzinfo=config.TIMEZONE)
     return get_local_datetime()
@@ -42,12 +38,12 @@ def people_list_users():
     for u in users_list:
         weekly_dist = 0
         weekly_rides = 0
-        total_rides = 0
+        total_rides = 0  # noqa: SIM113 -- tallied alongside the other per-ride sums
         total_dist = 0
         for r in u.rides:
             total_rides += 1
             total_dist += r.distance
-            ride_date = r.start_date.replace(tzinfo=timezone(r.timezone)).date()
+            ride_date = r.local_start_date.date()
             if week_start <= ride_date <= week_end:
                 weekly_dist += r.distance
                 weekly_rides += 1
@@ -85,12 +81,12 @@ def people_show_person(user_id):
     today_rides = 0
     weekly_dist = 0
     weekly_rides = 0
-    total_rides = 0
+    total_rides = 0  # noqa: SIM113 -- tallied alongside the other per-ride sums
     total_dist = 0
     for r in our_user.rides:
         total_rides += 1
         total_dist += r.distance
-        ride_date = r.start_date.replace(tzinfo=timezone(r.timezone)).date()
+        ride_date = r.local_start_date.date()
         if week_start <= ride_date <= week_end:
             weekly_dist += r.distance
             weekly_rides += 1
@@ -100,7 +96,7 @@ def people_show_person(user_id):
 
     q = text("""
            with daily_rides as (
-            select date(CONVERT_TZ(R.start_date, R.timezone, :timezone)) as ride_date,
+            select R.competition_date as ride_date,
             R.distance as distance,
             W.ride_temp_avg as ride_temp
             from rides R left outer join ride_weather W on W.ride_id = R.id
@@ -111,7 +107,7 @@ def people_show_person(user_id):
             group by ride_date
             having distance >= 1
             order by ride_date;
-            """).bindparams(athlete_id=user_id, timezone=config.TIMEZONE)
+            """).bindparams(athlete_id=user_id)
 
     indiv_q = meta.scoped_session().execute(q).fetchall()
     start = config.START_DATE - timedelta(days=(config.START_DATE.weekday() + 1) % 7)

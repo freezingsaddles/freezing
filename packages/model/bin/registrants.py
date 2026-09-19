@@ -25,7 +25,7 @@ def main(csvfile):
         reader = csv.DictReader(csvfile)
         for row in reader:
             regnum = int(row["#"])
-            id = int(row["Strava user ID"])
+            strava_id = int(row["Strava user ID"])
             firstname = escape_string(row["First Name"])
             lastname = escape_string(row["Last Name"])
             username = escape_string(
@@ -37,7 +37,7 @@ def main(csvfile):
             )
             datesubmitted_str = datesubmitted.strftime("%Y-%m-%d %H:%M:%S")
             print(
-                f"insert into registrants values({regnum}, {id}, '{username}', '{firstname} {lastname}', '{email}', '{datesubmitted_str}');"
+                f"insert into registrants values({regnum}, {strava_id}, '{username}', '{firstname} {lastname}', '{email}', '{datesubmitted_str}');"
             )
     print("commit;")
 

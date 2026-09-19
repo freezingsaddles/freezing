@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from flask import Blueprint, redirect, render_template, request, session
+from flask import Blueprint, redirect, render_template, request, session, url_for
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -24,7 +24,9 @@ def leaderboard():
     tribal_groups = load_tribes()
     my_tribes = query_my_tribes()
 
-    tribe_stats = defaultdict(lambda: dict(distance=0, points=0, ride_days=0, riders=0))
+    tribe_stats = defaultdict(
+        lambda: {"distance": 0, "points": 0, "ride_days": 0, "riders": 0}
+    )
 
     stats_query = text("""
         SELECT
@@ -67,7 +69,7 @@ def leaderboard():
 @blueprint.route("/individual")
 def individual():
     tribal_groups = load_tribes()
-    cur_group = next((group for group in tribal_groups if request.args.get(group.id)))
+    cur_group = next(group for group in tribal_groups if request.args.get(group.id))
     cur_tribe = request.args.get(cur_group.id)
     athlete_id = session.get("athlete_id")
 
@@ -122,11 +124,11 @@ def post_my():
     tribal_groups = load_tribes()
 
     my_tribes = [
-        dict(
-            athlete_id=athlete_id,
-            tribal_group=tribal_group.name,
-            tribe_name=request.form.get(tribal_group.id),
-        )
+        {
+            "athlete_id": athlete_id,
+            "tribal_group": tribal_group.name,
+            "tribe_name": request.form.get(tribal_group.id),
+        }
         for tribal_group in tribal_groups
         if request.form.get(tribal_group.id) in tribal_group.tribes
     ]
@@ -135,6 +137,10 @@ def post_my():
         Tribe.__table__.delete().where(Tribe.athlete_id == athlete_id)
     )
 
-    meta.scoped_session().execute(Tribe.__table__.insert(), my_tribes)
+    # An empty list would be an INSERT with no columns, which MySQL rejects.
+    if my_tribes:
+        meta.scoped_session().execute(Tribe.__table__.insert(), my_tribes)
 
-    return redirect("/tribes/leaderboard")
+    # Names, not urls: nothing the browser sends reaches redirect() as a url.
+    after = {"register": url_for("general.register", step="form")}
+    return redirect(after.get(request.form.get("next"), url_for(".leaderboard")))

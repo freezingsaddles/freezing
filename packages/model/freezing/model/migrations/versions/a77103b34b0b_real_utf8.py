@@ -1,4 +1,4 @@
-"""real utf8
+"""Real utf8.
 
 Revision ID: a77103b34b0b
 Revises: 22183530616d

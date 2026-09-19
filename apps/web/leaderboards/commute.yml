@@ -37,7 +37,7 @@ query: |
       R.id,
       R.athlete_id,
       R.distance,
-      date(convert_tz(R.start_date, R.timezone, 'America/New_York')) as start_date
+      R.competition_date as start_date
     from
       rides R
     join

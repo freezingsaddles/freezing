@@ -1,5 +1,5 @@
 """
-Created on Feb 10, 2013
+Created on Feb 10, 2013.
 
 @author: hans
 """
@@ -16,7 +16,7 @@ from flask import (
     session,
     url_for,
 )
-from sqlalchemy import func, text
+from sqlalchemy import text
 from stravalib import Client
 
 from freezing.model import meta
@@ -25,6 +25,7 @@ from freezing.web import app, config, data
 from freezing.web.autolog import log
 from freezing.web.exc import MultipleTeamsError, NoTeamsError
 from freezing.web.utils import auth
+from freezing.web.utils.tribes import load_tribes, query_tribes
 from freezing.web.views.shared_sql import team_leaderboard_query
 
 blueprint = Blueprint("general", __name__)
@@ -54,8 +55,8 @@ custom_tag_pages = {
 
 def tag_page(tag):
     return next(
-        (tuple[1] for tuple in custom_tag_pages.items() if tag.startswith(tuple[0])),
-        "hashtag/{}".format(tag),
+        (page for prefix, page in custom_tag_pages.items() if tag.startswith(prefix)),
+        f"hashtag/{tag}",
     )
 
 
@@ -75,22 +76,21 @@ def ess(number):
 
 
 @app.template_filter("ord")
-def ord(number):
+def ordinal(number):
     if number % 10 == 0 or number % 10 > 3 or number // 10 == 1:
         return "th"
-    elif number % 10 == 1:
+    if number % 10 == 1:
         return "st"
-    elif number % 10 == 2:
+    if number % 10 == 2:
         return "nd"
-    else:  # if number % 10 == 3:
-        return "rd"
+    return "rd"  # number % 10 == 3
 
 
 @app.template_filter("myself")
 def myself(number):
     # generic board formats the PK into a fancy string so unformat it
-    id = int(sub(",", "", number)) if isinstance(number, str) else number
-    return "myself" if session.get("athlete_id") == id else ""
+    athlete_id = int(sub(",", "", number)) if isinstance(number, str) else number
+    return "myself" if session.get("athlete_id") == athlete_id else ""
 
 
 @blueprint.route("/")
@@ -151,7 +151,7 @@ def index():
         .query(RidePhoto)
         .filter_by(primary=True)
         .join(Ride)
-        .order_by(func.convert_tz(Ride.start_date, Ride.timezone, "GMT").desc())
+        .order_by(Ride.start_date.desc())
         .limit(12)
     )
 
@@ -171,9 +171,9 @@ def index():
                 coalesce(sum(R.moving_time),0) as moving_time,
                 coalesce(sum(R.distance),0) as distance
             from rides R
-            where date(CONVERT_TZ(R.start_date, R.timezone,'{0}')) >= '{1}'
+            where R.competition_date >= '{}'
             ;
-        """.format(config.TIMEZONE, today.date()))
+        """.format(today.date()))
     today_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
     today_riders = int(today_res._mapping["riders"])
     today_hours = round(today_res._mapping["moving_time"]) / 3600
@@ -201,9 +201,17 @@ def index():
 
     athlete_id = session.get("athlete_id")
     yourself = _rider_stats(athlete_id) if athlete_id else _non_rider_stats()
+    athlete = meta.scoped_session().get(Athlete, athlete_id) if athlete_id else None
+
+    registration_open = (
+        config.REGISTRATION_DATE is not None
+        and config.REGISTRATION_DATE <= now_tz < config.START_DATE
+    )
 
     return render_template(
         "index.html",
+        show_registration=registration_open or "register" in request.args,
+        registered=bool(athlete and athlete.registered),
         year=config.START_DATE.year,
         winter_is_coming=post_autumnal_equinox,
         team_count=len(config.COMPETITION_TEAMS),
@@ -223,7 +231,7 @@ def index():
         pr_gold=prs.get(1, 0),
         pr_silver=prs.get(2, 0),
         pr_bronze=prs.get(3, 0),
-        photos=[photo for photo in photos],
+        photos=list(photos),
         tags=tags,
         winners=team_rows[:3],  # + team_rows[4:][-1:]  # for last place too
         yourself=yourself,
@@ -244,14 +252,16 @@ def _trending_tags():
     original_tag = {}
     for res in meta.scoped_session().execute(q).fetchall():
         ride_tags = {}  # Prevent double-tagging
-        for hash in findall(r"(?<=#)\w+", res._mapping["name"]):
-            desuffix = fullmatch(r"(?i)(withkid|foodrescue|fsrealsuppleride).*", hash)
-            hash = desuffix[1] if desuffix else hash
+        for hashtag in findall(r"(?<=#)\w+", res._mapping["name"]):
+            desuffix = fullmatch(
+                r"(?i)(withkid|foodrescue|fsrealsuppleride).*", hashtag
+            )
+            hashtag = desuffix[1] if desuffix else hashtag
             if not fullmatch(
-                r"(?i)(BAFS|FS|FreezingSaddles)?\d*", hash
+                r"(?i)(BAFS|FS|FreezingSaddles)?\d*", hashtag
             ):  # Ditch useless tags
-                original_tag[hash.lower()] = hash
-                ride_tags[hash.lower()] = 1
+                original_tag[hashtag.lower()] = hashtag
+                ride_tags[hashtag.lower()] = 1
         for tag in ride_tags:
             tag_count[tag] = tag_count.get(tag, 0) + 1
     trending_tags = sorted(tag_count.items(), key=lambda t: t[1], reverse=True)
@@ -264,8 +274,7 @@ def _trending_tags():
             [original_tag[t[0]], 1 + (t[1] - min_count) / scale, tag_page(t[0])]
             for t in alpha_tags
         )
-    else:
-        return []
+    return []
 
 
 # Get non-rider stats
@@ -316,9 +325,9 @@ def _rider_stats(athlete_id):
                 from rides R
                 where R.athlete_id = :athlete_id
                 """).bindparams(athlete_id=athlete_id)).one()
-    ride_days = set(res[0] for res in (meta.scoped_session().execute(text("""
+    ride_days = {res[0] for res in (meta.scoped_session().execute(text("""
                     select ride_date from daily_scores DS where DS.athlete_id = :athlete_id
-                    """).bindparams(athlete_id=athlete_id)).fetchall()))
+                    """).bindparams(athlete_id=athlete_id)).fetchall())}
     team = (
         meta.scoped_session().query(Team).join(Athlete).filter_by(id=athlete_id).one()
     )
@@ -430,12 +439,19 @@ def register():
         else None
     )
 
+    # The form lives on the Wordpress site, which redirects back to this step.
+    if step == "complete" and athlete and not athlete.registered:
+        log.info(f"Athlete {athlete.id} ({athlete.name}) completed registration")
+        athlete.registered = True
+
     now_tz = datetime.now(config.START_DATE.tzinfo)
     return render_template(
         "register.html",
         step=step,
         athlete=athlete,
         team=team,
+        tribal_groups=load_tribes() if step == "tribes" else [],
+        tribes=query_tribes(athlete.id) if step == "tribes" and athlete else {},
         mean_team=config.MAIN_TEAM,
         public_authorize_url=public_url,
         private_authorize_url=private_url,
@@ -446,7 +462,8 @@ def register():
 @blueprint.route("/authorization")
 def authorization():
     """
-    Method called by Strava (redirect) that includes parameters.
+    Handle the redirect from Strava that includes parameters.
+
     - state
     - code
     - error
@@ -514,7 +531,7 @@ def authorization():
         code = request.args.get("code")
         scope = request.args.get("scope")
         state = request.args.get("state")
-        log.info("Auth code: {}, scope: {}, state: {}".format(code, scope, state))
+        log.info(f"Auth code: {code}, scope: {scope}, state: {state}")
         client = Client()
         token_dict = client.exchange_code_for_token(
             client_id=config.STRAVA_CLIENT_ID,
@@ -554,7 +571,7 @@ def authorization():
     # Thanks https://stackoverflow.com/a/32926295/424301 for the hint on tzinfo aware compares
     after_competition_start = datetime.now(config.TIMEZONE) > config.START_DATE
     if message:
-        log.info("Authorization message: {}".format(message))
+        log.info(f"Authorization message: {message}")
 
     if state == "register":
         return redirect(url_for(".register", step="club"))
@@ -580,7 +597,7 @@ def webhook_challenge():
         k: request.args.get(k)
         for k in ("hub.challenge", "hub.mode", "hub.verify_token")
     }
-    log.info("Webhook challenge: {}".format(strava_request))
+    log.info(f"Webhook challenge: {strava_request}")
     challenge_resp = client.handle_subscription_callback(
         strava_request, verify_token=config.STRAVA_VERIFY_TOKEN
     )
@@ -589,5 +606,5 @@ def webhook_challenge():
 
 @blueprint.route("/webhook", methods=["POST"])
 def webhook_activity():
-    log.info("Activity webhook: {}".format(request.json))
+    log.info(f"Activity webhook: {request.json}")
     return jsonify()

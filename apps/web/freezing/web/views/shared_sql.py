@@ -1,6 +1,4 @@
-"""
-SQL queries used in more than one class. DRY 4EVA
-"""
+"""SQL queries used in more than one class. DRY 4EVA."""
 
 from sqlalchemy import text
 
@@ -33,7 +31,7 @@ def indiv_sleaze_query():
 def indiv_freeze_query(friends=False):
     return text(f"""
         with FP as (
-            select R.athlete_id, A.display_name as athlete_name, date(R.start_date) as ride_date, (11*(ATAN((R.distance+4)-2*PI())+1.4)-2.66)*(1.2+ATAN((32-W.ride_temp_start)/5)) as freeze_points
+            select R.athlete_id, A.display_name as athlete_name, R.competition_date as ride_date, (11*(ATAN((R.distance+4)-2*PI())+1.4)-2.66)*(1.2+ATAN((32-W.ride_temp_start)/5)) as freeze_points
             from rides R
             join ride_weather W on W.ride_id = R.id
             join {'athletes' if friends else 'lbd_athletes'} A on A.id = R.athlete_id
@@ -65,17 +63,16 @@ def indiv_segment_query(join_miles=False):
             on aa.id = bb.athlete_id
             order by aa.segment_rides desc;
         """)
-    else:
-        return text("""
-            select A.id, A.display_name as athlete_name, count(E.id) as segment_rides
-            from lbd_athletes A
-            join rides R on R.athlete_id = A.id
-            join ride_efforts E on E.ride_id = R.id
-            where E.segment_id = :segment_id
-            group by A.id, A.display_name
-            order by segment_rides desc
-            ;
-        """)
+    return text("""
+        select A.id, A.display_name as athlete_name, count(E.id) as segment_rides
+        from lbd_athletes A
+        join rides R on R.athlete_id = A.id
+        join ride_efforts E on E.ride_id = R.id
+        where E.segment_id = :segment_id
+        group by A.id, A.display_name
+        order by segment_rides desc
+        ;
+    """)
 
 
 def team_segment_query():

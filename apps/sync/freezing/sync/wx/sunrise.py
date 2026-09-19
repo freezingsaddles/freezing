@@ -1,22 +1,16 @@
-"""
-Adapted from http://michelanders.blogspot.com/2010/12/calulating-sunrise-and-sunset-in-python.html
-"""
-
-from __future__ import division
+"""Adapted from http://michelanders.blogspot.com/2010/12/calulating-sunrise-and-sunset-in-python.html."""
 
 from datetime import datetime, time
 from math import acos, asin, cos
 from math import degrees as deg
 from math import radians as rad
 from math import sin, tan
-
-import pytz
-from dateutil.tz import tzlocal
+from zoneinfo import ZoneInfo
 
 
 class Sun:
-    """
-    Calculate sunrise and sunset based on equations from NOAA
+    """Calculate sunrise and sunset based on equations from NOAA.
+
     http://www.srrb.noaa.gov/highlights/sunrise/calcdetails.html
 
     typical use, calculating the sunrise at the present day:
@@ -32,8 +26,8 @@ class Sun:
         self.lon = float(lon)
 
     def sunrise(self, when):
-        """
-        return the time of sunrise as a datetime.time object
+        """Return the time of sunrise as a datetime.time object.
+
         when is a datetime.datetime object. If none is given
         a local time zone is assumed (including daylight saving
         if present)
@@ -54,8 +48,7 @@ class Sun:
 
     @classmethod
     def _timefromdecimalday(cls, day):
-        """
-        returns a datetime.time object.
+        """Return a datetime.time object.
 
         day is a decimal day between 0.0 and 1.0, e.g. noon = 0.5
         """
@@ -68,10 +61,7 @@ class Sun:
         return time(hour=h, minute=m, second=s)
 
     def _preptime(self, when):
-        """
-        Extract information in a suitable format from when,
-        a datetime.datetime object.
-        """
+        """Extract information in a suitable format from when, a datetime.datetime object."""
         # datetime days are numbered in the Gregorian calendar
         # while the calculations from NOAA are distibuted as
         # OpenOffice spreadsheets with days numbered from
@@ -83,13 +73,11 @@ class Sun:
 
         self.timezone = 0
         offset = when.utcoffset()
-        if not offset is None:
+        if offset is not None:
             self.timezone = offset.seconds / 3600.0
 
     def _calc(self):
-        """
-        Perform the actual calculations for sunrise, sunset and
-        a number of related quantities.
+        """Perform the actual calculations for sunrise, sunset and a number of related quantities.
 
         The results are stored in the instance variables
         sunrise_t, sunset_t and solarnoon_t
@@ -111,7 +99,7 @@ class Sun:
             23
             + (
                 26
-                + ((21.448 - Jcent * (46.815 + Jcent * (0.00059 - Jcent * 0.001813))))
+                + (21.448 - Jcent * (46.815 + Jcent * (0.00059 - Jcent * 0.001813)))
                 / 60
             )
             / 60
@@ -149,7 +137,7 @@ class Sun:
 
 if __name__ == "__main__":
     s = Sun(lat=39.45536859, lon=-77.4142634)
-    when = datetime.now(tzinfo=pytz.timezone("America/New_York"))
-    print(datetime.today())
-    print(s.sunrise(when))
-    print(s.sunset(when))
+    when = datetime.now(tz=ZoneInfo("America/New_York"))
+    print(datetime.today())  # noqa: T201
+    print(s.sunrise(when))  # noqa: T201
+    print(s.sunset(when))  # noqa: T201

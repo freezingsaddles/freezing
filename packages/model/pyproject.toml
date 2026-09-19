@@ -17,7 +17,7 @@ maintainers = [
     {name = "Richard Bullington-McGuire", email="richard.bullington.mcguire@gmail.com"},
 ]
 license = {text = "Apache License (2.0)"}
-requires-python = ">=3.10"
+requires-python = ">=3.14"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: Apache Software License",
@@ -25,7 +25,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.14",
     "Natural Language :: English",
 ]
 dependencies = [
@@ -33,11 +33,9 @@ dependencies = [
     "PyMySQL>=1.0,<2",
     "SQLAlchemy>=2.0,<3",
     "alembic>=1.13,<2",
-    "arrow>=1.0,<2",
     "colorlog>=6,<7",
     "envparse>=0.2",
     "marshmallow>=3.18,<5",
-    "pytz>=2024",
 ]
 
 [tool.fawltydeps]
@@ -56,9 +54,6 @@ ignore_unused = [
     "flake8-pyproject",
     "flake8-quotes",
     "flake8-raise",
-    "flake8-return",
     "flake8-simplify",
-    "flake8-sorted-keys",
-    "flake8-todo",
 ]
 

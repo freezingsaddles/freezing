@@ -1,5 +1,5 @@
 """
-Created on Feb 10, 2013
+Created on Feb 10, 2013.
 
 @author: hans
 """
@@ -111,7 +111,8 @@ def team_daily():
 @blueprint.route("/indiv_worst_day_points")
 def indiv_worst_day_points():
     ridersq = text("""
-    select count(distinct(athlete_id)) as riders from rides group by date(start_date)
+    select count(distinct(athlete_id)) as riders from rides
+    group by competition_date
     """)
     riders = [
         x._mapping["riders"] for x in meta.scoped_session().execute(ridersq).fetchall()

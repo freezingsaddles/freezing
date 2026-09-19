@@ -1,8 +1,8 @@
 import logging
 import os
 from datetime import tzinfo
+from zoneinfo import ZoneInfo
 
-import pytz
 from colorlog import ColoredFormatter
 from envparse import env
 
@@ -24,7 +24,7 @@ class Config:
     TIMEZONE: tzinfo = env(
         "TIMEZONE",
         default="America/New_York",
-        postprocessor=lambda val: pytz.timezone(val),
+        postprocessor=lambda val: ZoneInfo(val),
     )
 
 
@@ -33,16 +33,15 @@ config = Config()
 
 def init_logging(loglevel: int = logging.INFO, color: bool = False):
     """
-    Initialize the logging subsystem and create a logger for this class,
-    using passed in optparse options.
+    Initialize the logging subsystem and create a logger for this class, using passed in optparse options.
 
     :param level: The log level (e.g. logging.DEBUG)
     :return:
     """
-
     ch = logging.StreamHandler()
     ch.setLevel(loglevel)
 
+    formatter: logging.Formatter
     if color:
         formatter = ColoredFormatter(
             "%(log_color)s%(levelname)-8s%(reset)s [%(name)s] %(message)s",
@@ -68,9 +67,9 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
         logging.root,
     ]
 
-    for l in loggers:
-        if l is logging.root:
-            l.setLevel(logging.DEBUG)
+    for logger in loggers:
+        if logger is logging.root:
+            logger.setLevel(logging.DEBUG)
         else:
-            l.setLevel(logging.INFO)
-        l.addHandler(ch)
+            logger.setLevel(logging.INFO)
+        logger.addHandler(ch)

@@ -1,4 +1,4 @@
-"""reverse track coords
+"""Reverse track coords.
 
 Revision ID: 6cca33764ed5
 Revises: c206a3641567
@@ -13,7 +13,6 @@ down_revision = "c206a3641567"
 
 import re
 
-import sqlalchemy as sa
 from alembic import op
 
 _linestring_rx = re.compile("^LINESTRING\\((.+)\\)$")
@@ -21,7 +20,7 @@ _linestring_rx = re.compile("^LINESTRING\\((.+)\\)$")
 
 def parse_linestring(wkt):
     """
-    Parses LINESTRING WKT into a list of lon/lat (str) tuples.
+    Parse LINESTRING WKT into a list of lon/lat (str) tuples.
 
     :param wkt: The WKT for the LINESTRING
     :type wkt: str`
@@ -34,7 +33,7 @@ def parse_linestring(wkt):
 
 
 def linestring_wkt(points):
-    wkt_dims = ["{} {}".format(lon, lat) for (lon, lat) in points]
+    wkt_dims = [f"{lon} {lat}" for (lon, lat) in points]
     return "LINESTRING({})".format(", ".join(wkt_dims))
 
 
@@ -43,11 +42,9 @@ def reverse_coordinates():
     results = conn.execute(
         "select ride_id, AsWkt(gps_track) as gps_track from ride_tracks"
     )
-    i = 0
-    for row in results:
-        i += 1
+    for i, row in enumerate(results, 1):
         if i % 100 == 0:
-            print("Row: {}".format(i))
+            print(f"Row: {i}")
         orig_points = parse_linestring(row["gps_track"])
         new_points = [(lon, lat) for (lat, lon) in orig_points]
         new_wkt = linestring_wkt(new_points)

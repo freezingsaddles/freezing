@@ -22,8 +22,7 @@ class ActivityPublisher:
     def serialize_message(self, message) -> str:
         if isinstance(message, str):
             return message
-        else:
-            return json.dumps(message)
+        return json.dumps(message)
 
     def publish_message(self, message: Any, dest: DefinedTubes):
         """

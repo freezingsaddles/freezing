@@ -29,7 +29,7 @@ def upgrade():
             (sum(R.distance) * sum(R.distance)))
           else 65 + sum(R.distance)
         end as points,
-        date(CONVERT_TZ(R.start_date, R.timezone,'{0}')) as ride_date
+        date(CONVERT_TZ(R.start_date, R.timezone,'{}')) as ride_date
            from
         rides R join athletes A on A.id = R.athlete_id
       group by

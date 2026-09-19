@@ -1,16 +1,11 @@
 import json
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from stravalib.client import Client
-from stravalib.model import DetailedActivity, Stream
 
-from freezing.sync.utils.cache import (
-    CachingActivityFetcher,
-    CachingAthleteObjectFetcher,
-    CachingStreamFetcher,
-)
+from freezing.sync.utils.cache import CachingActivityFetcher, CachingStreamFetcher
 
 
 @pytest.fixture
@@ -33,7 +28,7 @@ class TestCachingAthleteObjectFetcher:
             athlete_id=athlete_id, object_id=object_id, object_json=object_json
         )
         assert os.path.exists(cache_path)
-        with open(cache_path, "r") as f:
+        with open(cache_path) as f:
             cached_data = json.load(f)
         assert cached_data == object_json
 

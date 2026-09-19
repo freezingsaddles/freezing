@@ -190,6 +190,23 @@ cd /opt/compose
 cp .env $HOME/backups/.env-$(date +'%Y-%m-%d')
 ```
 
+* Hand last season's athletes back to Strava, before anything deletes their tokens:
+
+```bash
+cd /opt/compose
+docker compose run --rm --no-deps freezing-sync freezing-deauthorize
+docker compose run --rm --no-deps freezing-sync freezing-deauthorize --yes
+```
+
+  The first command only says what it would do. Strava goes on sending webhook
+  events for everyone who has authorised the application, and gives the receiver
+  no way to refuse them one athlete at a time, so this is the only thing that
+  stops next season's logs filling with updates about riders who are no longer
+  in the database. Run it before emptying the `athletes` table, because
+  deauthorizing has to be done as each athlete and needs their token, and before
+  moving the dates on below, because the command refuses to disconnect a
+  competition that has not reached its `END_DATE`.
+
 * Edit the `.env` file for the production server (look in `/opt/compose/.env`) as follows:
   * Update the start and end dates
   * Update the main Strava team id `MAIN_TEAM`
@@ -201,7 +218,20 @@ cp .env $HOME/backups/.env-$(date +'%Y-%m-%d')
 vim /opt/compose/.env
 ```
 
+* Stop Freezebot, so that it is not watching while the photos go:
+
+```bash
+cd /opt/compose
+docker compose stop freezing-freezebot
+```
+
+  It keeps Discord in step with `ride_photos`, and reads photos that have gone
+  as photos to take down. Left running through the wipe, it would delete a
+  season of pictures from the Discord channels. Start it again once the new
+  season's dates are in `.env`.
+
 * Delete all the data in the following MySQL tables: (see [freezing/sql/year-start.sql](freezing/sql/year-start.sql))
+  * freezebot_posts
   * athletes
   * rides
   * ride_efforts
@@ -210,6 +240,11 @@ vim /opt/compose/.env
   * ride_tracks
   * ride_weather
   * teams
+
+  `tribes` is not in the list because it has a foreign key on `athletes` with
+  `on delete cascade`, so it goes when they do. That is also why the script
+  deletes from `athletes` rather than truncating it: a truncate would leave the
+  tribes behind.
 * Insert a new record into the `teams` table matching the MAIN_TEAM id:
 
     insert into teams values (567288, 'Freezing Saddles 2020', 1);

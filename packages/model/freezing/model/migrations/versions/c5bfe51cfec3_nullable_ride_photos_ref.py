@@ -1,4 +1,4 @@
-"""nullable ride_photos ref
+"""Nullable ride_photos ref.
 
 Revision ID: c5bfe51cfec3
 Revises: 74b6566816aa

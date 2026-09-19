@@ -1,8 +1,4 @@
-import arrow
-from pytz import utc
-from sqlalchemy import and_
-
-from freezing.model import meta, orm
+from freezing.common.times import parse_instant
 from freezing.sync.config import config
 from freezing.sync.data.activity import ActivitySync
 
@@ -10,22 +6,20 @@ from . import BaseCommand
 
 
 class SyncActivitiesScript(BaseCommand):
-    """
-    Synchronize rides from data with the database.
-    """
+    """Synchronize rides from data with the database."""
 
     name = "sync-activities"
     description = "Syncs all activities for registered athletes."
 
     def build_parser(self):
-        parser = super(SyncActivitiesScript, self).build_parser()
+        parser = super().build_parser()
 
         parser.add_argument(
             "--start-date",
             dest="start_date",
             help="Date to begin fetching (default is to fetch all since configured start date)",
             default=config.START_DATE,
-            type=lambda v: arrow.get(v).datetime,
+            type=parse_instant,
             metavar="YYYY-MM-DD",
         )
 

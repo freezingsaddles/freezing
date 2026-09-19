@@ -1,7 +1,7 @@
 import decimal
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import yaml
 from marshmallow import fields
@@ -26,35 +26,29 @@ class GenericBoardField(BaseMessage):
         if isinstance(v, str):
             if self.format:
                 return self.format.format(**dict(row._mapping))
-            else:
-                return v
+            return v
 
-        elif isinstance(v, (float, decimal.Decimal)):
-            # '{number:.{digits}f}'.format(number=p, digits=n)
-            # {:,}
+        if isinstance(v, (float, decimal.Decimal)):
+            # The format is a str.format spec such as a fixed number of digits
+            # or a thousands separator.
             if self.formatx:
                 return self.formatx.format(**dict(row._mapping))
             if self.format:
                 return self.format.format(v)
-            else:
-                return "{0:,.2f}".format(v)
+            return f"{v:,.2f}"
 
-        elif isinstance(v, int):
-            # '{number:.{digits}f}'.format(number=p, digits=n)
-            # {:,}
+        if isinstance(v, int):
+            # The format is a str.format spec such as a thousands separator.
             if self.format:
                 return self.format.format(v)
-            else:
-                return "{0:,}".format(v)
+            return f"{v:,}"
 
-        elif isinstance(v, datetime):
+        if isinstance(v, datetime):
             if self.format:
                 return v.strftime(self.format)
-            else:
-                return v.isoformat()
+            return v.isoformat()
 
-        else:
-            return v
+        return v
 
 
 class GenericBoardFieldSchema(BaseSchema):
@@ -76,10 +70,10 @@ class GenericBoard(BaseMessage):
     description = None
     url = None
     discord: int | None = None
-    sponsors: List[int] | None = None
-    banned: List[int] | None = None  # banned for prior win
-    query = None
-    fields: List[GenericBoardField] = None
+    sponsors: list[int] | None = None
+    banned: list[int] | None = None  # banned for prior win
+    query: str | None = None
+    fields: list[GenericBoardField] | None = None
 
 
 class GenericBoardSchema(BaseSchema):
@@ -96,8 +90,10 @@ class GenericBoardSchema(BaseSchema):
     fields = fields.Nested(GenericBoardFieldSchema, many=True, required=False)
 
 
-def load_board_and_data(leaderboard) -> Tuple[GenericBoard, List[Dict[str, Any]]]:
+def load_board_and_data(leaderboard) -> tuple[GenericBoard, list[dict[str, Any]]]:
     board = load_board(leaderboard)
+    if board.query is None:
+        raise ObjectNotFound(f"Board {leaderboard} has no query")
 
     with meta.transaction_context(read_only=True) as session:
         rs = session.execute(text(board.query))
@@ -111,13 +107,11 @@ def load_board_and_data(leaderboard) -> Tuple[GenericBoard, List[Dict[str, Any]]
 
 
 def load_board(leaderboard) -> GenericBoard:
-    path = os.path.join(
-        config.LEADERBOARDS_DIR, "{}.yml".format(os.path.basename(leaderboard))
-    )
+    path = os.path.join(config.LEADERBOARDS_DIR, f"{os.path.basename(leaderboard)}.yml")
     if not os.path.exists(path):
-        raise ObjectNotFound("Could not find yaml board definition {}".format(path))
+        raise ObjectNotFound(f"Could not find yaml board definition {path}")
 
-    with open(path, "rt", encoding="utf-8") as fp:
+    with open(path, encoding="utf-8") as fp:
         doc = yaml.safe_load(fp)
 
     schema = GenericBoardSchema()
@@ -126,7 +120,7 @@ def load_board(leaderboard) -> GenericBoard:
     return board
 
 
-def format_rows(rows, board) -> List[Dict[str, Any]]:
+def format_rows(rows, board) -> list[dict[str, Any]]:
     banned = []
     if board.sponsors:
         banned.extend(board.sponsors)
@@ -134,25 +128,26 @@ def format_rows(rows, board) -> List[Dict[str, Any]]:
         banned.extend(board.banned)
 
     def format_athlete(row):
-        id = row._mapping["athlete_id"]
-        format = (
+        athlete_id = row._mapping["athlete_id"]
+        template = (
             '<a href="/people/{id}" class="hover-underline text-muted">{name} <em>(ineligible)</em></a>'
-            if id in banned
+            if athlete_id in banned
             else '<a href="/people/{id}" class="hover-underline">{name}</a>'
         )
-        return format.format(id=id, name=row._mapping["athlete_name"])
+        return template.format(id=athlete_id, name=row._mapping["athlete_name"])
 
     def format_team(row):
-        format = '<a href="/teams/{id}" class="hover-underline">{name}</a>'
-        return format.format(id=row._mapping["team_id"], name=row._mapping["team_name"])
+        template = '<a href="/teams/{id}" class="hover-underline">{name}</a>'
+        return template.format(
+            id=row._mapping["team_id"], name=row._mapping["team_name"]
+        )
 
     def format_field(f: GenericBoardField, row) -> str:
         if f.type == "athlete":
             return format_athlete(row)
-        elif f.type == "team":
+        if f.type == "team":
             return format_team(row)
-        else:
-            return f.format_value(row._mapping[f.name], row)
+        return f.format_value(row._mapping[f.name], row)
 
     try:
         formatted = [
@@ -161,16 +156,15 @@ def format_rows(rows, board) -> List[Dict[str, Any]]:
         rank_by = next(iter([f.name for f in board.fields if f.rank_by]), None)
         return formatted if rank_by is None else rank_rows(formatted, rank_by)
     except KeyError as ke:
-        raise RuntimeError("Field not found in result row: {}".format(ke))
+        raise RuntimeError(f"Field not found in result row: {ke}") from ke
 
 
-def rank_rows(rows, rank_by, index=1, rank=0, rank_value=None) -> List[Dict[str, Any]]:
+def rank_rows(rows, rank_by, index=1, rank=0, rank_value=None) -> list[dict[str, Any]]:
     if len(rows) == 0:
         return rows
-    else:
-        head, *tail = rows
-        head_value = head[rank_by]
-        head_rank = rank if index > 1 and head_value == rank_value else index
-        return [{**head, "rank": head_rank}] + rank_rows(
-            tail, rank_by, 1 + index, head_rank, head_value
-        )
+    head, *tail = rows
+    head_value = head[rank_by]
+    head_rank = rank if index > 1 and head_value == rank_value else index
+    return [{**head, "rank": head_rank}] + rank_rows(
+        tail, rank_by, 1 + index, head_rank, head_value
+    )

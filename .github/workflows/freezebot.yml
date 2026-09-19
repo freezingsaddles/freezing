@@ -1,0 +1,43 @@
+---
+name: Freezebot
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'apps/freezebot/**'
+      - '.github/workflows/freezebot.yml'
+  pull_request:
+    paths:
+      - 'apps/freezebot/**'
+      - '.github/workflows/freezebot.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: freezebot
+    permissions:
+      checks: write        # for test results
+      pull-requests: write # for test results
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+      - uses: sbt/setup-sbt@82da71df4e122282484a99a8d70096bc2369dbd8 # v1.5.9
+      - name: Format check, tests, jar
+        working-directory: apps/freezebot
+        run: sbt --server --batch "scalafmtCheckAll; test; assembly"
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
+        if: always()
+        with:
+          files: |
+            apps/freezebot/target/out/**/test-reports/*.xml

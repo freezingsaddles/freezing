@@ -1,5 +1,4 @@
-"""
-Created on Feb 27, 2013
+"""Created on Feb 27, 2013.
 
 @author: hans
 """
@@ -78,41 +77,36 @@ state_name_to_abbrev_map = {
 
 
 class Fault(Exception):
-    """
-    Container for exceptions raised by the remote server.
-    """
+    """Container for exceptions raised by the remote server."""
 
     type = None
     description = None
 
-    def __init__(self, p1, p2=None):
+    def __init__(self, p1, p2=None):  # noqa: B042 (message built from args)
         if p1 and p2:
             self.type = p1
             self.description = p2
-            msg = "{0}: {1}".format(self.type, self.description)
+            msg = f"{self.type}: {self.description}"
         else:
             self.description = p1
             msg = self.description
-        super(Fault, self).__init__(msg)
+        super().__init__(msg)
 
 
 class NoDataFound(RuntimeError):
-    """
-    Exception to raise when there is no data available.
-    """
+    """Exception to raise when there is no data available."""
 
 
-class Client(object):
-    """
-    A Weather Underground client.
-    """
+class Client:
+    """A Weather Underground client."""
 
     # Here is an example URL:
     # http://api.wunderground.com/api/{api_key}/history_20130101/q/VA/Mc_Lean.json')
     base_url = urlparse("http://api.wunderground.com/api/")
 
     def __init__(self, api_key, cache_dir=None, pause=1.0, cache_only=False):
-        """
+        """Create a client.
+
         :param api_key: The wunderground api key.
         :param cache_dir: The base directory for cache files.
         :param pause: How long to pause between requests (wunderground rate limit is 10 req/minute for developer accounts)
@@ -129,9 +123,7 @@ class Client(object):
             os.makedirs(self.cache_dir)
 
     def _handle_protocol_error(self, response):
-        """
-        Parses the JSON response from the server, raising a :class:`stravatools.api.Fault` if the
-        server returned an error.
+        """Parse the JSON response from the server, raising a :class:`stravatools.api.Fault` if the server returned an error.
 
         :param response: The response JSON
         :raises Fault: If the response contains an error.
@@ -144,25 +136,19 @@ class Client(object):
         return response
 
     def get(self, *args, **kwargs):
-        """
-        Construct a URL built on top of the base where args are the path elements
-        and kwargs are any keywords.
-        """
+        """Construct a URL built on top of the base where args are the path elements and kwargs are any keywords."""
         path = self.base_url.path
         if not path.endswith("/"):
             path += "/"
 
         path_components = [self.api_key] + list(args)
-        if path_components:
-            if not path_components[-1].endswith(".json"):
-                path_components[-1] += ".json"
+        if path_components and not path_components[-1].endswith(".json"):
+            path_components[-1] += ".json"
 
         path += "/".join(path_components)
 
-        params = dict()
+        params = {}
         params.update(kwargs)
-        # query_params.update(urllib.urlencode(kwargs))
-        # new_query_string = urllib.urlencode(query_params)
 
         url = urlunsplit(
             (
@@ -174,7 +160,7 @@ class Client(object):
             )
         )
 
-        self.log.debug("GET {0!r} with params {1!r}".format(url, params))
+        self.log.debug(f"GET {url!r} with params {params!r}")
 
         try:
             raw = requests.get(url, params=params)
@@ -190,15 +176,13 @@ class Client(object):
         us_city_location_param = None
 
         if lat and lon:
-            latlon_location_param = "{0},{1}".format(lat, lon)
+            latlon_location_param = f"{lat},{lon}"
 
         # Try for US city first, since this will be more reusable
         if us_city:
             # Split on comma to extract state
             if us_city.count(",") != 1:
-                self.log.info(
-                    "Unable to parse city/state for us city: {0}".format(us_city)
-                )
+                self.log.info(f"Unable to parse city/state for us city: {us_city}")
             else:
                 state_code = None
                 city_parts = [part.strip() for part in us_city.split(",")]
@@ -207,7 +191,7 @@ class Client(object):
                         state_code = state_name_to_abbrev_map[city_parts[-1]]
                     else:
                         self.log.debug(
-                            "State len > 2 and not in name -> abbrev map: {0!r}".format(
+                            "State len > 2 and not in name -> abbrev map: {!r}".format(
                                 city_parts[-1]
                             )
                         )
@@ -219,9 +203,7 @@ class Client(object):
                         state_code + "/" + city_parts[0].replace(" ", "_")
                     )
                 else:
-                    self.log.info(
-                        "Unable to parse US state from {0!r}.".format(us_city)
-                    )
+                    self.log.info(f"Unable to parse US state from {us_city!r}.")
 
         # Check both for cache, starting with more specific one
         data = None
@@ -241,7 +223,7 @@ class Client(object):
                             res = self.get(date.strftime("history_%Y%m%d"), "q", lp)
                         except Fault:
                             self.log.info(
-                                "Server fault trying to fetch wx for {0},{1}".format(
+                                "Server fault trying to fetch wx for {},{}".format(
                                     lp, date
                                 )
                             )
@@ -255,7 +237,7 @@ class Client(object):
                 else:
                     # We tried all param options but each had an error
                     raise NoDataFound(
-                        "Unable to retrieve wx for lat/lon={0}, us_city={1}, date={2}".format(
+                        "Unable to retrieve wx for lat/lon={}, us_city={}, date={}".format(
                             (lat, lon), us_city, date
                         )
                     )
@@ -263,15 +245,15 @@ class Client(object):
                 self._write_cache(lp, date, data)
             else:
                 raise NoDataFound(
-                    "cache_only=True and no cached data found for lat/lon={0}, us_city={1}, date={2}".format(
+                    "cache_only=True and no cached data found for lat/lon={}, us_city={}, date={}".format(
                         (lat, lon), us_city, date
                     )
                 )
 
         try:
             history_data = HistoryDay.from_json(data["history"])
-        except:
-            self.log.exception("Unable to parse data: {0!r}".format(data))
+        except Exception:
+            self.log.exception(f"Unable to parse data: {data!r}")
             raise
 
         return history_data
@@ -283,19 +265,17 @@ class Client(object):
         return path
 
     def _check_cache(self, location_param, date):
-        data = None
         if self.cache_dir:
             basedir = self._cache_dir(location_param)
             filename = date.strftime("%Y-%m-%d") + ".json"
             filepath = os.path.join(basedir, filename)
             if os.path.exists(filepath):
-                self.log.debug("Cache hit for {0}/{1}".format(location_param, date))
-                with open(filepath, "r") as fp:
-                    data = json.loads(fp.read())
-            else:
-                self.log.debug("Cache miss for {0}/{1}".format(location_param, date))
+                self.log.debug(f"Cache hit for {location_param}/{date}")
+                with open(filepath) as fp:
+                    return json.loads(fp.read())
+            self.log.debug(f"Cache miss for {location_param}/{date}")
 
-        return data
+        return None
 
     def _write_cache(self, location_param, date, response_json):
         if self.cache_dir:

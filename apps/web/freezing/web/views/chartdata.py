@@ -1,16 +1,15 @@
 """
-Created on Feb 10, 2013
+Created on Feb 10, 2013.
 
 @author: hans
 """
 
 import copy
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from dateutil import rrule
 from flask import Blueprint, jsonify
-from pytz import utc
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -30,9 +29,7 @@ blueprint = Blueprint("chartdata", __name__)
 
 @blueprint.route("/team_leaderboard")
 def team_leaderboard_data():
-    """
-    Loads the leaderboard data broken down by team.
-    """
+    """Load the leaderboard data broken down by team."""
     q = team_leaderboard_query()
 
     team_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
@@ -40,7 +37,7 @@ def team_leaderboard_data():
     labels = []
     values = []
     ranks = []
-    for i, res in enumerate(team_q):
+    for res in team_q:
         values.append(res._mapping["total_score"])
         labels.append(res._mapping["team_name"])
         ranks.append(res._mapping["rank"])
@@ -50,9 +47,7 @@ def team_leaderboard_data():
 
 @blueprint.route("/indiv_leaderboard")
 def indiv_leaderboard_data():
-    """
-    Loads the leaderboard data broken down by team.
-    """
+    """Load the leaderboard data broken down by team."""
     q = text("""
              select
                A.id as athlete_id,
@@ -71,7 +66,7 @@ def indiv_leaderboard_data():
     labels = []
     values = []
     ranks = []
-    for i, res in enumerate(indiv_q):
+    for res in indiv_q:
         values.append(res._mapping["total_score"])
         labels.append(res._mapping["athlete_name"])
         ranks.append(res._mapping["rank"])
@@ -277,8 +272,6 @@ def team_number_sleaze_days():
 
 @blueprint.route("/indiv_kidical")
 def indiv_kidical():
-    # an_effort = meta.session_factory().query(RideEffort).filter_on(segment_id=segment_id).first() # @UndefinedVariable
-
     q = text("""
                 select A.id, A.display_name as athlete_name, count(R.id) as kidical_rides
                 from lbd_athletes A
@@ -340,8 +333,6 @@ def indiv_freeze_points():
 
 @blueprint.route("/indiv_segment/<int:segment_id>")
 def indiv_segment(segment_id):
-    # an_effort = meta.session_factory().query(RideEffort).filter_on(segment_id=segment_id).first() # @UndefinedVariable
-
     q = indiv_segment_query().bindparams(segment_id=segment_id)
 
     indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
@@ -369,8 +360,6 @@ def indiv_segment(segment_id):
 
 @blueprint.route("/team_segment/<int:segment_id>")
 def team_segment(segment_id):
-    # an_effort = meta.session_factory().query(RideEffort).filter_on(segment_id=segment_id).first() # @UndefinedVariable
-
     q = team_segment_query().bindparams(segment_id=segment_id)
 
     team_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
@@ -594,7 +583,6 @@ def now_or_competition_end():
 
 @blueprint.route("/user_daily_points/<athlete_id>")
 def user_daily_points(athlete_id):
-    """ """
     day_q = text("""
              select DS.points
              from daily_scores DS
@@ -609,17 +597,8 @@ def user_daily_points(athlete_id):
     )
     days = []
     points = []
-    for i, dt in enumerate(day_r):
-        # Thanks Stack Overflow https://stackoverflow.com/a/25265611/424301
-        day_no = (
-            utc.localize(
-                dt,
-                is_dst=None,
-            )
-            .astimezone(config.TIMEZONE)
-            .timetuple()
-            .tm_yday
-        )
+    for dt in day_r:
+        day_no = dt.replace(tzinfo=UTC).astimezone(config.TIMEZONE).timetuple().tm_yday
         pts = (
             meta.scoped_session()
             .execute(day_q.bindparams(id=athlete_id, yday=day_no))
@@ -633,7 +612,6 @@ def user_daily_points(athlete_id):
 
 @blueprint.route("/user_weekly_points/<athlete_id>")
 def user_weekly_points(athlete_id):
-    """ """
     week_q = text("""
              select sum(DS.points) as total_score
              from daily_scores DS
@@ -664,8 +642,6 @@ def user_weekly_points(athlete_id):
 
 @blueprint.route("/team_weekly_points")
 def team_weekly_points():
-    """ """
-
     q = text("""
              select
                DS.team_id as team_id,
@@ -695,18 +671,18 @@ def team_weekly_points():
         for r in res
     }
 
-    response = {}
-    response["x"] = ["x"] + [week + 1 for week in weeks]
-    response["teams"] = [name for id, name in teams]
-    for id, name in teams:
-        response[name] = [name] + [scores.get((week, id), 0.0) for week in weeks]
+    response = {
+        "x": ["x"] + [week + 1 for week in weeks],
+        "teams": [name for team_id, name in teams],
+    }
+    for team_id, name in teams:
+        response[name] = [name] + [scores.get((week, team_id), 0.0) for week in weeks]
 
     return jsonify(response)
 
 
 @blueprint.route("/team_cumul_points")
 def team_cumul_points():
-    """ """
     teams = (
         meta.scoped_session().query(Team).filter_by(leaderboard_exclude=False).all()
     )  # @UndefinedVariable
@@ -726,7 +702,7 @@ def team_cumul_points():
             rrule.DAILY, dtstart=competition_start(), until=now_or_competition_end()
         )
     ]
-    tpl_dict = dict([(dt, None) for dt in dates])
+    tpl_dict = dict.fromkeys(dates)
 
     # Query for each team, build this into a multidim array
     daily_cumul = defaultdict(dict)
@@ -750,9 +726,10 @@ def team_cumul_points():
             else:
                 prev_value = daily_cumul[team.id][datekey]
 
-    response = {}
-    response["dates"] = ["date"] + dates
-    response["teams"] = [team.name for team in teams]
+    response = {
+        "dates": ["date"] + dates,
+        "teams": [team.name for team in teams],
+    }
     for team in teams:
         response[team.name] = [team.name] + [
             daily_cumul[team.id][date] for date in dates
@@ -763,7 +740,6 @@ def team_cumul_points():
 
 @blueprint.route("/team_cumul_mileage")
 def team_cumul_mileage():
-    """ """
     teams = (
         meta.scoped_session().query(Team).filter_by(leaderboard_exclude=False).all()
     )  # @UndefinedVariable
@@ -783,7 +759,7 @@ def team_cumul_mileage():
             rrule.DAILY, dtstart=competition_start(), until=now_or_competition_end()
         )
     ]
-    tpl_dict = dict([(dt, None) for dt in dates])
+    tpl_dict = dict.fromkeys(dates)
 
     # Query for each team, build this into a multidim array
     daily_cumul = defaultdict(dict)
@@ -807,9 +783,10 @@ def team_cumul_mileage():
             else:
                 prev_value = daily_cumul[team.id][datekey]
 
-    response = {}
-    response["dates"] = ["date"] + dates
-    response["teams"] = [team.name for team in teams]
+    response = {
+        "dates": ["date"] + dates,
+        "teams": [team.name for team in teams],
+    }
     for team in teams:
         response[team.name] = [team.name] + [
             daily_cumul[team.id][date] for date in dates
@@ -841,7 +818,7 @@ def indiv_elev_dist():
     elevations = []
     distances = []
     speeds = []
-    for i, res in enumerate(indiv_q):
+    for res in indiv_q:
         athletes.append(res._mapping["athlete_name"])
         teams.append(res._mapping["team_name"])
         elevations.append(int(res._mapping["total_elevation_gain"]))
@@ -863,10 +840,11 @@ def indiv_elev_dist():
 def riders_vs_weather():
     """
     Snowiness and raininess are in the average inches per hour of snowfall during rides.
+
     A better metric would probably be total rain/snow at DCA on the day, but this is the measure we have.
     """
     q = text("""
-            select date(start_date) as start_date,
+            select R.competition_date as start_date,
             avg(W.day_temp_min) as low_temp,
             avg(W.ride_windchill_avg) as wind_chill,
             cast(sum(W.ride_rain) * 3600 / sum(R.moving_time) as float) as raininess,
@@ -875,8 +853,8 @@ def riders_vs_weather():
             max(W.wind_gust) as wind_gust,
             count(distinct R.athlete_id) as riders
             from rides R join ride_weather W on W.ride_id = R.id
-            group by date(start_date)
-            order by date(start_date);
+            group by start_date
+            order by start_date;
             """)
 
     rows = []
@@ -884,7 +862,6 @@ def riders_vs_weather():
         if res._mapping["low_temp"] is None:
             # This probably only happens for *today* since that isn't looked up yet.
             continue
-        # res['start_date']
         dt = res._mapping["start_date"]
 
         rows.append(
@@ -905,17 +882,16 @@ def riders_vs_weather():
 
 @blueprint.route("/distance_by_lowtemp")
 def distance_by_lowtemp():
-    """ """
     q = text("""
-            select date(start_date) as start_date,
+            select R.competition_date as start_date,
             avg(W.day_temp_min) as low_temp,
             avg(W.ride_windchill_avg) as wind_chill,
             cast(sum(W.ride_rain) * 3600 / sum(R.moving_time) as float) as raininess,
             cast(sum(W.ride_snow) * 3600 / sum(R.moving_time) as float) as snowiness,
             sum(R.distance) as distance
             from rides R join ride_weather W on W.ride_id = R.id
-            group by date(start_date)
-            order by date(start_date);
+            group by start_date
+            order by start_date;
             """)
 
     rows = []
@@ -923,7 +899,6 @@ def distance_by_lowtemp():
         if res._mapping["low_temp"] is None:
             # This probably only happens for *today* since that isn't looked up yet.
             continue
-        # res['start_date']
         dt = res._mapping["start_date"]
         rows.append(
             {
@@ -942,8 +917,7 @@ def distance_by_lowtemp():
 def short(name, max_len=17):
     if len(name) < max_len:
         return name
-    else:
-        return "{}…{}".format(name[: max_len - 2], name[len(name) - 1 : len(name)])
+    return f"{name[: max_len - 2]}…{name[len(name) - 1 : len(name)]}"
 
 
 def exec_and_jsonify_query(
@@ -1028,7 +1002,7 @@ def indiv_coldest():
     q = text(parameterized_suffering_query("ride_temp_start", "temp_start", func="min"))
 
     def hl(res, ql):
-        "%.2f F for %s on %s in %s" % (
+        return "{:.2f} F for {} on {} in {}".format(
             res._mapping["temp_start"],
             fmt_dur(res._mapping["moving"]),
             fmt_date(res._mapping["date"]),
@@ -1051,7 +1025,7 @@ def indiv_snowiest():
     )
 
     def hl(res, ql):
-        "%.2f in for %s on %s in %s" % (
+        return "{:.2f} in for {} on {} in {}".format(
             res._mapping["snow"],
             fmt_dur(res._mapping["moving"]),
             fmt_date(res._mapping["date"]),
@@ -1074,7 +1048,7 @@ def indiv_rainiest():
     )
 
     def hl(res, ql):
-        "%.2f in for %s on %s in %s" % (
+        return "{:.2f} in for {} on {} in {}".format(
             res._mapping["rain"],
             fmt_dur(res._mapping["moving"]),
             fmt_date(res._mapping["date"]),
