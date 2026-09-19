@@ -22,10 +22,4 @@ class ActivityNotFound(RuntimeError):
 
 
 class AthleteDeauthorized(RuntimeError):
-    """The athlete has taken our authorisation back, and their tokens are gone.
-
-    Strava does not tell us when a rider disconnects the application; the first
-    we hear of it is a refresh token it will not honour. Nothing we do brings
-    that authorisation back, so anything holding this athlete should give up on
-    them rather than try again on the next pass.
-    """
+    """We hold no authorisation for this athlete, and asking again will not help."""

@@ -77,7 +77,8 @@ class WebhookResource:
             self.publisher.publish_message(json_data, dest=DefinedTubes.activity_update)
         elif result.object_type is ObjectType.athlete:
             # The one athlete event Strava defines is the rider disconnecting
-            # us, and it is the only notice we get that their tokens are dead.
+            # us, which the sync would otherwise discover only when it next
+            # tried to use their tokens.
             message = AthleteUpdate()
             message.athlete_id = result.owner_id
             message.event_time = result.event_time

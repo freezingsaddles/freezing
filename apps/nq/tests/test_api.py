@@ -62,7 +62,7 @@ def test_post_webhook(client, publisher: ActivityPublisher):
 
 
 def test_post_webhook_athlete_deauthorization(client, publisher: ActivityPublisher):
-    """The only notice Strava gives that a rider's tokens are dead."""
+    """The earliest we can know a rider's tokens are dead."""
     d = {
         "subscription_id": 111,
         "owner_id": 222,
