@@ -606,14 +606,17 @@ class ActivitySync(BaseSync):
     # start and end off a ride and join those both into one ride, that will overlap the main
     # part of the ride and one will be excluded. Just upload three rides instead.
     # Allow some overlap at the start end, just in case .. things.
-    # Use local time because that's what is stored in the database.
     def check_db_overlap(
         self,
         activity: DetailedActivity,
     ):
         athlete = _required(activity.athlete, activity, "athlete")
-        start_date_utc = _required(activity.start_date, activity, "start_date").replace(
-            tzinfo=None
+        # Same as the write path: the offset has to be applied before it is
+        # dropped, or the window shifts by it against a column that has none.
+        start_date_utc = (
+            _required(activity.start_date, activity, "start_date")
+            .astimezone(UTC)
+            .replace(tzinfo=None)
         )
         elapsed_time = _required(activity.elapsed_time, activity, "elapsed_time")
         overlaps = (
