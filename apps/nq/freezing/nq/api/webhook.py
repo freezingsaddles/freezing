@@ -2,7 +2,13 @@ import json
 
 import falcon
 
-from freezing.model.msg.mq import ActivityUpdate, ActivityUpdateSchema, DefinedTubes
+from freezing.model.msg.mq import (
+    ActivityUpdate,
+    ActivityUpdateSchema,
+    AthleteUpdate,
+    AthleteUpdateSchema,
+    DefinedTubes,
+)
 from freezing.model.msg.strava import (
     ObjectType,
     SubscriptionCallback,
@@ -57,10 +63,7 @@ class WebhookResource:
         schema = SubscriptionUpdateSchema()
         result: SubscriptionUpdate = schema.load(req.media)
 
-        # We only care about activities
-        if result.object_type is not ObjectType.activity:
-            log.info(f"Ignoring non-activity webhook: {req.media}")
-        else:
+        if result.object_type is ObjectType.activity:
             message = ActivityUpdate()
             message.athlete_id = result.owner_id
             message.event_time = result.event_time
@@ -72,3 +75,18 @@ class WebhookResource:
 
             log.info(f"Publishing activity-update: {message}")
             self.publisher.publish_message(json_data, dest=DefinedTubes.activity_update)
+        elif result.object_type is ObjectType.athlete:
+            # The one athlete event Strava defines is the rider disconnecting
+            # us, and it is the only notice we get that their tokens are dead.
+            message = AthleteUpdate()
+            message.athlete_id = result.owner_id
+            message.event_time = result.event_time
+            message.operation = result.aspect_type
+            message.updates = result.updates
+
+            json_data = AthleteUpdateSchema().dump(message)
+
+            log.info(f"Publishing athlete-update: {message}")
+            self.publisher.publish_message(json_data, dest=DefinedTubes.athlete_update)
+        else:
+            log.info(f"Ignoring webhook we have no use for: {req.media}")

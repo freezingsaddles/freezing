@@ -72,7 +72,10 @@ def main():
 
     beanclient = Client(
         (config.BEANSTALKD_HOST, config.BEANSTALKD_PORT),
-        watch=[DefinedTubes.activity_update.value],
+        watch=[
+            DefinedTubes.activity_update.value,
+            DefinedTubes.athlete_update.value,
+        ],
     )
 
     subscriber = ActivityUpdateSubscriber(

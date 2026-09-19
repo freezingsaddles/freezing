@@ -20,6 +20,19 @@ def has_strava_authorization():
     )
 
 
+def forget_athlete(athlete: Athlete, logger: logging.Logger) -> None:
+    """Throw away tokens Strava will not honour again."""
+    logger.info(
+        "athlete %s has disconnected the application, forgetting their tokens",
+        athlete.id,
+    )
+    athlete.access_token = None
+    athlete.refresh_token = None
+    athlete.expires_at = 0
+    meta.scoped_session().add(athlete)
+    meta.scoped_session().commit()
+
+
 def _refresh_token_rejected(fault: Fault) -> bool:
     """Say whether Strava refused the refresh token itself, not just the call."""
     response = getattr(fault, "response", None)
@@ -93,7 +106,7 @@ class StravaClientForAthlete(Client):
             except Fault as fault:
                 if not _refresh_token_rejected(fault):
                     raise
-                self.forget_athlete(athlete)
+                forget_athlete(athlete, self.logger)
                 raise AthleteDeauthorized(
                     f"athlete {athlete.id} has disconnected the application"
                 ) from fault
@@ -103,18 +116,6 @@ class StravaClientForAthlete(Client):
             athlete.expires_at = token_dict["expires_at"]
             meta.scoped_session().add(athlete)
             meta.scoped_session().commit()
-
-    def forget_athlete(self, athlete: Athlete):
-        """Throw away tokens Strava will not honour again."""
-        self.logger.info(
-            "athlete %s has disconnected the application, forgetting their tokens",
-            athlete.id,
-        )
-        athlete.access_token = None
-        athlete.refresh_token = None
-        athlete.expires_at = 0
-        meta.scoped_session().add(athlete)
-        meta.scoped_session().commit()
 
 
 class BaseSync(metaclass=abc.ABCMeta):
