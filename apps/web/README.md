@@ -249,6 +249,12 @@ docker compose stop freezing-freezebot
 
     insert into teams values (567288, 'Freezing Saddles 2020', 1);
 
+* Clear the cache directories for activities and weather data:
+
+```bash
+sudo /opt/compose/bin/clear-cache-directories.sh
+```
+
 * Restart the services:
 
     cd /opt/compose && docker compose up -d
