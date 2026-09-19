@@ -158,7 +158,7 @@ def create_supplemental_db_objects(engine: Engine):
               (sum(R.distance) * sum(R.distance)))
             else 65 + sum(R.distance) - 10
           end as points,
-          date(CONVERT_TZ(R.start_date, R.timezone,'{}')) as ride_date
+          date(CONVERT_TZ(R.start_date, 'UTC','{}')) as ride_date
         from
           rides R join athletes A on A.id = R.athlete_id
         group by
@@ -173,11 +173,11 @@ def create_supplemental_db_objects(engine: Engine):
 
     _v_buid_ride_daylight = sa.DDL("""
         create view _build_ride_daylight as
-        select R.id as ride_id, date(R.start_date) as ride_date,
+        select R.id as ride_id, date(R.local_start_date) as ride_date,
         sec_to_time(R.elapsed_time) as elapsed,
         sec_to_time(R.moving_time) as moving,
-        TIME(R.start_date) as start_time,
-        TIME(date_add(R.start_date, interval R.elapsed_time second)) as end_time,
+        TIME(R.local_start_date) as start_time,
+        TIME(date_add(R.local_start_date, interval R.elapsed_time second)) as end_time,
         W.sunrise, W.sunset
         from rides R
         join ride_weather W on W.ride_id = R.id

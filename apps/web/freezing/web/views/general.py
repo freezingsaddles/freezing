@@ -16,7 +16,7 @@ from flask import (
     session,
     url_for,
 )
-from sqlalchemy import func, text
+from sqlalchemy import text
 from stravalib import Client
 
 from freezing.model import meta
@@ -151,7 +151,7 @@ def index():
         .query(RidePhoto)
         .filter_by(primary=True)
         .join(Ride)
-        .order_by(func.convert_tz(Ride.start_date, Ride.timezone, "GMT").desc())
+        .order_by(Ride.start_date.desc())
         .limit(12)
     )
 
@@ -171,7 +171,7 @@ def index():
                 coalesce(sum(R.moving_time),0) as moving_time,
                 coalesce(sum(R.distance),0) as distance
             from rides R
-            where date(CONVERT_TZ(R.start_date, R.timezone,'{}')) >= '{}'
+            where date(CONVERT_TZ(R.start_date, 'UTC','{}')) >= '{}'
             ;
         """.format(config.TIMEZONE, today.date()))
     today_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable

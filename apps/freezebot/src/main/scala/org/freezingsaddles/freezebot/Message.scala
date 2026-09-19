@@ -24,7 +24,7 @@ object Message:
       "title"  -> clip(photo.rideName, 256),
       "url"    -> s"https://www.strava.com/activities/${photo.rideId}",
       "image"  -> ujson.Obj("url" -> photo.imgL),
-      "footer" -> ujson.Obj("text" -> photo.startDate.format(time)),
+      "footer" -> ujson.Obj("text" -> photo.localStartDate.format(time)),
       "color"  -> blue,
     )
     photo.caption.map(_.trim).filter(_.nonEmpty).foreach(c => embed("description") = clip(c, 4096))

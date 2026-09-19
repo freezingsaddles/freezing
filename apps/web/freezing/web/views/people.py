@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 from math import ceil
-from zoneinfo import ZoneInfo
 
 from flask import Blueprint, abort, render_template
 from sqlalchemy import text
@@ -44,7 +43,7 @@ def people_list_users():
         for r in u.rides:
             total_rides += 1
             total_dist += r.distance
-            ride_date = r.start_date.replace(tzinfo=ZoneInfo(r.timezone)).date()
+            ride_date = r.local_start_date.date()
             if week_start <= ride_date <= week_end:
                 weekly_dist += r.distance
                 weekly_rides += 1
@@ -87,7 +86,7 @@ def people_show_person(user_id):
     for r in our_user.rides:
         total_rides += 1
         total_dist += r.distance
-        ride_date = r.start_date.replace(tzinfo=ZoneInfo(r.timezone)).date()
+        ride_date = r.local_start_date.date()
         if week_start <= ride_date <= week_end:
             weekly_dist += r.distance
             weekly_rides += 1
@@ -97,7 +96,7 @@ def people_show_person(user_id):
 
     q = text("""
            with daily_rides as (
-            select date(CONVERT_TZ(R.start_date, R.timezone, :timezone)) as ride_date,
+            select date(CONVERT_TZ(R.start_date, 'UTC', :timezone)) as ride_date,
             R.distance as distance,
             W.ride_temp_avg as ride_temp
             from rides R left outer join ride_weather W on W.ride_id = R.id

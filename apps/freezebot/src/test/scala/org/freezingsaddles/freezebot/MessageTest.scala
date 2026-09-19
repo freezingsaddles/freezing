@@ -11,7 +11,8 @@ class MessageTest extends munit.FunSuite:
     primary = false,
     rideId = 10629587487L,
     rideName = "Foggy Ross Hill Loops #scavhunt",
-    startDate = LocalDateTime.of(2024, 2, 26, 17, 33, 29),
+    startDate = LocalDateTime.of(2024, 2, 26, 22, 33, 29),
+    localStartDate = LocalDateTime.of(2024, 2, 26, 17, 33, 29),
     athleteId = 1644498L,
     athleteName = "Ann Rider",
     profilePhoto =

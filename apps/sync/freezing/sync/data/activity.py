@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TypeVar
 
 import arrow
@@ -92,7 +92,11 @@ class ActivitySync(BaseSync):
         # Should apply to both new and preexisting rides ...
 
         ride.name = strava_activity.name
-        ride.start_date = strava_activity.start_date_local
+        # Naive UTC: the column has no offset, and every comparison wants
+        # the instant.
+        ride.start_date = _required(
+            strava_activity.start_date, strava_activity, "start_date"
+        ).replace(tzinfo=None)
         ride.local_start_date = strava_activity.start_date_local
 
         # We need to round so that "1.0" miles in data is "1.0" miles when we convert back from meters.
@@ -174,7 +178,7 @@ class ActivitySync(BaseSync):
             'Writing ride for {athlete!r}: "{ride!r}" on {date}'.format(
                 athlete=ride.athlete.name,
                 ride=ride.name,
-                date=ride.start_date.strftime("%m/%d/%y"),
+                date=ride.local_start_date.strftime("%m/%d/%y"),
             )
         )
 
@@ -606,8 +610,8 @@ class ActivitySync(BaseSync):
         activity: DetailedActivity,
     ):
         athlete = _required(activity.athlete, activity, "athlete")
-        start_date_local = _required(
-            activity.start_date_local, activity, "start_date_local"
+        start_date_utc = _required(activity.start_date, activity, "start_date").replace(
+            tzinfo=None
         )
         elapsed_time = _required(activity.elapsed_time, activity, "elapsed_time")
         overlaps = (
@@ -624,9 +628,9 @@ class ActivitySync(BaseSync):
                     """).bindparams(
                     athlete_id=athlete.id,
                     activity_id=activity.id,
-                    start_date=start_date_local + _overlap_ignore,
+                    start_date=start_date_utc + _overlap_ignore,
                     end_date=(
-                        start_date_local + elapsed_time.timedelta() - _overlap_ignore
+                        start_date_utc + elapsed_time.timedelta() - _overlap_ignore
                     ),
                 ),
             )
@@ -819,8 +823,8 @@ class ActivitySync(BaseSync):
             exclude_keywords=config.EXCLUDE_KEYWORDS,
         )
 
-        # Because MySQL doesn't like it and we are not storing tz info in the db.
-        start_notz = start_date.replace(tzinfo=None)
+        # The column is naive UTC, so shift before dropping the offset.
+        start_notz = start_date.astimezone(UTC).replace(tzinfo=None)
 
         q = sess.query(Ride)
         q = q.filter(and_(Ride.athlete_id == athlete.id, Ride.start_date >= start_notz))

@@ -40,7 +40,7 @@ def teams_show_team(team_id):
 
     q = text("""
            with daily_rides as (
-            select date(CONVERT_TZ(R.start_date, R.timezone, :timezone)) as ride_date,
+            select date(CONVERT_TZ(R.start_date, 'UTC', :timezone)) as ride_date,
             A.id as athlete_id,
             sum(R.distance) as distance
             from rides R inner join athletes A on A.id = R.athlete_id

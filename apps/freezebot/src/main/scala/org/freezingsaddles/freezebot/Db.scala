@@ -55,8 +55,10 @@ case class Photo(
     primary: Boolean,
     rideId: Long,
     rideName: String,
-    /** The ride's local wall time, as Strava reports it and the Python side stores it. */
+    /** When the ride began, in UTC: what to order and compare by. */
     startDate: LocalDateTime,
+    /** The rider's own clock, for anything a person reads. */
+    localStartDate: LocalDateTime,
     athleteId: Long,
     athleteName: String,
     profilePhoto: Option[String],
@@ -70,7 +72,7 @@ object Photos:
     */
   def candidates(since: LocalDateTime)(using DbCon): List[Photo] =
     sql"""select p.id, p.caption, p.img_l, p.`primary`,
-                 r.id, r.name, r.start_date,
+                 r.id, r.name, r.start_date, r.local_start_date,
                  a.id, coalesce(nullif(a.display_name, ''), a.name), a.profile_photo
           from ride_photos p
           join rides r on r.id = p.ride_id
