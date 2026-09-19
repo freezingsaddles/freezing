@@ -19,7 +19,7 @@ query: |
           a.id as athlete_id,
           a.display_name as athlete_name,
           avg(r.distance) as dist,
-          count(distinct(date(r.start_date))) as num_ride_days
+          count(distinct(r.competition_date)) as num_ride_days
   from athletes a
   join rides r ON r.athlete_id = a.id
   group by a.id, a.display_name
