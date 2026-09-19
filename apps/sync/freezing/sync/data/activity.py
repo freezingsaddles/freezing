@@ -92,11 +92,13 @@ class ActivitySync(BaseSync):
         # Should apply to both new and preexisting rides ...
 
         ride.name = strava_activity.name
-        # Naive UTC: the column has no offset, and every comparison wants
-        # the instant.
-        ride.start_date = _required(
-            strava_activity.start_date, strava_activity, "start_date"
-        ).replace(tzinfo=None)
+        # The column has no offset, and the driver would drop one silently
+        # rather than apply it, so shift to UTC before letting it go.
+        ride.start_date = (
+            _required(strava_activity.start_date, strava_activity, "start_date")
+            .astimezone(UTC)
+            .replace(tzinfo=None)
+        )
         ride.local_start_date = strava_activity.start_date_local
 
         # We need to round so that "1.0" miles in data is "1.0" miles when we convert back from meters.
