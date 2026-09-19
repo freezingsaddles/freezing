@@ -15,7 +15,6 @@ from flask import (
 from sqlalchemy import text
 
 from freezing.model import meta
-from freezing.web.config import config
 
 blueprint = Blueprint("explore", __name__)
 
@@ -113,8 +112,8 @@ def team_daily():
 def indiv_worst_day_points():
     ridersq = text("""
     select count(distinct(athlete_id)) as riders from rides
-    group by date(CONVERT_TZ(start_date, 'UTC', :tz))
-    """).bindparams(tz=str(config.TIMEZONE))
+    group by competition_date
+    """)
     riders = [
         x._mapping["riders"] for x in meta.scoped_session().execute(ridersq).fetchall()
     ]

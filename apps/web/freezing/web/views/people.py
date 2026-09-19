@@ -96,7 +96,7 @@ def people_show_person(user_id):
 
     q = text("""
            with daily_rides as (
-            select date(CONVERT_TZ(R.start_date, 'UTC', :timezone)) as ride_date,
+            select R.competition_date as ride_date,
             R.distance as distance,
             W.ride_temp_avg as ride_temp
             from rides R left outer join ride_weather W on W.ride_id = R.id
@@ -107,7 +107,7 @@ def people_show_person(user_id):
             group by ride_date
             having distance >= 1
             order by ride_date;
-            """).bindparams(athlete_id=user_id, timezone=config.TIMEZONE)
+            """).bindparams(athlete_id=user_id)
 
     indiv_q = meta.scoped_session().execute(q).fetchall()
     start = config.START_DATE - timedelta(days=(config.START_DATE.weekday() + 1) % 7)

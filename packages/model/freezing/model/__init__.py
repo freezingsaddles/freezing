@@ -158,7 +158,7 @@ def create_supplemental_db_objects(engine: Engine):
               (sum(R.distance) * sum(R.distance)))
             else 65 + sum(R.distance) - 10
           end as points,
-          date(CONVERT_TZ(R.start_date, 'UTC','{}')) as ride_date
+          R.competition_date as ride_date
         from
           rides R join athletes A on A.id = R.athlete_id
         group by
@@ -166,7 +166,7 @@ def create_supplemental_db_objects(engine: Engine):
           A.team_id,
           ride_date
         ;
-    """.format(config.TIMEZONE))
+    """)
 
     with engine.begin() as conn:
         conn.execute(_v_daily_scores_create)

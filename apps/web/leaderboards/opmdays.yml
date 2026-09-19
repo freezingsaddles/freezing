@@ -20,7 +20,7 @@ query: |
   with tzrides as (
     select
       R.athlete_id,
-      date(convert_tz(R.start_date, R.timezone, 'America/New_York')) as start_date,
+      R.competition_date as start_date,
       R.distance
     from rides R
   )

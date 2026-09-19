@@ -2,8 +2,6 @@
 
 from sqlalchemy import text
 
-from freezing.web.config import config
-
 
 def team_sleaze_query():
     return text("""
@@ -33,7 +31,7 @@ def indiv_sleaze_query():
 def indiv_freeze_query(friends=False):
     return text(f"""
         with FP as (
-            select R.athlete_id, A.display_name as athlete_name, date(CONVERT_TZ(R.start_date, 'UTC', '{config.TIMEZONE}')) as ride_date, (11*(ATAN((R.distance+4)-2*PI())+1.4)-2.66)*(1.2+ATAN((32-W.ride_temp_start)/5)) as freeze_points
+            select R.athlete_id, A.display_name as athlete_name, R.competition_date as ride_date, (11*(ATAN((R.distance+4)-2*PI())+1.4)-2.66)*(1.2+ATAN((32-W.ride_temp_start)/5)) as freeze_points
             from rides R
             join ride_weather W on W.ride_id = R.id
             join {'athletes' if friends else 'lbd_athletes'} A on A.id = R.athlete_id
