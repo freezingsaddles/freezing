@@ -4,7 +4,7 @@ import math
 import operator
 from datetime import datetime, timezone
 
-from flask import Blueprint, abort, redirect, render_template, request, session
+from flask import Blueprint, abort, render_template, request, session
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -99,7 +99,28 @@ def points_per_mile():
     )
 
 
-def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
+def _tagged_rides(photo_tags: bool) -> str:
+    """Return the rides carrying the tag, as a set of ids.
+
+    A board whose photos are the point takes the tag from a photo's description
+    as well as from the ride title, so that a rider need only tag the photo.
+    """
+    by_title = """
+        select R.id from rides R
+        where R.name like concat('%', '#', :hashtag, '%')
+           or R.name like concat('%', '#', :alttag, '%')
+    """
+    if not photo_tags:
+        return by_title
+    return by_title + """
+        union
+        select P.ride_id from ride_photos P
+        where lower(P.caption) like concat('%', '#', :hashtag, '%')
+           or lower(P.caption) like concat('%', '#', :alttag, '%')
+    """
+
+
+def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_tags):
     """Build the hashtag table data; orderby is 'miles', 'rides' or 'days'."""
     sess = meta.scoped_session()
     rank_by = "hashtag_miles"
@@ -108,20 +129,18 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
     elif orderby == "rides":
         rank_by = "hashtag_rides"
     q = text(f"""
-        with hash_rides as (
+        with tagged as (
+            {_tagged_rides(photo_tags)}
+        ), hash_rides as (
             select
                 R.id,
                 R.athlete_id,
                 R.distance,
                 R.competition_date as start_date
             from
-                rides R
+                rides R join tagged T on T.id = R.id
             where
-                R.distance >= :min_miles and
-                (
-                    R.name like concat('%', '#', :hashtag, '%') or
-                    R.name like concat('%', '#', :alttag, '%')
-                )
+                R.distance >= :min_miles
         ), daily_rides as (
             select
                 H.athlete_id,
@@ -172,7 +191,7 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
     return {"tdata": retval}
 
 
-def _get_phototag_tdata(request, hashtag):
+def _get_phototag_tdata(request, hashtag, photo_tags):
     page = int(request.args.get("page", 1))
     if page < 1:
         page = 1
@@ -184,9 +203,13 @@ def _get_phototag_tdata(request, hashtag):
     offset = page_size * (page - 1)
     limit = page_size
 
-    # clunky query so if a tagged ride has tagged photos then include
-    # those, else include its primary photo.
-    with_union_photos = """
+    # On a photo board the tag on the photo is enough, whatever the ride is
+    # called. Elsewhere the photo still has to sit on a tagged ride. Either way
+    # a tagged ride with no tagged photo falls back to its primary photo.
+    photo_tags_sql = (
+        "true" if photo_tags else "R.id in (select ride_id from tagged_rides)"
+    )
+    with_union_photos = f"""
         with tagged_rides as (
             select
                 R.id AS ride_id,
@@ -210,19 +233,25 @@ def _get_phototag_tdata(request, hashtag):
                 P.primary
         ), tagged_photos as (
             select
-                P.id, P.caption, P.img_l, R.*
+                P.id, P.caption, P.img_l,
+                R.id AS ride_id,
+                R.name,
+                R.athlete_id,
+                convert_tz(R.start_date, 'UTC', :tz) AS start_date,
+                A.display_name
             from
-                tagged_rides R join
-                ride_photos P ON P.ride_id = R.ride_id
+                rides R join athletes A on A.id = R.athlete_id join
+                ride_photos P on P.ride_id = R.id
             where
-                P.caption like '%#%'
+                lower(P.caption) like :tag and
+                ({photo_tags_sql}) and
+                (:myself is null or A.id = :myself) and
+                (:date is null or R.competition_date = :date)
         ), union_photos as (
             select
                 P.*
             from
                 tagged_photos P
-            where
-                lower(P.caption) like :tag
             union all
             select
                 P.*
@@ -299,6 +328,9 @@ def hashtag_leaderboard(hashtag):
     rank_by = meta.rank_by if meta else "miles"
     default_view = meta.default_view if meta else None
     view = request.args.get("view", default_view or "leaderboard")
+    # A board whose photos are the point takes the tag from a photo description
+    # as well as from the ride title, on every tab.
+    photo_tags = default_view == "photos"
     sponsors = (
         [_load_sponsor(sponsor) for sponsor in meta.sponsors]
         if meta and meta.sponsors
@@ -318,9 +350,10 @@ def hashtag_leaderboard(hashtag):
             orderby=rank_by,
             friendless=meta.friendless if meta else None,
             min_miles=meta.min_miles if meta else None,
+            photo_tags=photo_tags,
         )
     elif view == "photos":
-        args = _get_phototag_tdata(request=request, hashtag=ht)
+        args = _get_phototag_tdata(request=request, hashtag=ht, photo_tags=photo_tags)
 
     return render_template(
         "pointless/hashtag.html",
@@ -334,12 +367,6 @@ def hashtag_leaderboard(hashtag):
             **args,
         },
     )
-
-
-# Junk but someone posted the wrong url everywhere
-@blueprint.route("/phototag/<string:hashtag>")
-def phototag_leaderboard(hashtag):
-    return redirect(f"/pointless/hashtag/{hashtag}?view=photos")
 
 
 def _get_segment_tdata(segment):

@@ -178,24 +178,39 @@
         </div>
         <div id="collapseHow" class="collapse alert alert-light mt-3 mt-lg-4">
             <ul class="mb-0 ps-3">
-                <li>
-                    If you post just one photo on your ride, tag your ride by putting
-                    <code>{{ hashtag }}</code> in the ride <em>title</em>, and the photo will
-                    show up here.
-                </li>
-                <li>
-                    If you post multiple photos then tag <em>both</em> your ride
-                    <em>and</em> the photo(s) you want to show up, using the photo
-                    <em>description</em>
-                    field.
-                    <ul>
+                {% if meta and meta.default_view == "photos" %}
+                    <li>
+                        This is a photo-based hashtag, so tag your individual
+                        photographs by putting <code>{{ hashtag }}</code> in the photo
+                        <em>description</em>. You don't need to tag your ride.
+                    </li>
+                    {% if hashtag_notag == "bingo" %}
                         <li>
-                            For example, you might tag your ride
-                            <code>{{ hashtag }} #zombie</code> and then tag one photo
-                            <code>{{ hashtag }}</code> and another <code>#zombie</code>.
+                            Follow the hashtag with the item from the bingo card, as in
+                            <code>{{ hashtag }} Flag (military)</code>, so the photo can be
+                            matched to the right square.
                         </li>
-                    </ul>
-                </li>
+                    {% endif %}
+                {% else %}
+                    <li>
+                        If you post just one photo on your ride, tag your ride by putting
+                        <code>{{ hashtag }}</code> in the ride <em>title</em>, and the photo will
+                        show up here.
+                    </li>
+                    <li>
+                        If you post multiple photos then tag <em>both</em> your ride
+                        <em>and</em> the photo(s) you want to show up, using the photo
+                        <em>description</em>
+                        field.
+                        <ul>
+                            <li>
+                                For example, you might tag your ride
+                                <code>{{ hashtag }} #zombie</code> and then tag one photo
+                                <code>{{ hashtag }}</code> and another <code>#zombie</code>.
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
                 <li>
                     To tag a photo, do the following:
                     <ul>
@@ -214,10 +229,12 @@
                         </li>
                     </ul>
                 </li>
-                <li>
-                    If you tag a photo and don't tag your ride, your photo will
-                    <em>not</em> show up.
-                </li>
+                {% if not (meta and meta.default_view == "photos") %}
+                    <li>
+                        If you tag a photo and don't tag your ride, your photo will
+                        <em>not</em> show up.
+                    </li>
+                {% endif %}
                 <li>
                     Sometimes it can take a few hours for photo tags to sync.
                     <ul>

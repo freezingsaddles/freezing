@@ -238,21 +238,36 @@ def index():
     )
 
 
-# Find the top 16 trending tags from the most recent 500 tagged rides
+# The days of tagging the homepage's tag cloud is built from. At a couple of
+# hundred rides a day this is a few hundred rows, and it moves with the
+# competition instead of being a fixed count.
+_TRENDING_DAYS = 3
+
+
+# Find the top 16 trending tags of the last few days, from ride titles and photo
+# descriptions alike; the cloud does not care which kind of tag a board wants.
 def _trending_tags():
     q = text("""
-                select name
+                select R.name as tagged
                 from rides R
-                where name like '%#%'
-                order by start_date desc
-                limit 500
+                where R.name like '%#%'
+                  and R.competition_date >= (
+                      select max(competition_date) - interval :days day from rides
+                  )
+                union all
+                select P.caption as tagged
+                from ride_photos P join rides R on R.id = P.ride_id
+                where P.caption like '%#%'
+                  and R.competition_date >= (
+                      select max(competition_date) - interval :days day from rides
+                  )
                 ;
-            """)
+            """).bindparams(days=_TRENDING_DAYS)
     tag_count = {}
     original_tag = {}
     for res in meta.scoped_session().execute(q).fetchall():
         ride_tags = {}  # Prevent double-tagging
-        for hashtag in findall(r"(?<=#)\w+", res._mapping["name"]):
+        for hashtag in findall(r"(?<=#)\w+", res._mapping["tagged"]):
             desuffix = fullmatch(
                 r"(?i)(withkid|foodrescue|fsrealsuppleride).*", hashtag
             )
