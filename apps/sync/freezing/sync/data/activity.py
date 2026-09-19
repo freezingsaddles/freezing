@@ -31,6 +31,22 @@ from freezing.sync.utils.cache import CachingActivityFetcher
 from . import BaseSync, StravaClientForAthlete, has_strava_authorization
 from .photos import schedule_fetch, schedule_one_more_fetch
 
+# Strava is late and sometimes partial with a ride's efforts, so each one is
+# read again on a backoff of 1, 6, 36 and 216 hours -- eleven days in all --
+# and then left alone.
+MAX_EFFORT_RESYNCS = 4
+
+
+def schedule_effort_resync(ride: Ride) -> None:
+    """Ask for this ride's efforts again later, or stop asking."""
+    sync_count = ride.resync_count or 0
+    if sync_count >= MAX_EFFORT_RESYNCS:
+        ride.efforts_fetched = True
+    else:
+        ride.resync_count = 1 + sync_count
+        ride.resync_date = datetime.now() + timedelta(hours=6**sync_count)
+
+
 # Amount of activity overlap to permit
 _overlap_ignore = timedelta(minutes=3)
 
@@ -239,19 +255,7 @@ class ActivitySync(BaseSync):
                 session.add(effort)
                 session.flush()
 
-            # It would appear that Strava has some delayed consistency. Sometimes, no efforts are returned
-            # and sometimes partial attempts are returned, so use an exponential backoff to re-fetch every
-            # activity at least _MAX_EFFORT_RESYNCS times over an extended period of time.
-            _MAX_EFFORT_RESYNCS = 3
-
-            sync_count = ride.resync_count or 0
-            if sync_count > _MAX_EFFORT_RESYNCS:
-                ride.efforts_fetched = True
-            else:
-                ride.resync_count = 1 + sync_count
-                ride.resync_date = datetime.now() + timedelta(
-                    hours=6**sync_count
-                )  # 1, 6, 36 hours
+            schedule_effort_resync(ride)
 
         except Exception:
             self.logger.exception(f"Error adding effort for ride: {ride}")
