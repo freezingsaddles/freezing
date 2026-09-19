@@ -112,7 +112,7 @@ class Registration(Base):
     previous_mileage = Column(String(255), nullable=True)
     team_captain = Column(Boolean, nullable=False, default=False)
 
-    athlete = orm.relationship(
+    athlete: Mapped["Athlete | None"] = orm.relationship(
         "Athlete", backref=orm.backref("registrations", lazy="dynamic")
     )
 

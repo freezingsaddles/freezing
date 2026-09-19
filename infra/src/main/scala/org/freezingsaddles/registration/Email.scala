@@ -6,7 +6,6 @@ import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.Instant
 import java.util.Properties
-import scala.jdk.CollectionConverters.*
 
 /** The parts of a raw RFC 822 message this service cares about. */
 case class Email(
