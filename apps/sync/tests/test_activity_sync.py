@@ -63,6 +63,7 @@ def ride():
     r.id = 999
     r.resync_count = 0
     r.photos_fetched = None
+    r.track_fetched = None
     r.athlete = SimpleNamespace(name="Test Athlete")
     return r
 
@@ -137,3 +138,5 @@ def test_update_ride_complete(activity_sync, detailed_activity, ride):
         activity_sync.update_ride_complete(detailed_activity, ride)
         assert getattr(ride, "detail_fetched", False) is True
         assert ride.distance == pytest.approx(0.621, rel=1e-3)
+        # Strava serves streams late, so each visit here asks again.
+        assert ride.track_fetched is False
