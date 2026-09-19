@@ -38,10 +38,11 @@ def schedule_one_more_fetch(ride: Ride) -> None:
 
 def _schedule_next_fetch(ride: Ride) -> None:
     fetches = (ride.photos_fetched or 0) + 1
-    ride.photos_fetched = fetches
     if fetches >= MAX_FETCHES:
+        ride.photos_fetched = MAX_FETCHES
         ride.photos_resync_date = None
     else:
+        ride.photos_fetched = fetches
         ride.photos_resync_date = datetime.now() + FIRST_INTERVAL * 2 ** (fetches - 1)
 
 
@@ -119,7 +120,7 @@ class PhotoSync(BaseSync):
         photos = meta.scoped_session().query(RidePhoto).filter_by(ride_id=ride.id)
         existing_photos = {photo.id: photo for photo in photos}
         found_primary = False
-        found_photo = False
+        added_photo = False
 
         for activity_photo in activity_photos:
             if not activity_photo.urls or str(size) not in activity_photo.urls:
@@ -131,7 +132,6 @@ class PhotoSync(BaseSync):
                 continue
             if activity_photo.caption and "#nobafs" in activity_photo.caption.lower():
                 continue
-            found_photo = True
 
             # If it's already in the db, then skip it.
             photo = existing_photos.get(activity_photo.unique_id)
@@ -150,6 +150,7 @@ class PhotoSync(BaseSync):
                     primary=False,
                 )
                 meta.scoped_session().add(photo)
+                added_photo = True
 
             if size == BigSize:  # horrid, we should just remove thumbnails
                 photo.img_l = activity_photo.urls.get(str(size)) or photo.img_l
@@ -163,7 +164,10 @@ class PhotoSync(BaseSync):
             self.logger.info(f"Deleting deleted photo {deleted_photo}")
             meta.scoped_session().delete(deleted_photo)
 
-        # If there are photos but none primary then need to refetch the ride
-        # to identify the primary.
-        if found_photo and not found_primary:
+        # Only the ride's details name its primary photo, so a change to the
+        # set of photos while we have no primary is worth another look at them.
+        # Asking again for a set we have already seen is not: the answer would
+        # be the one we have, and the detail fetch schedules a photo fetch, so
+        # the two would call to each other until the season turned.
+        if (added_photo or existing_photos) and not found_primary:
             ride.detail_fetched = False
