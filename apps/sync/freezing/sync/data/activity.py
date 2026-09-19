@@ -93,6 +93,7 @@ class ActivitySync(BaseSync):
 
         ride.name = strava_activity.name
         ride.start_date = strava_activity.start_date_local
+        ride.local_start_date = strava_activity.start_date_local
 
         # We need to round so that "1.0" miles in data is "1.0" miles when we convert back from meters.
         # The stravalib Distance/Velocity objects carry their SI unit, which unit_helper reads.
