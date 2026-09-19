@@ -72,7 +72,9 @@ tags:
   - tag: bingo
     name: Bicycle Bingo
     description: |
-      Ride your bike and play Bingo! The hashtag to use is <code>#bingo</code>.
+      Ride your bike and play Bingo! The hashtag to use is <code>#bingo</code>. When you're playing this game, tag your <em>photos</em>, not your rides.
+      Follow the hashtag with the item from the bingo card, as in <code>#bingo military flag</code> (for a bingo card <em>Flag (Military)</em>), so the photo can be matched to the right square.
+      If you want to add commentary, just separate it with punctuation or a dash, like <code>#bingo military flag - this one was on a ride to the grocery store</code>.
     rank_by: days
     discord: 1443983774185422849
     sponsors: [3487165]

@@ -14,26 +14,24 @@
         {% if meta.description %}
             <p>{{ meta.description | safe }}</p>
         {% endif %}
-        {% if meta.discord %}
-            <p>
-                See:
+        <p>
+            {% if meta.discord %}
+                See the
                 <a href="https://discord.com/channels/1443244420358213643/{{ meta.discord }}"
                    target="_blank"
-                   rel="noreferrer">Discord Channel</a>
-            </p>
-        {% endif %}
-        {% if sponsors %}
-            <p>
+                   rel="noreferrer">discord channel</a>.
+            {% endif %}
+            {% if sponsors %}
                 Sponsored by
                 {% for sp in sponsors %}
                     {# djlint:off #}
                     <em><a href="{{sp.url}}">{{ sp.name }}</a></em>{% if loop.last %}.{% else %}, {% endif %}
                     {# djlint:on #}
                 {% endfor %}
-            </p>
-        {% else %}
-            <p class="text-muted">This ride has no sponsor and is completely pointless.</p>
-        {% endif %}
+            {% else %}
+                <span class="text-muted">This ride has no sponsor and is completely pointless.</span>
+            {% endif %}
+        </p>
     {% else %}
         <p>
             To see another segment, simply edit the URL and replace
