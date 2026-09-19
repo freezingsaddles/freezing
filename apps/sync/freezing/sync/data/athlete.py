@@ -1,6 +1,8 @@
 from datetime import datetime
 
+from sqlalchemy import or_
 from stravalib import model as sm
+from stravalib.exc import AccessUnauthorized
 
 from freezing.common import athletes, teams
 from freezing.model import meta
@@ -64,6 +66,63 @@ class AthleteSync(BaseSync):
         return athletes.register_athlete(
             strava_athlete, access_token=access_token, logger=self.logger
         )
+
+    def deauthorize_athletes(
+        self, athlete_id: int | None = None, commit: bool = False
+    ) -> tuple[int, int]:
+        """Hand every athlete's authorisation back to Strava, and forget their tokens.
+
+        Strava keeps sending webhook events for anyone who has authorised the
+        application, and offers the receiver no way to refuse them for one
+        athlete. Deauthorising is the only thing that stops them, and it has to
+        be done as that athlete, so it has to happen before their tokens are
+        thrown away.
+
+        :param athlete_id: Just this athlete, rather than all of them.
+        :param commit: Actually do it. Left alone, this only says what it would.
+        :return: How many were deauthorised, and how many failed.
+        """
+        done = failed = 0
+        with meta.transaction_context() as sess:
+            q = sess.query(Athlete).filter(
+                or_(
+                    Athlete.access_token.isnot(None),
+                    Athlete.refresh_token.isnot(None),
+                )
+            )
+            if athlete_id:
+                q = q.filter(Athlete.id == athlete_id)
+
+            for athlete in q.all():
+                if not commit:
+                    self.logger.info(f"Would deauthorize {athlete.id} ({athlete.name})")
+                    done += 1
+                    continue
+                try:
+                    # The client refreshes the token first, so a stale one is
+                    # not what makes this fail.
+                    StravaClientForAthlete(athlete, logger=self.logger).deauthorize()
+                    self.logger.info(f"Deauthorized {athlete.id} ({athlete.name})")
+                except AccessUnauthorized as e:
+                    # They revoked us at their end. There is nothing left to
+                    # hand back, so the tokens go the same way as the rest.
+                    self.logger.info(
+                        f"Athlete {athlete.id} ({athlete.name}) had already "
+                        f"disconnected, clearing tokens: {e}"
+                    )
+                except Exception:
+                    # Anything else -- our own client credentials rejected, for
+                    # one -- says nothing about this athlete's authorisation,
+                    # so leave their tokens alone and let the count show it.
+                    self.logger.exception(f"Could not deauthorize {athlete.id}")
+                    failed += 1
+                    continue
+                athlete.access_token = None
+                athlete.refresh_token = None
+                athlete.expires_at = 0
+                sess.add(athlete)
+                done += 1
+        return done, failed
 
     def register_athlete_team(
         self, strava_athlete: sm.DetailedAthlete, athlete_model: Athlete

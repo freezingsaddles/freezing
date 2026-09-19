@@ -190,6 +190,23 @@ cd /opt/compose
 cp .env $HOME/backups/.env-$(date +'%Y-%m-%d')
 ```
 
+* Hand last season's athletes back to Strava, before anything deletes their tokens:
+
+```bash
+cd /opt/compose
+docker compose run --rm --no-deps freezing-sync freezing-deauthorize
+docker compose run --rm --no-deps freezing-sync freezing-deauthorize --yes
+```
+
+  The first command only says what it would do. Strava goes on sending webhook
+  events for everyone who has authorised the application, and gives the receiver
+  no way to refuse them one athlete at a time, so this is the only thing that
+  stops next season's logs filling with updates about riders who are no longer
+  in the database. Run it before emptying the `athletes` table, because
+  deauthorizing has to be done as each athlete and needs their token, and before
+  moving the dates on below, because the command refuses to disconnect a
+  competition that has not reached its `END_DATE`.
+
 * Edit the `.env` file for the production server (look in `/opt/compose/.env`) as follows:
   * Update the start and end dates
   * Update the main Strava team id `MAIN_TEAM`

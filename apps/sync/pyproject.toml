@@ -45,6 +45,7 @@ classifiers = [
 
 [project.entry-points.console_scripts]
 freezing-sync = "freezing.sync.run:main"
+freezing-deauthorize = "freezing.sync.cli.deauthorize:main"
 freezing-sync-activities = "freezing.sync.cli.sync_activities:main"
 freezing-sync-athletes = "freezing.sync.cli.sync_athletes:main"
 freezing-sync-detail = "freezing.sync.cli.sync_details:main"
