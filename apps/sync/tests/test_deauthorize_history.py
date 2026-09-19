@@ -156,3 +156,41 @@ def test_a_dry_run_asks_strava_nothing(script, tmp_path):
         script.execute(args)
     assert not client.called
     assert not (tmp_path / "l.jsonl").exists()
+
+
+def test_an_empty_pipe_is_an_error_not_a_quiet_success(script, tmp_path, monkeypatch):
+    """`docker exec` without -i delivers nothing and says nothing about it."""
+    import io
+
+    from freezing.sync.exc import CommandError
+    from freezing.sync.utils.mysqldump import STDIN
+
+    monkeypatch.setattr("sys.stdin", SimpleNamespace(buffer=io.BytesIO(b"")))
+    with pytest.raises(CommandError, match="-i"):
+        script.tokens_by_athlete([STDIN])
+
+
+def test_a_dump_with_no_tokens_is_an_error(script, tmp_path):
+    from freezing.sync.exc import CommandError
+
+    empty = backup(tmp_path, "a.sql", [(1, 100, "NULL")])
+    with pytest.raises(CommandError):
+        script.tokens_by_athlete([empty])
+
+
+def test_standard_input_can_only_be_read_once(script):
+    from freezing.sync.exc import CommandError
+    from freezing.sync.utils.mysqldump import STDIN
+
+    with pytest.raises(CommandError, match="once"):
+        script.tokens_by_athlete([STDIN, STDIN])
+
+
+def test_a_piped_dump_is_read(script, tmp_path, monkeypatch):
+    import io
+
+    from freezing.sync.utils.mysqldump import STDIN
+
+    data = backup(tmp_path, "a.sql", [(1, 100, "'x'"), (2, 200, "'y'")]).read_bytes()
+    monkeypatch.setattr("sys.stdin", SimpleNamespace(buffer=io.BytesIO(data)))
+    assert script.tokens_by_athlete([STDIN]) == {1: ["x"], 2: ["y"]}
