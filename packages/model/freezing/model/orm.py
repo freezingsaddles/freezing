@@ -79,7 +79,10 @@ class Athlete(StravaEntity):
     registered = Column(Boolean, nullable=True)
 
     rides: DynamicMapped["Ride"] = orm.relationship(
-        "Ride", backref="athlete", lazy="dynamic", cascade="all, delete, delete-orphan"
+        "Ride",
+        back_populates="athlete",
+        lazy="dynamic",
+        cascade="all, delete, delete-orphan",
     )
 
 
@@ -104,6 +107,10 @@ class Ride(StravaEntity):
         nullable=False,
         index=True,
     )
+    # Spelled out rather than left to a backref on Athlete.rides: a backref is
+    # only attached once the mappers are configured, and queries that select
+    # columns rather than entities reach Ride.athlete before that happens.
+    athlete: Mapped["Athlete"] = orm.relationship("Athlete", back_populates="rides")
     description = Column(String(1024), nullable=True)
     elapsed_time = Column(Integer, nullable=False)  # Seconds
     # in case we want to convert that to a TIME type, time.strftime with time.gmtime
