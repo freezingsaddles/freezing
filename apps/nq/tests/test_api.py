@@ -59,3 +59,31 @@ def test_post_webhook(client, publisher: ActivityPublisher):
     publisher.publish_message.assert_called_with(
         called_with, dest=DefinedTubes.activity_update
     )
+
+
+def test_post_webhook_athlete_deauthorization(client, publisher: ActivityPublisher):
+    """The earliest we can know a rider's tokens are dead."""
+    d = {
+        "subscription_id": 111,
+        "owner_id": 222,
+        "object_type": "athlete",
+        "object_id": 222,
+        "aspect_type": "update",
+        "updates": {"authorized": "false"},
+        "event_time": 1358919359,
+    }
+
+    result = client.simulate_post(
+        "/webhook", body=json.dumps(d), headers={"content-type": "application/json"}
+    )
+    assert result.status_code == 200
+
+    publisher.publish_message.assert_called_with(
+        {
+            "athlete_id": d["owner_id"],
+            "operation": d["aspect_type"],
+            "event_time": "2013-01-23T05:35:59+00:00",
+            "updates": d["updates"],
+        },
+        dest=DefinedTubes.athlete_update,
+    )
