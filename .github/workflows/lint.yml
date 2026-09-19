@@ -51,7 +51,9 @@ jobs:
         run: |
           pip install uv==0.12.15
           uv sync --frozen --only-dev
-      - name: djlint
+      - name: djlint --check
         run: uv run --no-sync djlint --check apps/web/freezing/web/templates
+      - name: djlint
+        run: uv run --no-sync djlint apps/web/freezing/web/templates
       - name: pymarkdown
         run: uv run --no-sync pymarkdown scan apps/web
