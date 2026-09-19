@@ -15,14 +15,14 @@ repositories, whose histories are preserved here.
 | `apps/freezebot` | Freezebot, the Scala Discord bot that posts tagged ride photos to the competitions' channels |
 | `docker/beanstalkd` | the beanstalkd queue image |
 | `deploy` | docker compose files and server scripts |
+| `infra` | Scala CDK app and Lambda that record registration emails in the database |
 | `teams` | Scala team solver that assigns teams from historical performance data |
 
 ## Developing
 
 The Python projects form a [uv](https://docs.astral.sh/uv/) workspace with a
 single lock file. `freezing-model` is a workspace dependency of each app, so a
-change to the model and the code that uses it land in one pull request; there
-is no separate model release.
+change to the model and the code that uses it land in one pull request.
 
     uv sync --all-packages --all-extras   # one virtualenv for everything
     uv run black --check .                 # formatting; isort, flake8 and mypy the same way
