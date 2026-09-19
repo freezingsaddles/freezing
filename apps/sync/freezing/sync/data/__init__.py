@@ -65,6 +65,13 @@ class StravaClientForAthlete(Client):
             athlete = meta.scoped_session().query(Athlete).get(athlete_id)
             if not athlete:
                 raise ValueError(f"Athlete ID does not exist in database: {athlete_id}")
+        # The refresh token is withheld on purpose. Given one, stravalib
+        # refreshes on its own and keeps the new tokens in memory, where
+        # nothing writes them back to the athlete; Strava may retire the old
+        # refresh token at that point, so the one we hold would go stale and
+        # the next pass would read its rejection as the rider disconnecting.
+        # Refreshing below keeps the database the one place tokens live.
+        # stravalib warns about this on every call; init_logging drops it.
         super().__init__(access_token=athlete.access_token, rate_limit_requests=True)
         self.refresh_athlete_access_token(athlete)
 
