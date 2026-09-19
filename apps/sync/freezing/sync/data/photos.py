@@ -26,14 +26,30 @@ POLL_INTERVAL = timedelta(minutes=1)
 
 def schedule_fetch(ride: Ride) -> None:
     """Start the ride's photos over from the beginning of the backoff."""
+    if ride.private:
+        forget_fetch(ride)
+        return
     ride.photos_fetched = 0
     ride.photos_resync_date = datetime.now()
 
 
 def schedule_one_more_fetch(ride: Ride) -> None:
     """Look once more without reopening the whole backoff."""
-    if ride.photos_fetched is not None:
+    if ride.private:
+        forget_fetch(ride)
+    elif ride.photos_fetched is not None:
         ride.photos_resync_date = datetime.now()
+
+
+def forget_fetch(ride: Ride) -> None:
+    """Ask nothing of a ride whose photos are not ours to show.
+
+    sync_photos passes private rides over, so a ride scheduled while private
+    stays due for ever. Leaving the count unset rather than spent means the
+    ride is scheduled properly if it is ever made public.
+    """
+    ride.photos_fetched = None
+    ride.photos_resync_date = None
 
 
 def _schedule_next_fetch(ride: Ride) -> None:
