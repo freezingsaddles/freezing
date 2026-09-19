@@ -6,7 +6,9 @@ import pytest
 
 from freezing.model.orm import Ride
 from freezing.sync.data.photos import (
+    FIRST_INTERVAL,
     MAX_FETCHES,
+    POLL_INTERVAL,
     _schedule_next_fetch,
     schedule_fetch,
     schedule_one_more_fetch,
@@ -78,3 +80,8 @@ def test_one_more_look_does_not_restart_the_backoff(ride):
     # That one look is all it buys.
     _schedule_next_fetch(ride)
     assert ride.photos_resync_date is None
+
+
+def test_we_look_often_enough_for_the_first_step_to_mean_anything():
+    """A ride waits for the tick after it falls due, so the tick bounds it."""
+    assert POLL_INTERVAL <= FIRST_INTERVAL
