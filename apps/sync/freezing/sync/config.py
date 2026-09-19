@@ -3,10 +3,11 @@ import os
 from datetime import timedelta, tzinfo
 from zoneinfo import ZoneInfo
 
-import arrow
 from colorlog import ColoredFormatter
 from datadog import DogStatsd
 from envparse import env
+
+from freezing.common.times import parse_instant
 
 envfile = os.environ.get("APP_SETTINGS", os.path.join(os.getcwd(), ".env"))
 
@@ -35,8 +36,8 @@ class Config:
     OBSERVER_TEAMS = env("OBSERVER_TEAMS", cast=list, subcast=int, default=[])
     MAIN_TEAM = env("MAIN_TEAM", cast=int, default=0)
 
-    START_DATE = env("START_DATE", postprocessor=lambda val: arrow.get(val).datetime)
-    END_DATE = env("END_DATE", postprocessor=lambda val: arrow.get(val).datetime)
+    START_DATE = env("START_DATE", postprocessor=parse_instant)
+    END_DATE = env("END_DATE", postprocessor=parse_instant)
 
     TIMEZONE: tzinfo = env(
         "TIMEZONE",

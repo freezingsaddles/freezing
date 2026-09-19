@@ -17,7 +17,6 @@ maintainers = [
 license = {text = "Apache License (2.0)"}
 requires-python = ">=3.14"
 dependencies = [
-    "arrow>=1.4.0,<2",
     "envparse>=0.2.0,<1",
     "falcon>=4.3.1,<5",
     "freezing-model",

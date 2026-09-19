@@ -898,7 +898,6 @@ version = "0.13.0"
 source = { editable = "packages/model" }
 dependencies = [
     { name = "alembic" },
-    { name = "arrow" },
     { name = "colorlog" },
     { name = "envparse" },
     { name = "geoalchemy2" },
@@ -910,7 +909,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.13,<2" },
-    { name = "arrow", specifier = ">=1.0,<2" },
     { name = "colorlog", specifier = ">=6,<7" },
     { name = "envparse", specifier = ">=0.2" },
     { name = "geoalchemy2", specifier = ">=0.14,<1" },
@@ -924,7 +922,6 @@ name = "freezing-nq"
 version = "0.4.3"
 source = { editable = "apps/nq" }
 dependencies = [
-    { name = "arrow" },
     { name = "envparse" },
     { name = "falcon" },
     { name = "freezing-model" },
@@ -934,7 +931,6 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "arrow", specifier = ">=1.4.0,<2" },
     { name = "envparse", specifier = ">=0.2.0,<1" },
     { name = "falcon", specifier = ">=4.3.1,<5" },
     { name = "freezing-model", editable = "packages/model" },
@@ -948,7 +944,6 @@ version = "1.6.0"
 source = { editable = "apps/sync" }
 dependencies = [
     { name = "apscheduler" },
-    { name = "arrow" },
     { name = "colorlog" },
     { name = "datadog" },
     { name = "envparse" },
@@ -966,7 +961,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "apscheduler", specifier = ">=3.11.3,<4" },
-    { name = "arrow", specifier = ">=1.4.0,<2" },
     { name = "colorlog", specifier = ">=6.12.0,<7" },
     { name = "datadog", specifier = ">=0.53.0,<1" },
     { name = "envparse", specifier = ">=0.2.0,<1" },
@@ -986,7 +980,6 @@ name = "freezing-web"
 version = "1.7.0"
 source = { editable = "apps/web" }
 dependencies = [
-    { name = "arrow" },
     { name = "colorlog" },
     { name = "envparse" },
     { name = "flask" },
@@ -1008,7 +1001,6 @@ runtime = [
 
 [package.metadata]
 requires-dist = [
-    { name = "arrow", specifier = ">=1.4.0,<2" },
     { name = "colorlog", specifier = ">=6.10.1,<7" },
     { name = "envparse", specifier = ">=0.2.0,<1" },
     { name = "flask", specifier = ">=3.1.3,<4" },

@@ -1,6 +1,5 @@
 import json
-
-import arrow
+from datetime import UTC, datetime
 
 from freezing.model.msg.mq import ActivityUpdate, DefinedTubes
 from freezing.model.msg.strava import AspectType
@@ -44,7 +43,7 @@ def test_post_webhook(client, publisher: ActivityPublisher):
 
     message = ActivityUpdate()
     message.athlete_id = d["owner_id"]
-    message.event_time = arrow.get(d["event_time"]).datetime
+    message.event_time = datetime.fromtimestamp(d["event_time"], UTC)
     message.activity_id = d["object_id"]
     message.operation = AspectType(d["aspect_type"])
     message.updates = d["updates"]

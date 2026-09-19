@@ -4,9 +4,10 @@ from datetime import datetime, timedelta, tzinfo
 from importlib.metadata import version
 from zoneinfo import ZoneInfo
 
-import arrow
 from colorlog import ColoredFormatter
 from envparse import env
+
+from freezing.common.times import parse_instant
 
 from .version import branch, build_date, commit
 
@@ -31,9 +32,7 @@ class Config:
     COMPETITION_TEAMS: list[int] = env("TEAMS", cast=list, subcast=int, default=[])
     COMPETITION_TITLE: str = env("COMPETITION_TITLE", default="Freezing Saddles")
     DEBUG: bool = env("DEBUG", cast=bool, default=False)
-    END_DATE: datetime = env(
-        "END_DATE", postprocessor=lambda val: arrow.get(val).datetime
-    )
+    END_DATE: datetime = env("END_DATE", postprocessor=parse_instant)
     # Environment (localdev, production, etc.)
     ENVIRONMENT: str = env("ENVIRONMENT", default="localdev")
     DISCORD_INVITATION: str = env(
@@ -56,15 +55,13 @@ class Config:
     REGISTRATION_DATE: datetime | None = env(
         "REGISTRATION_DATE",
         default="",
-        postprocessor=lambda val: arrow.get(val).datetime if val else None,
+        postprocessor=lambda val: parse_instant(val) if val else None,
     )
     REGISTRATION_SITE: str = env("REGISTRATION_SITE", "https://freezingsaddles.info/")
     SECRET_KEY = env("SECRET_KEY")
     SQLALCHEMY_URL: str = env("SQLALCHEMY_URL")
     SQLALCHEMY_ROOT_URL: str = env("SQLALCHEMY_ROOT_URL", None)
-    START_DATE: datetime = env(
-        "START_DATE", postprocessor=lambda val: arrow.get(val).datetime
-    )
+    START_DATE: datetime = env("START_DATE", postprocessor=parse_instant)
     STRAVA_CLIENT_ID = env("STRAVA_CLIENT_ID")
     STRAVA_CLIENT_SECRET = env("STRAVA_CLIENT_SECRET")
     JSON_CACHE_DIR = env("JSON_CACHE_DIR", default="/cache/json")
