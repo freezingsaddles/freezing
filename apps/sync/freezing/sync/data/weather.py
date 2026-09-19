@@ -12,6 +12,10 @@ from freezing.sync.data import BaseSync
 from freezing.sync.utils.wktutils import parse_point_wkt
 from freezing.sync.wx.visualcrossing.api import HistoVisualCrossing
 
+# The job runs hourly, so this is half a day of asking. A ride the forecaster
+# has nothing for would otherwise be asked about every hour for ever.
+MAX_WEATHER_ATTEMPTS = 12
+
 
 # We only synchronize weather for yesterday's rides to avoid syncing early in the day and then having
 # no (or forecasted) weather data for the rest of the day in our cache. This means our weather
@@ -27,13 +31,25 @@ class WeatherSync(BaseSync):
     description = "Sync all ride weather"
 
     def sync_weather(
-        self, clear: bool = False, limit: int | None = None, cache_only: bool = False
+        self,
+        clear: bool = False,
+        limit: int | None = None,
+        cache_only: bool = False,
+        retry_failed: bool = False,
     ):
         sess = meta.scoped_session()
 
         if clear:
             self.logger.info("Clearing all weather data!")
             sess.query(orm.RideWeather).delete()
+
+        if retry_failed:
+            given_up = sess.query(orm.Ride).filter(
+                orm.Ride.weather_attempts >= MAX_WEATHER_ATTEMPTS
+            )
+            self.logger.info(f"Asking again about {given_up.count()} rides")
+            given_up.update({orm.Ride.weather_attempts: 0})
+            sess.commit()
 
         if limit:
             self.logger.info(f"Fetching weather for first {limit} rides")
@@ -49,9 +65,10 @@ class WeatherSync(BaseSync):
             join ride_geo G on G.ride_id = R.id
             left join ride_weather W on W.ride_id = R.id
             where W.ride_id is null
+            and R.weather_attempts < :max_attempts
             and date_add(R.start_date, INTERVAL R.elapsed_time SECOND) < (UTC_TIMESTAMP() - INTERVAL 1 HOUR)
             ;
-            """)
+            """).bindparams(max_attempts=MAX_WEATHER_ATTEMPTS)
 
         visual_crossing = HistoVisualCrossing(
             api_key=config.VISUAL_CROSSING_API_KEY,
@@ -195,6 +212,16 @@ class WeatherSync(BaseSync):
             except Exception:
                 self.logger.exception(f"Error getting weather data for ride: {ride}")
                 sess.rollback()
+                ride = sess.get(orm.Ride, r._mapping["id"])
+                ride.weather_attempts = (ride.weather_attempts or 0) + 1
+                if ride.weather_attempts >= MAX_WEATHER_ATTEMPTS:
+                    self.logger.warning(
+                        "Giving up on weather for ride {} after {} attempts; "
+                        "sync-weather --retry-failed asks again.".format(
+                            ride.id, ride.weather_attempts
+                        )
+                    )
+                sess.commit()
 
             else:
                 sess.commit()

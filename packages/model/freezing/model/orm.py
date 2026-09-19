@@ -168,6 +168,9 @@ class Ride(StravaEntity):
     detail_fetched = Column(Boolean, default=False, nullable=False)
     resync_count = Column(Integer, default=0, nullable=False)
     resync_date = Column(DateTime, nullable=True)
+    # Failed attempts at this ride's weather. A ride the forecaster has nothing
+    # for is asked about again, but not for ever.
+    weather_attempts = Column(Integer, default=0, server_default="0", nullable=False)
 
     private = Column(Boolean, default=False, nullable=False)
     visibility = Column(String(255), nullable=True)
