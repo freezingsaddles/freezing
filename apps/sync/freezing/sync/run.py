@@ -12,6 +12,7 @@ from freezing.sync.data.activity import ActivitySync
 from freezing.sync.data.athlete import AthleteSync
 from freezing.sync.data.photos import POLL_INTERVAL, PhotoSync
 from freezing.sync.data.weather import WeatherSync
+from freezing.sync.exc import CompetitionOver
 from freezing.sync.subscribe import ActivityUpdateSubscriber
 
 
@@ -47,9 +48,14 @@ def main():
     # to match rate limits.  Admittedly that will make the time-based segment
     # calculation a little trickier.
     def segmented_sync_activities():
-        activity_sync.sync_rides_distributed(
-            total_segments=4, segment=(datetime.now().hour % 4)
-        )
+        try:
+            activity_sync.sync_rides_distributed(
+                total_segments=4, segment=(datetime.now().hour % 4)
+            )
+        except CompetitionOver as over:
+            # Every hour of the closed season, so it is a remark and not a
+            # traceback. Asking for this by hand still gets an argument back.
+            log.info(str(over))
 
     scheduler.add_job(segmented_sync_activities, "cron", minute="50")
 
