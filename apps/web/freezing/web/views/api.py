@@ -1,4 +1,3 @@
-import base64
 import datetime
 import gzip
 import hashlib
@@ -21,6 +20,7 @@ from freezing.web.autolog import log
 from freezing.web.exc import ObjectNotFound
 from freezing.web.serialize import RidePhotoSchema
 from freezing.web.utils import auth
+from freezing.web.utils.genericboard import load_board_and_data
 from freezing.web.utils.hashboard import load_hashtag
 from freezing.web.utils.wktutils import parse_linestring, parse_point_wkt
 
@@ -355,7 +355,7 @@ def _track_map(
                and {'A.id = :athlete_id' if athlete_id else 'true'}
                and {'A.team_id = :team_id' if team_id else 'true'}
                and {_hashtag_filter(hash_tag)}
-               and {'FIND_IN_SET(hex(R.id), :ride_ids) > 0' if ride_ids else 'true'}
+               and {'FIND_IN_SET(hex(R.id), :ride_ids) > 0' if ride_ids is not None else 'true'}
              order by R.start_date DESC
              {'limit :limit' if limit else ''}
              """)
@@ -366,7 +366,7 @@ def _track_map(
         q = q.bindparams(athlete_id=athlete_id)
     if hash_tag:
         q = q.bindparams(hash_tag=f"%#{hash_tag}%")
-    if ride_ids:
+    if ride_ids is not None:
         q = q.bindparams(ride_ids=ride_ids)
     if limit:
         q = q.bindparams(limit=limit)
@@ -469,19 +469,34 @@ def _make_gzip_json_response(content, private=False):
     return response
 
 
+def _board_ride_ids(leaderboard: str) -> str:
+    """Return the rides a generic leaderboard names, for the track map to draw.
+
+    The board's own query answers this, so the map asks for a board by name
+    rather than being handed the rides it found. A name is a handful of bytes
+    whatever the board turns up, where the rides themselves outgrew the
+    request line the moment a board became popular.
+    """
+    try:
+        board, data = load_board_and_data(leaderboard)
+    except ObjectNotFound:
+        abort(404, f"no leaderboard named {leaderboard}")
+    if not any(field.name == "ride_ids" for field in board.fields):
+        abort(404, f"leaderboard {leaderboard} names no rides")
+    return ",".join(row["ride_ids"] for row in data if row.get("ride_ids"))
+
+
 @blueprint.route("/all/trackmap.json")
 def track_map_all():
     hash_tag = request.args.get("hashtag")
-    rides = request.args.get("rides")
+    board = request.args.get("board")
     limit = get_limit(request)
 
-    ride_ids = (
-        gzip.decompress(base64.b64decode(rides, b"-_")).decode("utf-8")
-        if rides
-        else None
-    )
+    ride_ids = _board_ride_ids(board) if board else None
 
-    key_str = hash_tag or ride_ids
+    # The board is keyed by name, not by what it found: its rides change as the
+    # season goes on, and the cache has an age limit of its own to catch that.
+    key_str = hash_tag or board
     # bandit in github curses this as insecure, but not locally, so just go wild to suppress
     key = (  # nosec
         hashlib.md5(  # nosec

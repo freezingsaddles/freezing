@@ -48,7 +48,7 @@
     {% else %}
         <p class="text-muted">This ride has no sponsor and is completely pointless.</p>
     {% endif %}
-    {% if rides %}
+    {% if show_rides %}
         <div role="tabpanel"  class="mt-lg-4 mb-lg-3">
             <ul class="nav nav-tabs mb-0" role="tablist">
                 <li role="presentation" class="nav-item">
@@ -134,11 +134,11 @@
     {% endif %}
 {% endblock %}
 {% block foot %}
-    {% if rides %}
+    {% if show_rides %}
         <script>
   $(function() {
     $('#map-link').one('click', () => {
-      create_ride_map('map', '/api/all/trackmap.json?rides={{rides}}', null, true);
+      create_ride_map('map', '/api/all/trackmap.json?board={{ leaderboard | urlencode }}', null, true);
     });
   });
         </script>
