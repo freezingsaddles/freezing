@@ -337,6 +337,8 @@ def _track_map(
     hash_tag=None,
     ride_ids=None,
     limit=None,
+    offset=None,
+    oldest_first=False,
 ):
     teamsq = text("select id, name from teams order by id asc")
     teams = [
@@ -345,7 +347,8 @@ def _track_map(
     ]
 
     q = text(f"""
-             select ST_AsText(T.gps_track), ST_AsText(G.start_geo), ST_AsText(G.end_geo), A.team_id
+             select ST_AsText(T.gps_track), ST_AsText(G.start_geo), ST_AsText(G.end_geo),
+                    A.team_id, R.competition_date
              from ride_tracks T
              join ride_geo G on G.ride_id = T.ride_id
              join rides R on R.id = T.ride_id
@@ -356,8 +359,9 @@ def _track_map(
                and {'A.team_id = :team_id' if team_id else 'true'}
                and {_hashtag_filter(hash_tag)}
                and {'FIND_IN_SET(hex(R.id), :ride_ids) > 0' if ride_ids is not None else 'true'}
-             order by R.start_date DESC
+             order by R.start_date {'asc' if oldest_first else 'desc'}, R.id asc
              {'limit :limit' if limit else ''}
+             {'offset :offset' if offset else ''}
              """)
 
     if team_id:
@@ -370,12 +374,14 @@ def _track_map(
         q = q.bindparams(ride_ids=ride_ids)
     if limit:
         q = q.bindparams(limit=limit)
+    if offset:
+        q = q.bindparams(offset=offset)
 
     # Be warned, the terms "lon" and lat" in the following code should not be read as longitude and
     # latitude. There is confusion about which order these fields occur in the database; it has
     # varied from year to year.
     tracks = []
-    for [gps_track, start_geowkt, end_geowkt, team_id] in (
+    for [gps_track, start_geowkt, end_geowkt, team_id, day] in (
         meta.scoped_session().execute(q).fetchall()
     ):
         start_geo = _parse_point(start_geowkt)
@@ -415,10 +421,11 @@ def _track_map(
             # Break tracks that span flights and train journeys
             if not point or _distance2(lon, lat, point[0], point[1]) > _max_contiguous2:
                 track = []
-                tracks.append({"team": team_id, "track": track})
+                tracks.append({"team": team_id, "day": day.isoformat(), "track": track})
             point = (lon, lat)
             track.append(point)
-    tracks.reverse()
+    if not oldest_first:
+        tracks.reverse()
 
     return {"tracks": tracks, "teams": teams}
 
@@ -484,6 +491,74 @@ def _board_ride_ids(leaderboard: str) -> str:
     if not any(field.name == "ride_ids" for field in board.fields):
         abort(404, f"leaderboard {leaderboard} names no rides")
     return ",".join(row["ride_ids"] for row in data if row.get("ride_ids"))
+
+
+#: Rides in one page of the animated track map. Fixed, so that page N holds the
+#: same rides from one request to the next and can be cached for as long as
+#: anyone likes. Paging by ride rather than by date is what makes that true: a
+#: ride uploaded late lands in whichever page is being written, instead of
+#: pushing every later ride into a different one.
+TRACK_PAGE_RIDES = 1000
+
+#: A page nobody will write to again. The season is in its URL, so this cannot
+#: outlive the data it describes.
+_SETTLED_PAGE = "public, max-age=31536000, immutable"
+
+
+def _public_ride_count():
+    q = text("""
+             select count(*)
+             from ride_tracks T
+             join ride_geo G on G.ride_id = T.ride_id
+             join rides R on R.id = T.ride_id
+             where not(R.private) and R.visibility = 'everyone'
+             """)
+    return meta.scoped_session().execute(q).scalar() or 0
+
+
+@blueprint.route("/all/trackmap/pages.json")
+def track_map_pages():
+    """Describe the pages of the animated track map."""
+    rides = _public_ride_count()
+    response = jsonify(
+        {
+            "season": config.START_DATE.year,
+            "rides": rides,
+            "page_rides": TRACK_PAGE_RIDES,
+            "pages": -(-rides // TRACK_PAGE_RIDES),
+        }
+    )
+    response.headers["Cache-Control"] = (
+        f"max-age={config.JSON_CACHE_MINUTES * 60}, public"
+    )
+    return response
+
+
+@blueprint.route("/all/trackmap/<int:season>/<int:page>.json")
+def track_map_page(season: int, page: int):
+    """One page of the animated track map, oldest rides first."""
+    if season != config.START_DATE.year:
+        abort(404, "no such season")
+
+    content = _get_cached(
+        f"track_map/page/{season}-{page}.json.gz",
+        lambda: gzip.compress(
+            json.dumps(
+                _track_map(
+                    limit=TRACK_PAGE_RIDES,
+                    offset=page * TRACK_PAGE_RIDES,
+                    oldest_first=True,
+                ),
+                indent=None,
+            ).encode("utf8"),
+            5,
+        ),
+    )
+    response = _make_gzip_json_response(content)
+    # Every page but the one still being written to is finished with.
+    if (page + 1) * TRACK_PAGE_RIDES < _public_ride_count():
+        response.headers["Cache-Control"] = _SETTLED_PAGE
+    return response
 
 
 @blueprint.route("/all/trackmap.json")
