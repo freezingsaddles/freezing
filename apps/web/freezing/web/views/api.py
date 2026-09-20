@@ -9,7 +9,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from flask import Blueprint, abort, jsonify, make_response, request, session
-from sqlalchemy import func, text
+from sqlalchemy import bindparam, func, text
 from werkzeug.utils import secure_filename
 
 from freezing.common.times import parse_instant
@@ -355,7 +355,7 @@ def _track_map(
                and {'A.id = :athlete_id' if athlete_id else 'true'}
                and {'A.team_id = :team_id' if team_id else 'true'}
                and {_hashtag_filter(hash_tag)}
-               and {'FIND_IN_SET(hex(R.id), :ride_ids) > 0' if ride_ids is not None else 'true'}
+               and {'R.id in :ride_ids' if ride_ids is not None else 'true'}
              order by R.start_date DESC
              {'limit :limit' if limit else ''}
              """)
@@ -367,7 +367,10 @@ def _track_map(
     if hash_tag:
         q = q.bindparams(hash_tag=f"%#{hash_tag}%")
     if ride_ids is not None:
-        q = q.bindparams(ride_ids=ride_ids)
+        # Named ride by ride rather than searched for in a string: hex(R.id)
+        # hides the column from its own primary key, and every ride of the
+        # season has to be read and formatted to answer.
+        q = q.bindparams(bindparam("ride_ids", value=ride_ids, expanding=True))
     if limit:
         q = q.bindparams(limit=limit)
 
@@ -469,7 +472,7 @@ def _make_gzip_json_response(content, private=False):
     return response
 
 
-def _board_ride_ids(leaderboard: str) -> str:
+def _board_ride_ids(leaderboard: str) -> list[int]:
     """Return the rides a generic leaderboard names, for the track map to draw.
 
     The board's own query answers this, so the map asks for a board by name
@@ -483,7 +486,12 @@ def _board_ride_ids(leaderboard: str) -> str:
         abort(404, f"no leaderboard named {leaderboard}")
     if not any(field.name == "ride_ids" for field in board.fields):
         abort(404, f"leaderboard {leaderboard} names no rides")
-    return ",".join(row["ride_ids"] for row in data if row.get("ride_ids"))
+    return [
+        int(ride, 16)
+        for row in data
+        if row.get("ride_ids")
+        for ride in row["ride_ids"].split(",")
+    ]
 
 
 @blueprint.route("/all/trackmap.json")
