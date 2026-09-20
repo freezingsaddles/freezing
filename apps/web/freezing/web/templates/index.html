@@ -384,6 +384,11 @@
                 <div class="leaflet-control-container d-none d-xl-block">
                     <div class="leaflet-top leaflet-right">
                         <div class="leaflet-bar leaflet-control">
+                            <a id="play-map"
+                               class="leaflet-control-expand"
+                               href="#"
+                               role="button"
+                               title="Pause the season">⏸</a>
                             <a id="expand-map"
                                class="leaflet-control-expand"
                                href="#"
@@ -449,7 +454,20 @@
   }
   $(() => {
     if ($('#map').length) {
-        const map = create_ride_map('map', '/api/all/trackmap.json');
+        // Someone who has asked their machine to stop things moving gets the
+        // map the way it has always been: the most recent rides, sitting still.
+        const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const map = still
+            ? create_ride_map('map', '/api/all/trackmap.json')
+            : animate_ride_map('map', '/api/all/trackmap/pages.json');
+        if (still) $('#play-map').hide();
+        $('#play-map').click(e => {
+            e.preventDefault();
+            const playing = map.playing();
+            if (playing) map.pause(); else map.play();
+            $('#play-map').text(playing ? '▶' : '⏸')
+                          .attr('title', playing ? 'Play the season' : 'Pause the season');
+        });
         $('#expand-map').click(e => {
             e.preventDefault();
             $('body').toggleClass('map-expanded');
