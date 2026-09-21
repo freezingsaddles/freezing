@@ -1,9 +1,7 @@
 # Freezing Saddles
 
 Monorepo for the [Freezing Saddles](https://freezingsaddles.org) winter cycling
-competition. It replaces the separate `freezing-model`, `freezing-web`,
-`freezing-sync`, `freezing-nq`, `freezing-beanstalkd` and `freezing-compose`
-repositories, whose histories are preserved here.
+competition.
 
 | Path | What it is |
 | --- | --- |
