@@ -158,17 +158,20 @@
                 </div>
             {% endif %}
         </div>
-    {% endif %}
-    {% if winter_is_coming and not g.logged_in %}
-        <div class="{{ 'mb-3 mb-lg-4' if bafs_is_over else 'mt-4 mt-lg-5' }} alert alert-info">
-            Freezing Saddles is a game organized by friends in the general DC area.
-            It is a convivial and good-humored competition in which participants are randomly assigned to teams.
-            The teams then compete for points by riding their bikes all winter, in the cold, in the dark and in the snow,
-            and by engaging in pointless challenges.
-            The winners win and, well, so does everyone else. You should join!
-            Sign up by following the Register link. Registration opens around Thanksgiving;
-            the competition starts on January 1<sup>st</sup>, and ends on the last full day of astronomical winter,
-            usually March 19<sup>th</sup>.
+    {% elif winter_is_coming %}
+        <div class="card mb-3 my-lg-4 bg-light p-3 px-lg-4 text-center">
+            <p class="register-btn" style="color: #05a4e4">Winter is Coming</p>
+            <p>
+                Freezing Saddles is a game organized by cyclists in the general DC area.
+                It is a friendly competition in which participants are randomly assigned to teams
+                and compete for points by riding their bikes all winter, in the cold, in the dark and in the snow.
+            </p>
+            <p>The winners win and, well, so does everyone else.</p>
+            <p class="mb-0">
+                Registration opens around Thanksgiving;
+                the competition starts on January 1<sup>st</sup>, and ends on the last full day of astronomical winter,
+                usually March 19<sup>th</sup>.
+            </p>
         </div>
     {% elif bafs_is_over %}
         <div class="mb-3 mb-lg-4 py-2 alert alert-success text-center position-relative"
