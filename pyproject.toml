@@ -89,6 +89,7 @@ per-file-ignores = [
     "packages/model/freezing/model/migrations/env.py:T201",
     # Command-line scripts print.
     "packages/model/bin/*.py:T201",
+    "apps/web/test/*.py:T201",
 ]
 
 [tool.pymarkdown]
