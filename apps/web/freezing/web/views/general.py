@@ -18,6 +18,7 @@ from flask import (
 )
 from sqlalchemy import text
 from stravalib import Client
+from stravalib.exc import Fault
 
 from freezing.model import meta
 from freezing.model.orm import Athlete, Ride, RidePhoto, Team
@@ -548,12 +549,28 @@ def authorization():
         scope = request.args.get("scope")
         state = request.args.get("state")
         log.info(f"Auth code: {code}, scope: {scope}, state: {state}")
+
+        # Strava sends people here with a code. Anyone arriving without one has
+        # opened the address by hand or followed a stale link, and has not
+        # failed at anything: start them off again rather than showing them an
+        # error about a code they never had.
+        if not code:
+            return redirect(url_for(".join"))
+
         client = Client()
-        token_dict = client.exchange_code_for_token(
-            client_id=config.STRAVA_CLIENT_ID,
-            client_secret=config.STRAVA_CLIENT_SECRET,
-            code=code,
-        )
+        try:
+            token_dict = client.exchange_code_for_token(
+                client_id=config.STRAVA_CLIENT_ID,
+                client_secret=config.STRAVA_CLIENT_SECRET,
+                code=code,
+            )
+        except Fault as fault:
+            # A code is good for one exchange, so a refresh or a back button
+            # arrives with one Strava has already spent.
+            log.info(f"Strava would not take the authorization code: {fault}")
+            return render_template(
+                "authorization_error.html", error="the code had already been used"
+            )
         # Use the now-authenticated client to get the current athlete
         strava_athlete = client.get_athlete()
         log.info("Strava athlete: {}", str(strava_athlete))
