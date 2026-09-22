@@ -1,4 +1,3 @@
-import math
 import operator
 from datetime import datetime, timezone
 
@@ -11,6 +10,7 @@ from freezing.web.config import config
 from freezing.web.exc import ObjectNotFound
 from freezing.web.utils.genericboard import format_rows, load_board, load_board_and_data
 from freezing.web.utils.hashboard import load_hashtag
+from freezing.web.utils.paging import requested_page
 from freezing.web.utils.segboard import load_segment
 
 blueprint = Blueprint("pointless", __name__)
@@ -171,16 +171,11 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_ta
 
 
 def _get_phototag_tdata(request, hashtag, photo_tags):
-    page = int(request.args.get("page", 1))
-    if page < 1:
-        page = 1
     date = request.args.get("date")
     mine = request.args.get("mine") == "true"
     myself = session.get("athlete_id") if mine else None
 
     page_size = 24
-    offset = page_size * (page - 1)
-    limit = page_size
 
     # On a photo board the tag on the photo is enough, whatever the ride is
     # called. Elsewhere the photo still has to sit on a tagged ride. Either way
@@ -252,6 +247,10 @@ def _get_phototag_tdata(request, hashtag, photo_tags):
     )
     num_photos = meta.scoped_session().execute(total_q).scalar_one()
 
+    # Settled before the query is built, so that the page a reader is shown
+    # and the page they are told they are on cannot disagree.
+    page, offset, total_pages = requested_page(page_size, num_photos)
+
     photo_q = text(f"""
         {with_union_photos}
         select
@@ -269,17 +268,9 @@ def _get_phototag_tdata(request, hashtag, photo_tags):
         date=date,
         myself=myself,
         offset=offset,
-        limit=limit,
+        limit=page_size,
     )
     photos = meta.scoped_session().execute(photo_q)
-
-    if num_photos < offset:
-        page = 1
-
-    total_pages = int(math.ceil((1.0 * num_photos) / page_size))
-
-    if page > total_pages:
-        page = total_pages
 
     return {
         "photos": list(photos),

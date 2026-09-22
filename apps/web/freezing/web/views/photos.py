@@ -1,25 +1,16 @@
-import math
-
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template
 
 from freezing.model import meta
 from freezing.model.orm import Ride, RidePhoto
 from freezing.web.autolog import log
+from freezing.web.utils.paging import requested_page
 
 blueprint = Blueprint("photos", __name__)
 
 
 @blueprint.route("/")
 def index():
-    page = int(request.args.get("page", 1))
-    if page < 1:
-        page = 1
-
     page_size = 60
-    offset = page_size * (page - 1)
-    limit = page_size
-
-    log.debug(f"Page = {page}, offset={offset}, limit={limit}")
 
     total_q = (
         meta.scoped_session()
@@ -32,15 +23,12 @@ def index():
     )
     num_photos = total_q.count()
 
-    page_q = total_q.limit(limit).offset(offset)
+    # Settled before the query is built, so that the page a reader is shown
+    # and the page they are told they are on cannot disagree.
+    page, offset, total_pages = requested_page(page_size, num_photos)
+    log.debug(f"Page = {page}, offset={offset}, limit={page_size}")
 
-    if num_photos < offset:
-        page = 1
-
-    total_pages = int(math.ceil((1.0 * num_photos) / page_size))
-
-    if page > total_pages:
-        page = total_pages
+    page_q = total_q.limit(page_size).offset(offset)
 
     return render_template(
         "photos.html",

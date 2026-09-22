@@ -1,2 +1,7 @@
 User-agent: *
 Allow: /
+
+# A crawler walking these asks for a count of every photo on every page, and
+# indexes a hundred addresses that hold the same gallery between them.
+Disallow: /photos/?page=
+Disallow: /pointless/hashtag/*?*page=
