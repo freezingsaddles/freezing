@@ -6,6 +6,11 @@ RUN curl -fsSL "https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt
 ENV PATH="/opt/sbt/bin:$PATH"
 WORKDIR /build
 
+# Resolve through a mirror, and only through it: repo1.maven.org rate-limits a
+# runner sharing an address with the rest of GitHub, and has failed this build.
+COPY apps/freezebot/repositories /root/.sbt/repositories
+ENV SBT_OPTS="-Dsbt.override.build.repos=true"
+
 # The build definition first, so sbt and the dependencies cache independently of source changes.
 COPY apps/freezebot/build.sbt ./
 COPY apps/freezebot/project/build.properties apps/freezebot/project/plugins.sbt project/
