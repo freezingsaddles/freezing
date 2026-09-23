@@ -98,7 +98,7 @@ def myself(number):
 def index():
     q = text("""select count(*) as num_contestants from lbd_athletes""")
 
-    indiv_count_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    indiv_count_res = meta.scoped_session().execute(q).one()
     contestant_count = indiv_count_res._mapping["num_contestants"]
 
     q = text("""
@@ -108,7 +108,7 @@ def index():
             ;
         """)
 
-    all_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    all_res = meta.scoped_session().execute(q).one()
     total_miles = int(all_res._mapping["distance"])
     total_hours = int(all_res._mapping["moving_time"]) / 3600
     total_rides = all_res._mapping["num_rides"]
@@ -121,7 +121,7 @@ def index():
             ;
         """)
 
-    sub32_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    sub32_res = meta.scoped_session().execute(q).one()
     sub_freezing_hours = int(sub32_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -132,7 +132,7 @@ def index():
             ;
         """)
 
-    rain_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    rain_res = meta.scoped_session().execute(q).one()
     rain_hours = int(rain_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -143,7 +143,7 @@ def index():
             ;
         """)
 
-    snow_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    snow_res = meta.scoped_session().execute(q).one()
     snow_hours = int(snow_res._mapping["moving_time"]) / 3600
 
     # Grab some recent photos
@@ -175,7 +175,7 @@ def index():
             where R.competition_date >= '{}'
             ;
         """.format(today.date()))
-    today_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    today_res = meta.scoped_session().execute(q).one()
     today_riders = int(today_res._mapping["riders"])
     today_hours = round(today_res._mapping["moving_time"]) / 3600
     today_miles = int(today_res._mapping["distance"])
@@ -189,7 +189,7 @@ def index():
             group by personal_record
             ;
         """)
-    pr_res = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    pr_res = meta.scoped_session().execute(q).fetchall()
     prs = {res._mapping["pr"]: res._mapping["count"] for res in pr_res}
     # Don't try to do local legends. the strava api basically just tells us
     # which segments are are the legend for, at the time we call the api. so

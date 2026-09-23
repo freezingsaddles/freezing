@@ -77,7 +77,7 @@ class WeatherSync(BaseSync):
             logger=self.logger,
         )
 
-        rows = sess.execute(q).fetchall()  # @UndefinedVariable
+        rows = sess.execute(q).fetchall()
         num_rides = len(rows)
 
         for i, r in enumerate(rows):
