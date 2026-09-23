@@ -173,27 +173,12 @@
                 usually March 19<sup>th</sup>.
             </p>
         </div>
-    {% elif bafs_is_over %}
+    {% elif bafs_is_over and not spring_is_over %}
         <div class="mb-3 mb-lg-4 py-2 alert alert-success text-center position-relative"
              style="z-index: 1001">
             Winter is over. The game is done. The reindeer have been put out to pasture. Time to clean your bike, wax your chain,
             and go for a ride.
             <span class="sprout">🌱</span>
-        </div>
-    {% endif %}
-    {% if g.logged_in and yourself.total_days < 15 and not request.cookies.get("discord-invite") %}
-        <div id="discord-invite"
-             class="mb-3 mb-lg-4 alert alert-success text-center">
-            <button type="button"
-                    class="btn btn-close"
-                    id="discord-invite-close"
-                    aria-label="Close"></button>
-            <strong>We're on Discord!</strong>
-            <br />
-            Freezing Saddles is using Discord to organize some group rides and pointless prizes.
-            <a rel="noreferrer"
-               target="_blank"
-               href="{{ discord_invitation }}">Join our Discord Server</a> to stay in touch.
         </div>
     {% endif %}
     {% if not bafs_is_live %}
@@ -442,14 +427,6 @@
 {% endblock %}
 {% block foot %}
     <script>
-  function initAlert(id, days) {
-    $(`#${id}-close`).click(e => {
-      $(`#${id}`).remove();
-      const date = new Date();
-      date.setDate(date.getDate() + days);
-      document.cookie = `${id}=hide; expires=${date.toUTCString()}; path=/`;
-    });
-  }
   $(() => {
     if ($('#map').length) {
         const map = create_ride_map('map', '/api/all/trackmap.json');
@@ -460,7 +437,6 @@
             $('#map')[0].scrollIntoView({block: 'center'});
         });
     }
-    initAlert('discord-invite', 60);
   });
     </script>
     {% if bafs_is_over and bafs_days_over < 14 %}
