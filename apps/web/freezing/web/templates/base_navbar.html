@@ -240,12 +240,21 @@
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button type="button"
-                            class="nav-link"
-                            data-bs-toggle="modal"
-                            data-bs-target="#discordModal">
-                        Discord
-                    </button>
+                    {% if g.discord_username %}
+                        <a class="nav-link"
+                           rel="noreferrer"
+                           target="_blank"
+                           href="https://discord.com/channels/1443244420358213643/1443244605263970416">
+                            Discord
+                        </a>
+                    {% else %}
+                        <button type="button"
+                                class="nav-link"
+                                data-bs-toggle="modal"
+                                data-bs-target="#discordModal">
+                            Discord
+                        </button>
+                    {% endif %}
                 </li>
                 {% if g.logged_in %}
                     <li class="nav-item dropdown">
@@ -453,16 +462,10 @@
                            href="https://discord.com/channels/1443244420358213643/1443244605263970416">Go Straight to Discord</a>.
                     </li>
                     {% if g.logged_in %}
-                        <li>
-                            Otherwise, please
-                            <a rel="noreferrer"
-                               target="_blank"
-                               href="{{ discord_invitation }}">Join the Freezing Saddles Discord Server</a>.
-                        </li>
                         {% if discord_linking %}
                             <li>
                                 Please link your Discord account to your Freezing Saddles account, so that
-                                captains and organizers know who you are on Discord.
+                                the website knows who you are on Discord.
                                 {% if discord_joining and not g.discord_username %}
                                     Linking also adds you to the server if you haven't joined it yet.
                                 {% endif %}
@@ -471,6 +474,13 @@
                                         {% include "discord_link.html" %}
                                     {% endwith %}
                                 </div>
+                            </li>
+                        {% else %}
+                            <li>
+                                Otherwise, please
+                                <a rel="noreferrer"
+                                   target="_blank"
+                                   href="{{ discord_invitation }}">Join the Freezing Saddles Discord Server</a>.
                             </li>
                         {% endif %}
                     {% else %}
