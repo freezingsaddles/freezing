@@ -59,3 +59,9 @@ jobs:
           file: apps/${{ inputs.app }}/Dockerfile
           push: ${{ inputs.push }}
           tags: ${{ inputs.org }}/freezing-${{ inputs.app }}:${{ inputs.tag }}
+          # Layers are kept between runs, so a build whose dependencies have
+          # not moved fetches nothing: each Dockerfile resolves them in a layer
+          # of their own, before any source is copied. A scope per app, or the
+          # four of them would write over each other.
+          cache-from: type=gha,scope=${{ inputs.app }}
+          cache-to: type=gha,scope=${{ inputs.app }},mode=max
