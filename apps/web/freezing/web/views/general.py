@@ -360,6 +360,12 @@ def _rider_stats(athlete_id):
     team = (
         meta.scoped_session().query(Team).join(Athlete).filter_by(id=athlete_id).one()
     )
+    refresh_token = (
+        meta.scoped_session()
+        .query(Athlete.refresh_token)
+        .filter_by(id=athlete_id)
+        .scalar()
+    )
     start = config.START_DATE.date()
     now_tz = datetime.now(config.TIMEZONE)
     today = min(now_tz, config.END_DATE).date()
@@ -392,6 +398,7 @@ def _rider_stats(athlete_id):
         "every_day": total_days > 0 and streak == total_days,
         "team_name": team.name if not team.leaderboard_exclude else None,
         "no_team": no_team,
+        "unauthorized": refresh_token is None,
     }
 
 
