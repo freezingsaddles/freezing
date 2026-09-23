@@ -20,7 +20,12 @@ from sqlalchemy import text
 from stravalib import Client
 from stravalib.exc import Fault
 
-from freezing.common.seasons import JUNE_SOLSTICE, SEPTEMBER_EQUINOX, season
+from freezing.common.seasons import (
+    JUNE_SOLSTICE,
+    SEPTEMBER_EQUINOX,
+    last_full_day_of_winter,
+    season,
+)
 from freezing.model import meta
 from freezing.model.orm import Athlete, Ride, RidePhoto, Team
 from freezing.web import app, config, data
@@ -221,6 +226,7 @@ def index():
         year=config.START_DATE.year,
         spring_is_over=post_summer_solstice,
         winter_is_coming=post_autumnal_equinox,
+        next_winter_ends=last_full_day_of_winter(now_tz.year + 1, config.TIMEZONE),
         team_count=len(config.COMPETITION_TEAMS),
         contestant_count=contestant_count,
         total_rides=total_rides,
