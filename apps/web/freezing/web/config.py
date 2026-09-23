@@ -39,6 +39,15 @@ class Config:
         "DISCORD_INVITATION",
         "https://example.org/",
     )
+    # The OAuth2 client of the Discord application Freezebot runs as. Unset,
+    # the site does not offer to link Discord accounts.
+    DISCORD_CLIENT_ID: str = env("DISCORD_CLIENT_ID", default="")
+    DISCORD_CLIENT_SECRET: str = env("DISCORD_CLIENT_SECRET", default="")
+    # With the bot token, linking an account also adds it to the server.
+    DISCORD_BOT_TOKEN: str = env("DISCORD_BOT_TOKEN", default="")
+    DISCORD_GUILD_ID: int = env(
+        "DISCORD_GUILD_ID", cast=int, default=1443244420358213643
+    )
     INSTANCE_PATH: str = env(
         "INSTANCE_PATH", default=os.path.join(_basedir, "data/instance")
     )

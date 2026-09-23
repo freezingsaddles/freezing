@@ -54,6 +54,7 @@ def _register_blueprints(app):
     from freezing.web.views import (
         api,
         chartdata,
+        discord,
         explore,
         general,
         leaderboard,
@@ -76,6 +77,7 @@ def _register_blueprints(app):
     app.register_blueprint(api.blueprint, url_prefix="/api")
     app.register_blueprint(teams.blueprint, url_prefix="/teams")
     app.register_blueprint(tribes.blueprint, url_prefix="/tribes")
+    app.register_blueprint(discord.blueprint, url_prefix="/discord")
 
 
 # This has to be done before we define the functions with @app decorators
@@ -113,6 +115,19 @@ def set_no_team_global():
         )
     else:
         g.no_team = total_days <= 31 and config.COMPETITION_TEAMS
+
+
+@app.before_request
+def set_discord_global():
+    athlete_id = session.get("athlete_id")
+    g.discord_username = (
+        meta.scoped_session()
+        .query(Athlete.discord_username)
+        .filter_by(id=athlete_id)
+        .scalar()
+        if athlete_id
+        else None
+    )
 
 
 @app.teardown_request
@@ -212,6 +227,8 @@ def inject_config():
         "environment": config.ENVIRONMENT,
         "registration_site": config.REGISTRATION_SITE,
         "discord_invitation": config.DISCORD_INVITATION,
+        "discord_linking": bool(config.DISCORD_CLIENT_ID),
+        "discord_joining": bool(config.DISCORD_BOT_TOKEN),
         "version_string": config.VERSION_STRING,
         "end_date": config.END_DATE,
         "pointless_prizes": _load_pointless(),
