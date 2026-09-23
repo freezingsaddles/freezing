@@ -5,7 +5,6 @@ from sqlalchemy import text
 
 from freezing.model import meta
 from freezing.model.orm import Tribe
-from freezing.web import config
 from freezing.web.utils.auth import requires_auth
 from freezing.web.utils.tribes import load_tribes, query_tribes
 
@@ -158,6 +157,5 @@ def post_my():
         meta.scoped_session().execute(Tribe.__table__.insert(), my_tribes)
 
     # Names, not urls: nothing the browser sends reaches redirect() as a url.
-    step = "discord" if config.DISCORD_CLIENT_ID else "form"
-    after = {"register": url_for("general.register", step=step)}
+    after = {"register": url_for("general.register", step="form")}
     return redirect(after.get(request.form.get("next"), url_for(".leaderboard")))

@@ -153,7 +153,8 @@
                         the next step.
                     </li>
                 </ul>
-                <a class="btn btn-primary mb-1" href="/register?step=tribes">Next</a>
+                <a class="btn btn-primary mb-1"
+                   href="/register?step={{ 'discord' if discord_linking else 'tribes' }}">Next</a>
             {% else %}
                 <ul>
                     <li>The next step is to join the Freezing Saddles {{ end_date.year }} Strava club.</li>
@@ -188,18 +189,56 @@
                    href="/register?step=club&refresh=true">Refresh</a>
             {% endif %}
         </div>
+    {% elif step == "discord" %}
+        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+            <h3 class="mb-3">
+                <strong>Step 3.</strong> <span>Link Discord</span> <small class="text-muted">(optional)</small>
+            </h3>
+            {% if athlete.discord_username %}
+                <ul>
+                    <li>
+                        Congratulations! You have linked your Discord account
+                        <strong>{{ athlete.discord_username }}</strong>.
+                    </li>
+                    <li>You can now continue to the next step.</li>
+                </ul>
+                <a class="btn btn-primary mb-1" href="/register?step=tribes">Next</a>
+            {% else %}
+                <ul>
+                    <li>
+                        We use <a rel="noreferrer"
+    target="_blank"
+    href="https://discord.com/">Discord</a>
+                        to organize group rides and pointless prizes, and teams use it to talk among themselves.
+                    </li>
+                    <li>
+                        Linking your Discord account tells your captain and the organizers who you
+                        are on Discord{{ ", and adds you to our server" if discord_joining }}.
+                    </li>
+                    <li>
+                        If you don't use Discord, or would rather not link it, just skip this step.
+                        You can always link it later from the Discord menu.
+                    </li>
+                </ul>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-discord mb-1"
+                       href="{{ url_for('discord.link', next='register') }}">Link Discord</a>
+                    <a class="btn btn-outline-secondary mb-1"
+                       href="/register?step=tribes">Skip</a>
+                </div>
+            {% endif %}
+        </div>
     {% elif step == "tribes" %}
         <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
             <h3 class="mb-3">
-                <strong>Step 3.</strong> <span>Join your Bike Tribes</span>
+                <strong>Step {{ 4 if discord_linking else 3 }}.</strong> <span>Join your Bike Tribes</span>
             </h3>
             {% if tribes %}
                 <ul>
                     <li>Congratulations! You have already chosen your bike tribes.</li>
                     <li>You can now continue to the next step.</li>
                 </ul>
-                <a class="btn btn-primary mb-1"
-                   href="/register?step={{ 'discord' if discord_linking else 'form' }}">Next</a>
+                <a class="btn btn-primary mb-1" href="/register?step=form">Next</a>
             {% else %}
                 <p>
                     Your selections will be visible to others, and you will show up on the
@@ -233,45 +272,6 @@
                     <button type="submit"
                             class="btn btn-primary mb-1 mt-2 w-100">Next</button>
                 </form>
-            {% endif %}
-        </div>
-    {% elif step == "discord" %}
-        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
-            <h3 class="mb-3">
-                <strong>Step 4.</strong> <span>Link Discord</span> <small class="text-muted">(optional)</small>
-            </h3>
-            {% if athlete.discord_username %}
-                <ul>
-                    <li>
-                        Congratulations! You have linked your Discord account
-                        <strong>{{ athlete.discord_username }}</strong>.
-                    </li>
-                    <li>You can now continue to the next step.</li>
-                </ul>
-                <a class="btn btn-primary mb-1" href="/register?step=form">Next</a>
-            {% else %}
-                <ul>
-                    <li>
-                        We use <a rel="noreferrer"
-    target="_blank"
-    href="https://discord.com/">Discord</a>
-                        to organize group rides and pointless prizes, and teams use it to talk among themselves.
-                    </li>
-                    <li>
-                        Linking your Discord account tells your captain and the organizers who you
-                        are on Discord{{ ", and adds you to our server" if discord_joining }}.
-                    </li>
-                    <li>
-                        If you don't use Discord, or would rather not link it, just skip this step.
-                        You can always link it later from the Discord menu.
-                    </li>
-                </ul>
-                <div class="d-flex flex-wrap gap-2">
-                    <a class="btn btn-discord mb-1"
-                       href="{{ url_for('discord.link', next='register') }}">Link Discord</a>
-                    <a class="btn btn-outline-secondary mb-1"
-                       href="/register?step=form">Skip</a>
-                </div>
             {% endif %}
         </div>
     {% elif step == "form" %}
