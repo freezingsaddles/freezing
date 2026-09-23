@@ -30,7 +30,7 @@ def people_list_users():
         .query(Athlete)
         .filter(Athlete.team.has(leaderboard_exclude=0))
         .order_by(Athlete.display_name)
-    )  # @UndefinedVariable
+    )
     today = get_today()
     week_start = today.date() - timedelta(days=(today.weekday()) % 7)
     week_end = week_start + timedelta(days=6)
@@ -224,7 +224,7 @@ def friends():
              ;
              """)
 
-    indiv_rows = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_rows = meta.scoped_session().execute(q).fetchall()
 
     return render_template(
         "people/friends.html",

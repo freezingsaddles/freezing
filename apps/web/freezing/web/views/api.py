@@ -56,7 +56,7 @@ def get_limit(request):
 def stats_general():
     q = text("""select count(*) as num_contestants from lbd_athletes""")
 
-    indiv_count_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    indiv_count_res = meta.scoped_session().execute(q).fetchone()
     contestant_count = indiv_count_res._mapping["num_contestants"]
 
     q = text("""
@@ -66,7 +66,7 @@ def stats_general():
                 ;
             """)
 
-    all_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    all_res = meta.scoped_session().execute(q).fetchone()
     total_miles = int(all_res._mapping["distance"])
     total_hours = int(all_res._mapping["moving_time"]) / 3600
     total_rides = all_res._mapping["num_rides"]
@@ -79,7 +79,7 @@ def stats_general():
                 ;
             """)
 
-    sub32_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    sub32_res = meta.scoped_session().execute(q).fetchone()
     sub_freezing_hours = int(sub32_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -90,7 +90,7 @@ def stats_general():
                 ;
             """)
 
-    rain_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    rain_res = meta.scoped_session().execute(q).fetchone()
     rain_hours = int(rain_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -101,7 +101,7 @@ def stats_general():
                 ;
             """)
 
-    snow_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    snow_res = meta.scoped_session().execute(q).fetchone()
     snow_hours = int(snow_res._mapping["moving_time"]) / 3600
 
     return jsonify(
@@ -149,7 +149,7 @@ def team_leaderboard():
              ;
              """)
 
-    team_rows = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    team_rows = meta.scoped_session().execute(q).fetchall()
 
     q = text("""
              select A.id as athlete_id, A.team_id, A.display_name as athlete_name,
@@ -163,7 +163,7 @@ def team_leaderboard():
              """)
 
     team_members = {}
-    for indiv_row in meta.scoped_session().execute(q).fetchall():  # @UndefinedVariable
+    for indiv_row in meta.scoped_session().execute(q).fetchall():
         team_members.setdefault(indiv_row["team_id"], []).append(indiv_row)
 
     for team_id in team_members:
