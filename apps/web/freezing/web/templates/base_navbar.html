@@ -459,6 +459,20 @@
                                target="_blank"
                                href="{{ discord_invitation }}">Join the Freezing Saddles Discord Server</a>.
                         </li>
+                        {% if discord_linking %}
+                            <li>
+                                Please link your Discord account to your Freezing Saddles account, so that
+                                captains and organizers know who you are on Discord.
+                                {% if discord_joining and not g.discord_username %}
+                                    Linking also adds you to the server if you haven't joined it yet.
+                                {% endif %}
+                                <div class="my-2">
+                                    {% with discord_next="" %}
+                                        {% include "discord_link.html" %}
+                                    {% endwith %}
+                                </div>
+                            </li>
+                        {% endif %}
                     {% else %}
                         <li>
                             Otherwise, please <a href="/login">Log In</a> and then

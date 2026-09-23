@@ -15,4 +15,16 @@
         If you do not already have a Discord account you will need to create one. Discord can be used
         on the Web and with their mobile app.
     </p>
+    {% if discord_linking %}
+        <p>
+            Please link your Discord account to your Freezing Saddles account, so that
+            captains and organizers know who you are on Discord.
+            {% if discord_joining and not g.discord_username %}
+                Linking also adds you to the server if you haven't joined it yet.
+            {% endif %}
+        </p>
+        {% with discord_next="" %}
+            {% include "discord_link.html" %}
+        {% endwith %}
+    {% endif %}
 {% endblock %}
