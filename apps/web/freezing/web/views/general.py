@@ -20,6 +20,7 @@ from sqlalchemy import text
 from stravalib import Client
 from stravalib.exc import Fault
 
+from freezing.common.seasons import JUNE_SOLSTICE, SEPTEMBER_EQUINOX, season
 from freezing.model import meta
 from freezing.model.orm import Athlete, Ride, RidePhoto, Team
 from freezing.web import app, config, data
@@ -158,10 +159,14 @@ def index():
 
     now_tz = datetime.now(config.TIMEZONE)
     after_competition_start = now_tz >= config.START_DATE
-    before_competition_end = now_tz < config.END_DATE
+    before_competition_end = now_tz <= config.END_DATE
     delta_after_end = now_tz - config.END_DATE
-    # Meh, close enough...
-    post_autumnal_equinox = now_tz.month > 9 or (now_tz.month == 9 and now_tz.day >= 22)
+    post_summer_solstice = now_tz >= season(now_tz.year, JUNE_SOLSTICE).astimezone(
+        config.TIMEZONE
+    )
+    post_autumnal_equinox = now_tz >= season(now_tz.year, SEPTEMBER_EQUINOX).astimezone(
+        config.TIMEZONE
+    )
 
     tags = _trending_tags()
 
@@ -214,6 +219,7 @@ def index():
         show_registration=registration_open or "register" in request.args,
         registered=bool(athlete and athlete.registered),
         year=config.START_DATE.year,
+        spring_is_over=post_summer_solstice,
         winter_is_coming=post_autumnal_equinox,
         team_count=len(config.COMPETITION_TEAMS),
         contestant_count=contestant_count,
@@ -301,7 +307,7 @@ def _non_rider_stats():
     today = min(now_tz, config.END_DATE).date()
     total_days = 1 + (today - start).days
     after_competition_start = now_tz >= config.START_DATE
-    before_competition_end = now_tz < config.END_DATE
+    before_competition_end = now_tz <= config.END_DATE
 
     # we could look to see if #competitors < #teams * max(#members)
     no_team = total_days <= 31 and config.COMPETITION_TEAMS
