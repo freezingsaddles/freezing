@@ -65,7 +65,13 @@
             <h3 class="mb-3">
                 <strong>Step 1.</strong> <span>Connect Strava and Login</span>
             </h3>
-            {% if not athlete %}
+            {% if not authorized %}
+                {% if athlete %}
+                    <div class="alert alert-warning">
+                        <strong>Your Strava authorization has expired and we can't read your rides!</strong>
+                        Please connect with Strava again to reauthorize Freezing Saddles.
+                    </div>
+                {% endif %}
                 <div>
                     The first thing you need to do is authorize Freezing Saddles to
                     read your Strava rides by clicking <em>Connect with Strava</em> below. This

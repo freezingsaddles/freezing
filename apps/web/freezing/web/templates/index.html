@@ -181,6 +181,12 @@
             <span class="sprout">🌱</span>
         </div>
     {% endif %}
+    {% if g.logged_in and yourself.unauthorized and not bafs_is_over %}
+        <div class="mb-3 mb-lg-4 py-2 alert alert-warning text-center">
+            <strong>Your Strava authorization has expired and we can't read your rides!</strong>
+            Please log out and then log back in again to reauthorize Strava.
+        </div>
+    {% endif %}
     {% if not bafs_is_live %}
         <div class="mb-4 mb-lg-5 alert alert-info">
             The shiny new Freezing Saddles competition for the upcoming winter hasn't
@@ -188,12 +194,6 @@
             contestants registered. There are still bike rides going on, you should go for a ride.
         </div>
     {% else %}
-        {% if g.logged_in and yourself.unauthorized %}
-            <div class="mb-3 mb-lg-4 py-2 alert alert-warning text-center">
-                <strong>Your Strava authorization has expired and we can't read your rides!</strong>
-                Please log out and then log back in again to reauthorize Strava.
-            </div>
-        {% endif %}
         {% if yourself.missed_today %}
             {% if yourself.missed_yesterday %}
                 <div class="mb-3 mb-lg-4 py-2 alert alert-danger text-center">
