@@ -475,6 +475,12 @@ def register():
         else None
     )
 
+    # Registering is for riders whose rides we can read, so an athlete whose
+    # tokens were forgotten goes back to connecting Strava.
+    authorized = athlete is not None and athlete.refresh_token is not None
+    if athlete and not authorized and step not in ("intro", "login"):
+        return redirect(url_for(".register", step="login"))
+
     # The form lives on the Wordpress site, which redirects back to this step.
     if step == "complete" and athlete and not athlete.registered:
         log.info(f"Athlete {athlete.id} ({athlete.name}) completed registration")
@@ -485,6 +491,7 @@ def register():
         "register.html",
         step=step,
         athlete=athlete,
+        authorized=authorized,
         team=team,
         tribal_groups=load_tribes() if step == "tribes" else [],
         tribes=query_tribes(athlete.id) if step == "tribes" and athlete else {},
