@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from colorlog import ColoredFormatter
 from envparse import env
 
+from freezing.common.seasons import competition_end
 from freezing.common.times import parse_instant
 
 from .version import branch, build_date, commit
@@ -32,7 +33,6 @@ class Config:
     COMPETITION_TEAMS: list[int] = env("TEAMS", cast=list, subcast=int, default=[])
     COMPETITION_TITLE: str = env("COMPETITION_TITLE", default="Freezing Saddles")
     DEBUG: bool = env("DEBUG", cast=bool, default=False)
-    END_DATE: datetime = env("END_DATE", postprocessor=parse_instant)
     # Environment (localdev, production, etc.)
     ENVIRONMENT: str = env("ENVIRONMENT", default="localdev")
     DISCORD_INVITATION: str = env(
@@ -72,6 +72,11 @@ class Config:
         "TIMEZONE",
         default="America/New_York",
         postprocessor=lambda val: ZoneInfo(val),
+    )
+    # A winter competition ends when winter does. Left unset, that is worked
+    # out rather than written down again every year.
+    END_DATE: datetime = competition_end(
+        env("END_DATE", default=None), START_DATE, TIMEZONE
     )
     VERSION_NUM: str = version("freezing-web")
     VERSION_STRING: str = f"{VERSION_NUM}+{branch}.{commit}.{build_date}"
