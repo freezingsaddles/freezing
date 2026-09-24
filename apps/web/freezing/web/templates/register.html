@@ -3,15 +3,21 @@
     {{ "Register for " + competition_title }}
 {% endblock %}
 {% block content %}
-    {% if after_competition_start %}
+    {% if after_competition_start and not g.finished %}
         <div class="alert alert-warning bg-warning text-dark">
             The {{ end_date.year }} competition has already started. You can still
             register, but you will be placed on the waiting list and only assigned
             to a team if a space opens up.
         </div>
     {% endif %}
-    {% if step == "intro" %}
-        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+    <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+        {% if g.finished %}
+            <h3 class="mb-3">Registration Closed</h3>
+            <p>Registration is closed for the {{ end_date.year }} competition.</p>
+        {% elif not registration_open %}
+            <h3 class="mb-3">Registration Not Yet Open</h3>
+            <p>Registration has not yet opened for the {{ end_date.year }} competition.</p>
+        {% elif step == "intro" %}
             <h3 class="mb-3">Register for Freezing Saddles {{ end_date.year }}</h3>
             <p>
                 Freezing Saddles is a winter riding competition for cyclists in the
@@ -59,9 +65,7 @@
             </p>
             <a class="btn btn-primary mb-1"
                href="/register?step=login">Start Registration</a>
-        </div>
-    {% elif step == "login" %}
-        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+        {% elif step == "login" %}
             <h3 class="mb-3">
                 <strong>Step 1.</strong> <span>Connect Strava and Login</span>
             </h3>
@@ -128,22 +132,19 @@
                 </ul>
                 <a class="btn btn-primary mb-1" href="/register?step=club">Next</a>
             {% endif %}
-        </div>
-    {% elif not athlete %}
-        <div class="alert alert-danger bg-danger text-dark mt-3">
-            <strong>Uh-oh, something went wrong!</strong>
-            <br />
-            You should be logged in at this point. Please check
-            your browser privacy settings and <a class="text-dark"
+        {% elif not athlete %}
+            <div class="alert alert-danger bg-danger text-dark mt-3">
+                <strong>Uh-oh, something went wrong!</strong>
+                <br />
+                You should be logged in at this point. Please check
+                your browser privacy settings and <a class="text-dark"
     href="/register">try registering again</a>,
-            or
-            <a rel="noreferrer"
-               target="_blank"
-               class="text-dark"
-               href="{{ registration_site }}contact-form/">contact us</a>.
-        </div>
-    {% elif step == "club" %}
-        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+                or
+                <a rel="noreferrer"
+                   target="_blank"
+                   class="text-dark"
+                   href="{{ registration_site }}contact-form/">contact us</a>.
+        {% elif step == "club" %}
             <h3 class="mb-3">
                 <strong>Step 2.</strong>
                 <span>Join the Freezing Saddles {{ end_date.year }} Strava Club</span>
@@ -195,9 +196,7 @@
                 <a class="btn btn-primary mb-1"
                    href="/register?step=club&refresh=true">Refresh</a>
             {% endif %}
-        </div>
-    {% elif step == "discord" %}
-        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+        {% elif step == "discord" %}
             <h3 class="mb-3">
                 <strong>Step 3.</strong> <span>Link Discord</span> <small class="text-muted">(optional)</small>
             </h3>
@@ -244,9 +243,7 @@
                        href="/register?step=tribes">Skip</a>
                 </div>
             {% endif %}
-        </div>
-    {% elif step == "tribes" %}
-        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+        {% elif step == "tribes" %}
             <h3 class="mb-3">
                 <strong>Step {{ 4 if discord_linking else 3 }}.</strong> <span>Join your Bike Tribes</span>
             </h3>
@@ -290,9 +287,7 @@
                             class="btn btn-primary mb-1 mt-2 w-100">Next</button>
                 </form>
             {% endif %}
-        </div>
-    {% elif step == "form" %}
-        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+        {% elif step == "form" %}
             <h3 class="mb-3">
                 <strong>Step {{ 5 if discord_linking else 4 }}.</strong> <span>Fill Out the Registration Form</span>
             </h3>
@@ -327,9 +322,7 @@
                 <a class="btn btn-primary mb-1"
                    href="{{ registration_site }}freezing-saddles-2027-registration/?stravanumber={{ athlete.id }}">Registration Form</a>
             {% endif %}
-        </div>
-    {% elif step == "complete" %}
-        <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
+        {% elif step == "complete" %}
             <h3 class="mb-3">Registration Complete</h3>
             <ul>
                 <li>Congratulations! Your registration is complete.</li>
@@ -356,8 +349,8 @@
                 </li>
             </ul>
             <a class="btn btn-primary mb-1" href="/">Done</a>
-        </div>
-    {% endif %}
+        {% endif %}
+    </div>
 {% endblock %}
 {% block foot %}
     {% if step == "club" and not team %}
