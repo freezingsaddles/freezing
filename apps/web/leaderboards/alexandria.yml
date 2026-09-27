@@ -2,11 +2,11 @@
 title: Alexandria Infrastructure
 description: "Number of rides of all Alexandria Infrastructure segments (i.e. the minimum rides of any one segment)."
 fields:
-  - name: id
+  - name: athlete_id
     visible: false
   - name: athlete_name
     label: Rider
-    format: '<a href="/people/{id}" class="hover-underline">{athlete_name}</a>'
+    type: athlete
   - name: segment_name
     label: Least-Ridden Segment
     format: '<a href="https://www.strava.com/segments/{segment_id}">{segment_name}</a>'
@@ -16,7 +16,7 @@ fields:
     type: number
 query: |
   select
-    A.id,
+    A.id as athlete_id,
     A.display_name as athlete_name,
     E.segment_id,
     E.segment_name,
