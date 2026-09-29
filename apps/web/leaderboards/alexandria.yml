@@ -29,4 +29,5 @@ query: |
     E.segment_id in (16700352, 16700518, 16700365, 16700527, 16700619, 2489428, 16700441, 7107707)
   group by
     A.id,
-    E.segment_id
+    E.segment_id,
+    E.segment_name
