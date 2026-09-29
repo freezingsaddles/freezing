@@ -450,8 +450,11 @@ class FakeRow:
 
 @blueprint.route("/multisegment/<string:leaderboard>")
 def multisegment(leaderboard):
-    board = load_board(leaderboard)
-    data = load_multisegment_board_data(board)
+    try:
+        board = load_board(leaderboard)
+        data = load_multisegment_board_data(board)
+    except ObjectNotFound:
+        abort(404)
     data.sort(key=lambda d: (-d["segment_rides"], d["athlete_name"]))
     formatted = format_rows([FakeRow(d) for d in data], board)
     return render_template(
@@ -515,7 +518,10 @@ def arlington():
 
 def load_multisegment_board_data(board):
     # include anyone who has ridden on any segment, but count as zero any segment they've missed
-    rides = meta.scoped_session().execute(text(board.query)).fetchall()
+    result = meta.scoped_session().execute(text(board.query))
+    if "segment_id" not in result.keys():
+        raise ObjectNotFound(f"Board {board.title} is not a multisegment board")
+    rides = result.fetchall()
     # segment_id -> segment_name
     segments = {
         ride._mapping["segment_id"]: ride._mapping["segment_name"] for ride in rides
