@@ -31,7 +31,7 @@ dev = [
     "flake8-quotes==3.4.0",
     "flake8-raise==0.0.5",
     "flake8-simplify==0.30.0",
-    "isort==9.0.1",
+    "isort==9.0.2",
     "mypy==2.3.1",
     "pre-commit==4.6.2",
     "pymarkdownlnt==0.9.40",
