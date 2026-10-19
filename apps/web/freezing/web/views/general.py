@@ -9,7 +9,6 @@ from re import findall, fullmatch, sub
 
 from flask import (
     Blueprint,
-    jsonify,
     redirect,
     render_template,
     request,
@@ -650,23 +649,3 @@ def authorization():
         no_teams=no_teams,
         rides_url=url_for("user.rides"),
     )
-
-
-@blueprint.route("/webhook", methods=["GET"])
-def webhook_challenge():
-    client = Client()
-    strava_request = {
-        k: request.args.get(k)
-        for k in ("hub.challenge", "hub.mode", "hub.verify_token")
-    }
-    log.info(f"Webhook challenge: {strava_request}")
-    challenge_resp = client.handle_subscription_callback(
-        strava_request, verify_token=config.STRAVA_VERIFY_TOKEN
-    )
-    return jsonify(challenge_resp)
-
-
-@blueprint.route("/webhook", methods=["POST"])
-def webhook_activity():
-    log.info(f"Activity webhook: {request.json}")
-    return jsonify()
