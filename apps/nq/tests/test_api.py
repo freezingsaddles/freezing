@@ -87,3 +87,18 @@ def test_post_webhook_athlete_deauthorization(client, publisher: ActivityPublish
         },
         dest=DefinedTubes.athlete_update,
     )
+
+
+def test_post_without_json_content_type(client):
+    result = client.simulate_post("/", body="x=1", content_type="text/plain")
+    assert result.status_code == 415
+
+
+def test_post_without_content_type(client):
+    result = client.simulate_post("/")
+    assert result.status_code == 415
+
+
+def test_request_not_accepting_json(client):
+    result = client.simulate_get("/health", headers={"accept": "text/html"})
+    assert result.status_code == 406
