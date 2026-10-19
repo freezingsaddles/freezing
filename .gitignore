@@ -36,6 +36,7 @@ env/
 **/.bsp/
 **/.bloop/
 **/.metals/
+**/*.semanticdb
 infra/cdk/node_modules/
 infra/cdk/cdk.out/
 infra/cdk/cdk.context.json
