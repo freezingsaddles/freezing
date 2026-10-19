@@ -11,14 +11,14 @@ class RequireJSON:
     def process_request(self, req, resp):
         if not req.client_accepts_json:
             raise falcon.HTTPNotAcceptable(
-                "This API only supports responses encoded as JSON.",
-                href="http://docs.examples.com/api/json",
+                description="This API only supports responses encoded as JSON."
             )
 
-        if req.method in ("POST", "PUT") and "application/json" not in req.content_type:
+        if req.method in ("POST", "PUT") and "application/json" not in (
+            req.content_type or ""
+        ):
             raise falcon.HTTPUnsupportedMediaType(
-                "This API only supports requests encoded as JSON.",
-                href="http://docs.examples.com/api/json",
+                description="This API only supports requests encoded as JSON."
             )
 
 
