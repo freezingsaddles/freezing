@@ -30,7 +30,7 @@ dev = [
     "flake8-pyproject==1.2.4",
     "flake8-quotes==3.4.0",
     "flake8-raise==0.0.5",
-    "flake8-simplify==0.30.0",
+    "flake8-simplify==0.31.1",
     "isort==9.0.2",
     "mypy==2.4.0",
     "pre-commit==4.6.2",
