@@ -17,7 +17,7 @@ exclude = ["apps/freezebot"]
 dev = [
     "autoflake==2.4.0",
     "bandit==1.9.4",
-    "black==26.10.0",
+    "black==26.10.1",
     "djlint==1.46.6",
     "fawltydeps==0.20.0",
     "flake8==7.4.1",
