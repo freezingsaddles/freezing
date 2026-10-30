@@ -11,10 +11,20 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Perform Bandit Analysis
-        uses: PyCQA/bandit-action@67a458d90fa11fb1463e91e7f4c8f068b5863c7f  # v1.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          severity: "medium"
-          confidence: "medium"
-          targets: "packages apps"
-          skips: "B101"  # Skip assert statements check
+          python-version-file: .python-version
+      - name: Install workspace
+        run: |
+          pip install uv==0.12.15
+          uv sync --frozen --only-dev
+      - name: Bandit
+        run: >-
+          uv run --no-sync bandit -r packages apps
+          --severity-level medium --confidence-level medium
+          --skip B101
+          --format sarif --output bandit.sarif --exit-zero
+      - uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          sarif_file: bandit.sarif
+          category: bandit
