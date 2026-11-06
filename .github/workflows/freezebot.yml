@@ -34,7 +34,7 @@ jobs:
       - uses: sbt/setup-sbt@ecad189dd245444b9ae0a0cd5922fd938b88906f # v1.5.12
       - name: Format check, tests, jar
         working-directory: apps/freezebot
-        run: sbt --server --batch "scalafmtCheckAll; test; assembly"
+        run: sbt --server --batch "scalafmtCheckAll; testFull; assembly"
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@7622c5bf3d112a72ab4fa3951c2aa5723d8ab92d # v2.25.0
         if: always()
