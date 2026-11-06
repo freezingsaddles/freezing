@@ -22,7 +22,7 @@ dev = [
     "fawltydeps==0.20.0",
     "flake8==7.4.1",
     "flake8-bugbear==26.9.30",
-    "flake8-builtins==3.1.0",
+    "flake8-builtins==3.2.0",
     "flake8-comprehensions==3.17.0",
     "flake8-docstrings==1.7.0",
     "flake8-eradicate==1.5.0",
