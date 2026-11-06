@@ -199,7 +199,7 @@
                 <div class="mb-3 mb-lg-4 py-2 alert alert-danger text-center">
                     <strong>You didn't ride yesterday!</strong> If you can, it's important to ride every
                     day. Even just <a style="color: inherit"
-    href="/leaderboard/indiv_sleaze">one mile</a> will help your team!
+                                      href="/leaderboard/indiv_sleaze">one mile</a> will help your team!
                 </div>
             {% elif yourself.hour >= 12 %}
                 <div class="mb-3 mb-lg-4 py-2 alert alert-info text-center">
@@ -394,8 +394,8 @@
                  style="font-size: 1.25rem">
                 {% for tag in tags %}
                     <span class="small text-muted">#</span><a href="/pointless/{{ tag[2] }}"
-   class="tag-link"
-   style="font-size: {{ tag[1] }}em">{{ tag[0] }}</a>
+                                                              class="tag-link"
+                                                              style="font-size: {{ tag[1] }}em">{{ tag[0] }}</a>
                 {% endfor %}
             </div>
         {% else %}
