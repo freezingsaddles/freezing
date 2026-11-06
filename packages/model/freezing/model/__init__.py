@@ -16,6 +16,7 @@ from freezing.model.config import config
 from freezing.model.monkeypatch import collections
 from freezing.model.orm import (
     Athlete,
+    Registration,
     Ride,
     RideEffort,
     RideError,
@@ -41,6 +42,7 @@ MANAGED_TABLES = [
     RidePhoto.__table__,
     RideWeather.__table__,
     Tribe.__table__,
+    Registration.__table__,
 ]
 
 

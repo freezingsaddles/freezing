@@ -1,0 +1,116 @@
+Return-Path: <bounce.example@em1388362.freezingsaddles.info>
+Received: from a4i540.smtp2go.com (a4i540.smtp2go.com. [158.120.82.28]) by inbound-smtp.us-east-1.amazonaws.com with SMTP id abc123 for admin@register.freezingsaddles.org; Fri, 27 Mar 2026 21:28:35 +0000 (UTC)
+Content-Type: multipart/mixed; boundary="===============6664076042820117864=="
+MIME-Version: 1.0
+Subject: Your registration for Freezing Saddles 2026
+X-Smtp2go-Api: WordPress on Other
+To: admin@register.freezingsaddles.org
+From: Freezing Saddles Registration <registration@freezingsaddles.info>
+X-Ninja-Forms: ninja-forms
+X-Mailer: WPMailSMTP/Mailer/smtp2go 4.7.1
+Message-Id: <E1w6EjI-FnQW0hPkGrF-Xb9I@message-id.smtpcorp.com>
+Date: Fri, 27 Mar 2026 21:28:32 +0000
+
+--===============6664076042820117864==
+Content-Type: multipart/alternative; boundary="===============5063612587293229136=="
+MIME-Version: 1.0
+
+--===============5063612587293229136==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+
+--===============5063612587293229136==
+Content-Type: multipart/related; type="text/html"; boundary="===============2792838740540616731=="
+MIME-Version: 1.0
+
+--===============2792838740540616731==
+Content-Type: text/html; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+<p>Ann, thanks for registering for Freezing Saddles 2026. The following is what you submitted:</p>
+<table>
+<tr>
+<td>First Name:</td>
+<td>Ann</td>
+</tr>
+<tr>
+<td>Last Name:</td>
+<td>Rider</td>
+</tr>
+<tr>
+<td>Zip Code:</td>
+<td>22201</td>
+</tr>
+<tr>
+<td>E-mail:</td>
+<td>ann.rider@example.com</td>
+</tr>
+<tr>
+<td>Opt in to e-mails?:</td>
+<td>Checked</td>
+</tr>
+<tr>
+<td>Your user name on the Washington Area Bike Forum:</td>
+<td></td>
+</tr>
+<tr>
+<td>How many posts have you made on the Washington Area Bike Forum?:</td>
+<td></td>
+</tr>
+<tr>
+<td>Strava user ID:</td>
+<td>12345678</td>
+</tr>
+<tr>
+<td>Have you joined the Strava club and authorized Freezing Saddles to read your Strava miles?:</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Have you ever participated in Freezing Saddles before?:</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Previous year's mileage:</td>
+<td></td>
+</tr>
+<tr>
+<td>Are you a Ringer?:</td>
+<td>12</td>
+</tr>
+<tr>
+<td>Are you willing to be a Team Captain?:</td>
+<td></td>
+</tr>
+<tr>
+<td>Are you willing to volunteer for something?  What are you volunteering to do? :</td>
+<td>Nothing</td>
+</tr>
+<tr>
+<td>More details on what you are volunteering to do:</td>
+<td></td>
+</tr>
+<tr>
+<td>Are you really gonna play?:</td>
+<td>Yes.</td>
+</tr>
+<tr>
+<td>Will you participate in the reindeer games?:</td>
+<td>Yes.</td>
+</tr>
+<tr>
+<td>Legal stuff:</td>
+<td>Yes.</td>
+</tr>
+</table>
+<p>Remember, registration is only the first step.&nbsp; The other steps, if you have not already completed them, are as follows:</p>
+<ol>
+<li>Join the <a href="https://www.strava.com/clubs/freezingsaddles2026" target="_blank">Freezing Saddles 2026 Strava club</a>.</li>
+<li><a href="https://freezingsaddles.org/authorize" target="_blank">Authorize Freezing Saddles to read your Strava miles</a>.</li>
+</ol>
+
+--===============2792838740540616731==--
+--===============5063612587293229136==--
+--===============6664076042820117864==--
