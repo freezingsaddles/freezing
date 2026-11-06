@@ -12,12 +12,15 @@ select count(*) from ride_weather as ride_weather_count;
 select count(*) from teams as teams_count;
 select count(*) from freezebot_posts as freezebot_posts_count;
 select count(*) from tribes as tribes_count;
+select count(*) from prize_rules as prize_rules_count;
 /* Freezebot keeps Discord in step with ride_photos, so it has to lose its
    bookkeeping before the photos go, or it reads the empty table as a season's
    worth of deleted photos and removes last year's messages from Discord.
    Stop the container first; see the README. */
 select 'cleaning out freezebot_posts';
 truncate freezebot_posts;
+select 'cleaning out prize_rules';
+truncate prize_rules;
 select 'cleaning out ride_efforts';
 truncate ride_efforts;
 select 'cleaning out ride_geo';
