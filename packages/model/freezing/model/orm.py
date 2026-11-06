@@ -312,3 +312,22 @@ class Tribe(Base):
         return "<{} id={} tribe_name={}>".format(
             self.__class__.__name__, self.id, self.tribe_name
         )
+
+
+class PrizeRules(Base):
+    """The rules of a sponsored pointless prize, in Markdown.
+
+    The prize is named by its kind (hashtag, segment or generic) and its name
+    within that kind, the same pair its leaderboard URL is built from.
+    """
+
+    __tablename__ = "prize_rules"
+    kind = Column(String(16), primary_key=True)
+    name = Column(String(191), primary_key=True)
+    rules = Column(Text, nullable=False)
+    # No foreign key: the rules outlive an athlete leaving the competition.
+    updated_by = Column(BigInteger, nullable=True)
+    updated_at = Column(DateTime, nullable=False)
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} kind={self.kind} name={self.name}>"

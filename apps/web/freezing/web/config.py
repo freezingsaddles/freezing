@@ -30,6 +30,8 @@ class Config:
     BEANSTALKD_HOST: str = env("BEANSTALKD_HOST", default="localhost")
     BEANSTALKD_PORT: str = env("BEANSTALKD_PORT", cast=int, default=11300)
     BIND_INTERFACE: str = env("BIND_INTERFACE", default="127.0.0.1")
+    # Strava ids of the administrators, who may edit the rules of any prize.
+    CABAL: list[int] = env("CABAL", cast=list, subcast=int, default=[])
     COMPETITION_TEAMS: list[int] = env("TEAMS", cast=list, subcast=int, default=[])
     COMPETITION_TITLE: str = env("COMPETITION_TITLE", default="Freezing Saddles")
     DEBUG: bool = env("DEBUG", cast=bool, default=False)

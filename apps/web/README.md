@@ -232,6 +232,7 @@ docker compose stop freezing-freezebot
 
 * Delete all the data in the following MySQL tables: (see [freezing/sql/year-start.sql](freezing/sql/year-start.sql))
   * freezebot_posts
+  * prize_rules
   * athletes
   * rides
   * ride_efforts

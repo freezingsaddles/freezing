@@ -34,6 +34,7 @@ dependencies = [
     # Thanks https://stackoverflow.com/a/77214086/424301 - Flask did not pin Werkzeug dep
     "Werkzeug>=3.1.8,<4",
     "colorlog>=6.10.1,<7",
+    "markdown-it-py>=4.2.0,<5",
     "python-dateutil>=2.9.0.post0,<3",
     "envparse>=0.2.0,<1",
     "freezing-common",

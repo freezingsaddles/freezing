@@ -1,7 +1,16 @@
+import contextlib
 import operator
 from datetime import datetime, timezone
 
-from flask import Blueprint, abort, render_template, request, session
+from flask import (
+    Blueprint,
+    abort,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -11,6 +20,7 @@ from freezing.web.exc import ObjectNotFound
 from freezing.web.utils.genericboard import format_rows, load_board, load_board_and_data
 from freezing.web.utils.hashboard import load_hashtag
 from freezing.web.utils.paging import requested_page
+from freezing.web.utils.rules import can_edit, rules_context, save_rules
 from freezing.web.utils.segboard import load_segment
 
 blueprint = Blueprint("pointless", __name__)
@@ -39,6 +49,9 @@ def generic(leaderboard):
             discord=board.discord,
             data=data,
             leaderboard=leaderboard,
+            **rules_context(
+                "generic", leaderboard, board.sponsors, session.get("athlete_id")
+            ),
         )
 
 
@@ -335,6 +348,12 @@ def hashtag_leaderboard(hashtag):
             "sponsors": sponsors,
             "banned": banned,
             **args,
+            **rules_context(
+                "hashtag",
+                ht.lower(),
+                meta.sponsors if meta else None,
+                session.get("athlete_id"),
+            ),
         },
     )
 
@@ -401,6 +420,12 @@ def segment_leaderboard(segment):
         meta=meta,
         sponsors=sponsors,
         banned=banned,
+        **rules_context(
+            "segment",
+            str(segment),
+            meta.sponsors if meta else None,
+            session.get("athlete_id"),
+        ),
     )
 
 
@@ -640,3 +665,36 @@ def civilwarhistory():
         "pointless/civilwarhistory.html",
         data={"tdata": sorted(data, key=lambda v: v[6], reverse=True)},
     )
+
+
+def _prize(kind: str, name: str) -> tuple[list[int] | None, str]:
+    """Return the sponsors of a prize and the page it is shown on."""
+    with contextlib.suppress(ObjectNotFound):
+        if kind == "hashtag":
+            tag = load_hashtag(name)
+            if tag and tag.tag.lower() == name:
+                return tag.sponsors, url_for(
+                    ".hashtag_leaderboard", hashtag=tag.tag, view="rules"
+                )
+        elif kind == "segment" and name.isdigit():
+            seg = load_segment(int(name))
+            if seg:
+                return seg.sponsors, url_for(
+                    ".segment_leaderboard", segment=seg.segment, _anchor="rules"
+                )
+        elif kind == "generic":
+            board = load_board(name)
+            return board.sponsors, url_for(
+                ".generic", leaderboard=name, _anchor="rules"
+            )
+    abort(404)
+
+
+@blueprint.route("/rules/<kind>/<name>", methods=["POST"])
+def edit_rules(kind, name):
+    sponsors, page = _prize(kind, name)
+    athlete_id = session.get("athlete_id")
+    if not sponsors or not can_edit(athlete_id, sponsors):
+        abort(403)
+    save_rules(kind, name, request.form.get("rules", "").strip(), athlete_id)
+    return redirect(page)
