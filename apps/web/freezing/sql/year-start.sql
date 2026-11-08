@@ -1,4 +1,5 @@
-/* Run this at the start of the new year to clear out last year's data */
+/* Run this at the start of the new year to clear out last year's data,
+   after freezing-archive-season has filed it in athlete_seasons. */
 use freezing;
 /* hmm, putting this in a transaction made this take forever, and locked the site. */
 /* begin; */
@@ -13,6 +14,7 @@ select count(*) from teams as teams_count;
 select count(*) from freezebot_posts as freezebot_posts_count;
 select count(*) from tribes as tribes_count;
 select count(*) from prize_rules as prize_rules_count;
+select count(*) from athlete_seasons as athlete_seasons_count;
 /* Freezebot keeps Discord in step with ride_photos, so it has to lose its
    bookkeeping before the photos go, or it reads the empty table as a season's
    worth of deleted photos and removes last year's messages from Discord.

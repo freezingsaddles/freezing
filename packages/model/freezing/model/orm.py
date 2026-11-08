@@ -9,6 +9,7 @@ from sqlalchemy import (
     Computed,
     Date,
     DateTime,
+    Double,
     Float,
     ForeignKey,
     Integer,
@@ -331,3 +332,32 @@ class PrizeRules(Base):
 
     def __repr__(self):
         return f"<{self.__class__.__name__} kind={self.kind} name={self.name}>"
+
+
+class AthleteSeason(Base):
+    """An athlete's results from a finished season.
+
+    Written before the yearly wipe, so it keeps no foreign keys: the athletes
+    and teams it names are deleted with the season.
+    """
+
+    __tablename__ = "athlete_seasons"
+    year = Column(Integer, primary_key=True, autoincrement=False)
+    athlete_id = Column(BigInteger, primary_key=True, autoincrement=False)
+    athlete_name = Column(String(255), nullable=False)
+    team_id = Column(BigInteger, nullable=True)
+    team_name = Column(String(1000), nullable=True)
+    # As that season's own daily_scores view scored it; the rules have changed.
+    points = Column(Double, nullable=False)
+    distance = Column(Double, nullable=False)  # miles
+    moving_time = Column(Integer, nullable=False)  # seconds
+    rides = Column(Integer, nullable=False)
+    days = Column(Integer, nullable=False)
+    # Null for anyone who was not on the leaderboard, such as an observer team.
+    rank = Column(Integer, nullable=True)
+    team_rank = Column(Integer, nullable=True)
+
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__} year={self.year} athlete_id={self.athlete_id}>"
+        )

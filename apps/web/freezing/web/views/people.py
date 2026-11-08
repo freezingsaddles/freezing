@@ -2,10 +2,10 @@ from datetime import datetime, timedelta
 from math import ceil
 
 from flask import Blueprint, abort, render_template
-from sqlalchemy import text
+from sqlalchemy import case, distinct, func, text
 
 from freezing.model import meta
-from freezing.model.orm import Athlete, Team
+from freezing.model.orm import Athlete, AthleteSeason, Team
 from freezing.web import config
 from freezing.web.utils.tribes import load_tribes, query_tribes
 
@@ -131,6 +131,7 @@ def people_show_person(user_id):
 
     return render_template(
         "people/show.html",
+        seasons=past_seasons(our_user.id),
         data={
             "environment": config.ENVIRONMENT,
             "my_tribes": my_tribes,
@@ -149,6 +150,41 @@ def people_show_person(user_id):
             "last_day": (config.END_DATE - start).days,
         },
     )
+
+
+def past_seasons(athlete_id: int) -> list[dict]:
+    """Return the archived seasons, latest first, with the size of each field."""
+    session = meta.scoped_session()
+    seasons = (
+        session.query(AthleteSeason)
+        .filter_by(athlete_id=athlete_id)
+        .order_by(AthleteSeason.year.desc())
+        .all()
+    )
+    if not seasons:
+        return []
+    fields = {
+        year: (athletes, teams)
+        for year, athletes, teams in session.query(
+            AthleteSeason.year,
+            func.count(AthleteSeason.rank),
+            func.count(
+                distinct(
+                    case((AthleteSeason.team_rank.isnot(None), AthleteSeason.team_id))
+                )
+            ),
+        )
+        .filter(AthleteSeason.year.in_([s.year for s in seasons]))
+        .group_by(AthleteSeason.year)
+    }
+    return [
+        {
+            "season": s,
+            "athletes": fields[s.year][0],
+            "teams": fields[s.year][1],
+        }
+        for s in seasons
+    ]
 
 
 def competition_done(loc_time):
