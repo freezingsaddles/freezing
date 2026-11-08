@@ -32,7 +32,7 @@ def team_leaderboard_data():
     """Load the leaderboard data broken down by team."""
     q = team_leaderboard_query()
 
-    team_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    team_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     values = []
@@ -61,7 +61,7 @@ def indiv_leaderboard_data():
              ;
              """)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     values = []
@@ -86,7 +86,7 @@ def team_elev_gain():
         ;
         """)
 
-    team_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    team_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -120,7 +120,7 @@ def indiv_elev_gain():
                 ;
             """)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -154,7 +154,7 @@ def indiv_moving_time():
                 ;
             """)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -191,7 +191,7 @@ def team_moving_time():
                 ;
             """)
 
-    team_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    team_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -220,7 +220,7 @@ def team_moving_time():
 def indiv_number_sleaze_days():
     q = indiv_sleaze_query()
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -247,7 +247,7 @@ def indiv_number_sleaze_days():
 def team_number_sleaze_days():
     q = team_sleaze_query()
 
-    team_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    team_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -282,7 +282,7 @@ def indiv_kidical():
                 ;
             """)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -308,7 +308,7 @@ def indiv_kidical():
 @blueprint.route("/indiv_freeze_points")
 def indiv_freeze_points():
     q = indiv_freeze_query()
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -335,7 +335,7 @@ def indiv_freeze_points():
 def indiv_segment(segment_id):
     q = indiv_segment_query().bindparams(segment_id=segment_id)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -362,7 +362,7 @@ def indiv_segment(segment_id):
 def team_segment(segment_id):
     q = team_segment_query().bindparams(segment_id=segment_id)
 
-    team_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    team_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -396,7 +396,7 @@ def indiv_avg_speed():
                 ;
             """)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -432,7 +432,7 @@ def team_avg_speed():
                 ;
             """)
 
-    team_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    team_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -469,7 +469,7 @@ def indiv_freezing():
                 ;
             """)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -506,7 +506,7 @@ def indiv_before_sunrise():
                 ;
             """)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -544,7 +544,7 @@ def indiv_after_sunset():
                 ;
             """)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     labels = []
     ranks = []
@@ -603,7 +603,7 @@ def user_daily_points(athlete_id):
             meta.scoped_session()
             .execute(day_q.bindparams(id=athlete_id, yday=day_no))
             .scalar()
-        )  # @UndefinedVariable
+        )
         days.append(dt.isoformat())
         points.append(0 if pts is None else pts)
 
@@ -633,7 +633,7 @@ def user_weekly_points(athlete_id):
             meta.scoped_session()
             .execute(week_q.bindparams(athlete_id=athlete_id, week=week_no - 1))
             .scalar()
-        )  # @UndefinedVariable
+        )
         weeks.append(i + 1)
         points.append(0 if total_score is None else total_score)
 
@@ -683,9 +683,7 @@ def team_weekly_points():
 
 @blueprint.route("/team_cumul_points")
 def team_cumul_points():
-    teams = (
-        meta.scoped_session().query(Team).filter_by(leaderboard_exclude=False).all()
-    )  # @UndefinedVariable
+    teams = meta.scoped_session().query(Team).filter_by(leaderboard_exclude=False).all()
 
     q = text("""
             select team_id, ride_date, points,
@@ -713,7 +711,7 @@ def team_cumul_points():
         )  # Ensure that we have keys for every day (even if there were no rides for that day)
         for row in (
             meta.scoped_session().execute(q.bindparams(team_id=team.id)).fetchall()
-        ):  # @UndefinedVariable
+        ):
             daily_cumul[team.id][row._mapping["ride_date"].strftime("%Y-%m-%d")] = (
                 row._mapping["cumulative_points"]
             )
@@ -740,9 +738,7 @@ def team_cumul_points():
 
 @blueprint.route("/team_cumul_mileage")
 def team_cumul_mileage():
-    teams = (
-        meta.scoped_session().query(Team).filter_by(leaderboard_exclude=False).all()
-    )  # @UndefinedVariable
+    teams = meta.scoped_session().query(Team).filter_by(leaderboard_exclude=False).all()
 
     q = text("""
             select team_id, ride_date, points,
@@ -770,7 +766,7 @@ def team_cumul_mileage():
         )  # Ensure that we have keys for every day (even if there were no rides for that day)
         for row in (
             meta.scoped_session().execute(q.bindparams(team_id=team.id)).fetchall()
-        ):  # @UndefinedVariable
+        ):
             daily_cumul[team.id][row._mapping["ride_date"].strftime("%Y-%m-%d")] = (
                 row._mapping["cumulative_distance"]
             )
@@ -811,7 +807,7 @@ def indiv_elev_dist():
                 ;
             """)
 
-    indiv_q = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    indiv_q = meta.scoped_session().execute(q).fetchall()
 
     athletes = []
     teams = []
@@ -858,7 +854,7 @@ def riders_vs_weather():
             """)
 
     rows = []
-    for res in meta.scoped_session().execute(q):  # @UndefinedVariable
+    for res in meta.scoped_session().execute(q):
         if res._mapping["low_temp"] is None:
             # This probably only happens for *today* since that isn't looked up yet.
             continue
@@ -895,7 +891,7 @@ def distance_by_lowtemp():
             """)
 
     rows = []
-    for res in meta.scoped_session().execute(q):  # @UndefinedVariable
+    for res in meta.scoped_session().execute(q):
         if res._mapping["low_temp"] is None:
             # This probably only happens for *today* since that isn't looked up yet.
             continue

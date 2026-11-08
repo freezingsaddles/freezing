@@ -34,7 +34,6 @@ def team_leaderboard_classic():
     # Get teams sorted by points
     q = team_leaderboard_query()
 
-    # @UndefinedVariable
     team_rows = meta.scoped_session().execute(q).fetchall()
 
     q = text("""
@@ -53,7 +52,6 @@ def team_leaderboard_classic():
              """)
 
     team_members = {}
-    # @UndefinedVariable
     for indiv_row in meta.scoped_session().execute(q).fetchall():
         team_members.setdefault(indiv_row._mapping["team_id"], []).append(indiv_row)
 
@@ -120,7 +118,6 @@ def individual_leaderboard_text():
              ;
              """)
 
-    # @UndefinedVariable
     indiv_rows = meta.scoped_session().execute(q).fetchall()
 
     return render_template(

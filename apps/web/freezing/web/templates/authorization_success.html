@@ -9,12 +9,6 @@
         application to read your rides.
     </p>
     <ul>
-        <li>
-            Make sure you have registered on the
-            <a rel="noreferrer" href="{{ registration_site }}">signup sheet</a>. Note:
-            for the purposes of the registration form, your Strava user ID is
-            <strong>{{ athlete.id }}</strong>.
-        </li>
         {% if no_teams %}
             <li>
                 <strong>Uh-oh, something went wrong</strong>. So you are a Strava athlete,
@@ -76,13 +70,6 @@
                     <a href="/leaderboard/team_text">leaderboards</a>.
                 </li>
             {% endif %}
-            <li>
-                Join the
-                <a rel="noreferrer"
-                   target="_blank"
-                   href="{{ discord_invitation }}">Freezing Saddles Discord Server</a>
-                where rides and some pointless prizes are organized.
-            </li>
             <li>
                 See <a href="/people/">other folks who have registered for the event</a>.
             </li>

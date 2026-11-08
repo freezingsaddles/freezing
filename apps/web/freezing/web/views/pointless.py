@@ -1,8 +1,16 @@
-import math
+import contextlib
 import operator
 from datetime import datetime, timezone
 
-from flask import Blueprint, abort, render_template, request, session
+from flask import (
+    Blueprint,
+    abort,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from sqlalchemy import text
 
 from freezing.model import meta
@@ -11,6 +19,8 @@ from freezing.web.config import config
 from freezing.web.exc import ObjectNotFound
 from freezing.web.utils.genericboard import format_rows, load_board, load_board_and_data
 from freezing.web.utils.hashboard import load_hashtag
+from freezing.web.utils.paging import requested_page
+from freezing.web.utils.rules import can_edit, rules_context, save_rules
 from freezing.web.utils.segboard import load_segment
 
 blueprint = Blueprint("pointless", __name__)
@@ -39,6 +49,9 @@ def generic(leaderboard):
             discord=board.discord,
             data=data,
             leaderboard=leaderboard,
+            **rules_context(
+                "generic", leaderboard, board.sponsors, session.get("athlete_id")
+            ),
         )
 
 
@@ -171,16 +184,11 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_ta
 
 
 def _get_phototag_tdata(request, hashtag, photo_tags):
-    page = int(request.args.get("page", 1))
-    if page < 1:
-        page = 1
     date = request.args.get("date")
     mine = request.args.get("mine") == "true"
     myself = session.get("athlete_id") if mine else None
 
     page_size = 24
-    offset = page_size * (page - 1)
-    limit = page_size
 
     # On a photo board the tag on the photo is enough, whatever the ride is
     # called. Elsewhere the photo still has to sit on a tagged ride. Either way
@@ -252,6 +260,10 @@ def _get_phototag_tdata(request, hashtag, photo_tags):
     )
     num_photos = meta.scoped_session().execute(total_q).scalar_one()
 
+    # Settled before the query is built, so that the page a reader is shown
+    # and the page they are told they are on cannot disagree.
+    page, offset, total_pages = requested_page(page_size, num_photos)
+
     photo_q = text(f"""
         {with_union_photos}
         select
@@ -269,17 +281,9 @@ def _get_phototag_tdata(request, hashtag, photo_tags):
         date=date,
         myself=myself,
         offset=offset,
-        limit=limit,
+        limit=page_size,
     )
     photos = meta.scoped_session().execute(photo_q)
-
-    if num_photos < offset:
-        page = 1
-
-    total_pages = int(math.ceil((1.0 * num_photos) / page_size))
-
-    if page > total_pages:
-        page = total_pages
 
     return {
         "photos": list(photos),
@@ -344,6 +348,12 @@ def hashtag_leaderboard(hashtag):
             "sponsors": sponsors,
             "banned": banned,
             **args,
+            **rules_context(
+                "hashtag",
+                ht.lower(),
+                meta.sponsors if meta else None,
+                session.get("athlete_id"),
+            ),
         },
     )
 
@@ -410,6 +420,12 @@ def segment_leaderboard(segment):
         meta=meta,
         sponsors=sponsors,
         banned=banned,
+        **rules_context(
+            "segment",
+            str(segment),
+            meta.sponsors if meta else None,
+            session.get("athlete_id"),
+        ),
     )
 
 
@@ -459,8 +475,11 @@ class FakeRow:
 
 @blueprint.route("/multisegment/<string:leaderboard>")
 def multisegment(leaderboard):
-    board = load_board(leaderboard)
-    data = load_multisegment_board_data(board)
+    try:
+        board = load_board(leaderboard)
+        data = load_multisegment_board_data(board)
+    except ObjectNotFound:
+        abort(404)
     data.sort(key=lambda d: (-d["segment_rides"], d["athlete_name"]))
     formatted = format_rows([FakeRow(d) for d in data], board)
     return render_template(
@@ -524,7 +543,10 @@ def arlington():
 
 def load_multisegment_board_data(board):
     # include anyone who has ridden on any segment, but count as zero any segment they've missed
-    rides = meta.scoped_session().execute(text(board.query)).fetchall()
+    result = meta.scoped_session().execute(text(board.query))
+    if "segment_id" not in result.keys():
+        raise ObjectNotFound(f"Board {board.title} is not a multisegment board")
+    rides = result.fetchall()
     # segment_id -> segment_name
     segments = {
         ride._mapping["segment_id"]: ride._mapping["segment_name"] for ride in rides
@@ -643,3 +665,36 @@ def civilwarhistory():
         "pointless/civilwarhistory.html",
         data={"tdata": sorted(data, key=lambda v: v[6], reverse=True)},
     )
+
+
+def _prize(kind: str, name: str) -> tuple[list[int] | None, str]:
+    """Return the sponsors of a prize and the page it is shown on."""
+    with contextlib.suppress(ObjectNotFound):
+        if kind == "hashtag":
+            tag = load_hashtag(name)
+            if tag and tag.tag.lower() == name:
+                return tag.sponsors, url_for(
+                    ".hashtag_leaderboard", hashtag=tag.tag, view="rules"
+                )
+        elif kind == "segment" and name.isdigit():
+            seg = load_segment(int(name))
+            if seg:
+                return seg.sponsors, url_for(
+                    ".segment_leaderboard", segment=seg.segment, _anchor="rules"
+                )
+        elif kind == "generic":
+            board = load_board(name)
+            return board.sponsors, url_for(
+                ".generic", leaderboard=name, _anchor="rules"
+            )
+    abort(404)
+
+
+@blueprint.route("/rules/<kind>/<name>", methods=["POST"])
+def edit_rules(kind, name):
+    sponsors, page = _prize(kind, name)
+    athlete_id = session.get("athlete_id")
+    if not sponsors or not can_edit(athlete_id, sponsors):
+        abort(403)
+    save_rules(kind, name, request.form.get("rules", "").strip(), athlete_id)
+    return redirect(page)

@@ -158,19 +158,22 @@
                 </div>
             {% endif %}
         </div>
-    {% endif %}
-    {% if winter_is_coming and not g.logged_in %}
-        <div class="{{ 'mb-3 mb-lg-4' if bafs_is_over else 'mt-4 mt-lg-5' }} alert alert-info">
-            Freezing Saddles is a game organized by friends in the general DC area.
-            It is a convivial and good-humored competition in which participants are randomly assigned to teams.
-            The teams then compete for points by riding their bikes all winter, in the cold, in the dark and in the snow,
-            and by engaging in pointless challenges.
-            The winners win and, well, so does everyone else. You should join!
-            Sign up by following the Register link. Registration opens around Thanksgiving;
-            the competition starts on January 1<sup>st</sup>, and ends on the last full day of astronomical winter,
-            usually March 19<sup>th</sup>.
+    {% elif winter_is_coming %}
+        <div class="card mb-3 my-lg-4 bg-light p-3 px-lg-4 text-center">
+            <p class="register-btn" style="color: #05a4e4">Winter is Coming</p>
+            <p>
+                Freezing Saddles is a game organized by cyclists in the general DC area.
+                It is a friendly competition in which participants are randomly assigned to teams
+                and compete for points by riding their bikes all winter, in the cold, in the dark and in the snow.
+            </p>
+            <p>The winners win and, well, so does everyone else.</p>
+            <p class="mb-0">
+                Registration opens around Thanksgiving;
+                the competition starts on January 1<sup>st</sup> and ends on the last full day of astronomical winter –
+                {{ next_winter_ends.strftime("%B") }} {{ next_winter_ends.day }}<sup>{{ next_winter_ends.day|ord }}</sup> next year.
+            </p>
         </div>
-    {% elif bafs_is_over %}
+    {% elif bafs_is_over and not spring_is_over %}
         <div class="mb-3 mb-lg-4 py-2 alert alert-success text-center position-relative"
              style="z-index: 1001">
             Winter is over. The game is done. The reindeer have been put out to pasture. Time to clean your bike, wax your chain,
@@ -178,19 +181,10 @@
             <span class="sprout">🌱</span>
         </div>
     {% endif %}
-    {% if g.logged_in and yourself.total_days < 15 and not request.cookies.get("discord-invite") %}
-        <div id="discord-invite"
-             class="mb-3 mb-lg-4 alert alert-success text-center">
-            <button type="button"
-                    class="btn btn-close"
-                    id="discord-invite-close"
-                    aria-label="Close"></button>
-            <strong>We're on Discord!</strong>
-            <br />
-            Freezing Saddles is using Discord to organize some group rides and pointless prizes.
-            <a rel="noreferrer"
-               target="_blank"
-               href="{{ discord_invitation }}">Join our Discord Server</a> to stay in touch.
+    {% if g.logged_in and yourself.unauthorized and not bafs_is_over %}
+        <div class="mb-3 mb-lg-4 py-2 alert alert-warning text-center">
+            <strong>Your Strava authorization has expired and we can't read your rides!</strong>
+            Please log out and then log back in again to reauthorize Strava.
         </div>
     {% endif %}
     {% if not bafs_is_live %}
@@ -205,7 +199,7 @@
                 <div class="mb-3 mb-lg-4 py-2 alert alert-danger text-center">
                     <strong>You didn't ride yesterday!</strong> If you can, it's important to ride every
                     day. Even just <a style="color: inherit"
-    href="/leaderboard/indiv_sleaze">one mile</a> will help your team!
+                                      href="/leaderboard/indiv_sleaze">one mile</a> will help your team!
                 </div>
             {% elif yourself.hour >= 12 %}
                 <div class="mb-3 mb-lg-4 py-2 alert alert-info text-center">
@@ -405,8 +399,8 @@
                  style="font-size: 1.25rem">
                 {% for tag in tags %}
                     <span class="small text-muted">#</span><a href="/pointless/{{ tag[2] }}"
-   class="tag-link"
-   style="font-size: {{ tag[1] }}em">{{ tag[0] }}</a>
+                                                              class="tag-link"
+                                                              style="font-size: {{ tag[1] }}em">{{ tag[0] }}</a>
                 {% endfor %}
             </div>
         {% else %}
@@ -444,14 +438,6 @@
 {% endblock %}
 {% block foot %}
     <script>
-  function initAlert(id, days) {
-    $(`#${id}-close`).click(e => {
-      $(`#${id}`).remove();
-      const date = new Date();
-      date.setDate(date.getDate() + days);
-      document.cookie = `${id}=hide; expires=${date.toUTCString()}; path=/`;
-    });
-  }
   $(() => {
     if ($('#map').length) {
         // Someone who has asked their machine to stop things moving gets the
@@ -475,7 +461,6 @@
             $('#map')[0].scrollIntoView({block: 'center'});
         });
     }
-    initAlert('discord-invite', 60);
   });
     </script>
     {% if bafs_is_over and bafs_days_over < 14 %}

@@ -47,6 +47,15 @@
     background-color: #ffffff;
   }
 
+  .past-seasons {
+    th, td {
+      padding: var(--bs-list-group-item-padding-y, .5rem) var(--bs-list-group-item-padding-x, 1rem);
+    }
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+  }
+
   .border-collapse {
     border-collapse: collapse;
     td {
@@ -82,6 +91,22 @@
                 {% endif %}
             </div>
         </div>
+    </div>
+    <h5 class="ps-2 mt-3 mt-lg-4">Ride Mosaic</h5>
+    <div>
+        <table class="table w-100 border-collapse">
+            {% for day in range(0,7) %}
+                <tr>
+                    {% for week in range(0,data.weeks) %}
+                        {% set date = week * 7 + day %}
+                        <td style="background-color: {{ data.mosaic[date] or 'transparent' }}"
+                            {% if date < data.first_day or date > data.last_day %} class="border-none" {% endif %}>
+                            &nbsp;
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
     </div>
     <div class="mt-3 mt-lg-4 d-grid grid-gap-3 grid-gap-lg-4 grid-lg-2">
         <div>
@@ -163,20 +188,52 @@
             </ul>
         </div>
     </div>
-    <h5 class="ps-2 mt-3 mt-lg-4">Ride Mosaic</h5>
-    <div>
-        <table class="table w-100 border-collapse">
-            {% for day in range(0,7) %}
-                <tr>
-                    {% for week in range(0,data.weeks) %}
-                        {% set date = week * 7 + day %}
-                        <td style="background-color: {{ data.mosaic[date] or 'transparent' }}"
-                            {% if date < data.first_day or date > data.last_day %} class="border-none" {% endif %}>
-                            &nbsp;
-                        </td>
+    {% if seasons %}
+        <h5 class="ps-2 mt-3 mt-lg-4">Past Seasons</h5>
+        <div class="table-responsive border rounded past-seasons">
+            <table class="table text-nowrap mb-0">
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th class="text-end">Points</th>
+                        <th class="text-end">Rank</th>
+                        <th class="text-end">Team Rank</th>
+                        <th class="text-end">Miles</th>
+                        <th class="text-end">Hours</th>
+                        <th class="text-end">Rides</th>
+                        <th class="text-end">Days</th>
+                        <th>Team</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in seasons %}
+                        {% set s = row.season %}
+                        <tr>
+                            <td>{{ s.year }}</td>
+                            <td class="text-end">{{ "{:,.0f}".format(s.points) }}</td>
+                            <td class="text-end">
+                                {% if s.rank %}
+                                    {{ s.rank }} of {{ row.athletes }}
+                                {% else %}
+                                    –
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if s.team_rank %}
+                                    {{ s.team_rank }} of {{ row.teams }}
+                                {% else %}
+                                    –
+                                {% endif %}
+                            </td>
+                            <td class="text-end">{{ "{:,.1f}".format(s.distance) }}</td>
+                            <td class="text-end">{{ "{:,.1f}".format(s.moving_time / 3600) }}</td>
+                            <td class="text-end">{{ s.rides }}</td>
+                            <td class="text-end">{{ s.days }}</td>
+                            <td>{{ s.team_name if s.team_rank else "–" }}</td>
+                        </tr>
                     {% endfor %}
-                </tr>
-            {% endfor %}
-        </table>
-    </div>
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
 {% endblock %}

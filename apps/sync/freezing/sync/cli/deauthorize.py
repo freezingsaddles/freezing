@@ -50,7 +50,7 @@ class DeauthorizeScript(BaseCommand):
 
     def execute(self, args):
         now = datetime.now(config.END_DATE.tzinfo)
-        if now < config.END_DATE and not args.before_the_end:
+        if now <= config.END_DATE and not args.before_the_end:
             raise CommandError(
                 "the competition runs until {}; deauthorizing now disconnects "
                 "every rider from Strava mid-season. Pass --before-the-end if "

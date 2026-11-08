@@ -16,13 +16,13 @@ exclude = ["apps/freezebot"]
 [dependency-groups]
 dev = [
     "autoflake==2.4.0",
-    "bandit==1.9.4",
-    "black==26.5.1",
-    "djlint==1.46.1",
+    "bandit[sarif]==1.9.4",
+    "black==26.10.1",
+    "djlint==1.49.8",
     "fawltydeps==0.20.0",
-    "flake8==7.3.0",
-    "flake8-bugbear==26.9.9",
-    "flake8-builtins==3.1.0",
+    "flake8==7.5.0",
+    "flake8-bugbear==26.10.27",
+    "flake8-builtins==3.2.0",
     "flake8-comprehensions==3.17.0",
     "flake8-docstrings==1.7.0",
     "flake8-eradicate==1.5.0",
@@ -30,13 +30,13 @@ dev = [
     "flake8-pyproject==1.2.4",
     "flake8-quotes==3.4.0",
     "flake8-raise==0.0.5",
-    "flake8-simplify==0.30.0",
-    "isort==9.0.1",
-    "mypy==2.3.1",
-    "pre-commit==4.6.2",
+    "flake8-simplify==0.31.1",
+    "isort==9.0.2",
+    "mypy==2.4.0",
+    "pre-commit==4.7.0",
     "pymarkdownlnt==0.9.40",
     "pytest==9.1.1",
-    "pytest-mock==3.15.1",
+    "pytest-mock==3.17.0",
 ]
 
 [tool.black]
@@ -89,6 +89,7 @@ per-file-ignores = [
     "packages/model/freezing/model/migrations/env.py:T201",
     # Command-line scripts print.
     "packages/model/bin/*.py:T201",
+    "apps/web/test/*.py:T201",
 ]
 
 [tool.pymarkdown]

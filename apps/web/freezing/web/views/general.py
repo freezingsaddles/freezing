@@ -9,7 +9,7 @@ from re import findall, fullmatch, sub
 
 from flask import (
     Blueprint,
-    jsonify,
+    g,
     redirect,
     render_template,
     request,
@@ -18,7 +18,14 @@ from flask import (
 )
 from sqlalchemy import text
 from stravalib import Client
+from stravalib.exc import Fault
 
+from freezing.common.seasons import (
+    JUNE_SOLSTICE,
+    SEPTEMBER_EQUINOX,
+    last_full_day_of_winter,
+    season,
+)
 from freezing.model import meta
 from freezing.model.orm import Athlete, Ride, RidePhoto, Team
 from freezing.web import app, config, data
@@ -97,7 +104,7 @@ def myself(number):
 def index():
     q = text("""select count(*) as num_contestants from lbd_athletes""")
 
-    indiv_count_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    indiv_count_res = meta.scoped_session().execute(q).one()
     contestant_count = indiv_count_res._mapping["num_contestants"]
 
     q = text("""
@@ -107,7 +114,7 @@ def index():
             ;
         """)
 
-    all_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    all_res = meta.scoped_session().execute(q).one()
     total_miles = int(all_res._mapping["distance"])
     total_hours = int(all_res._mapping["moving_time"]) / 3600
     total_rides = all_res._mapping["num_rides"]
@@ -120,7 +127,7 @@ def index():
             ;
         """)
 
-    sub32_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    sub32_res = meta.scoped_session().execute(q).one()
     sub_freezing_hours = int(sub32_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -131,7 +138,7 @@ def index():
             ;
         """)
 
-    rain_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    rain_res = meta.scoped_session().execute(q).one()
     rain_hours = int(rain_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -142,7 +149,7 @@ def index():
             ;
         """)
 
-    snow_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    snow_res = meta.scoped_session().execute(q).one()
     snow_hours = int(snow_res._mapping["moving_time"]) / 3600
 
     # Grab some recent photos
@@ -157,10 +164,14 @@ def index():
 
     now_tz = datetime.now(config.TIMEZONE)
     after_competition_start = now_tz >= config.START_DATE
-    before_competition_end = now_tz < config.END_DATE
+    before_competition_end = now_tz <= config.END_DATE
     delta_after_end = now_tz - config.END_DATE
-    # Meh, close enough...
-    post_autumnal_equinox = now_tz.month > 9 or (now_tz.month == 9 and now_tz.day >= 22)
+    post_summer_solstice = now_tz >= season(now_tz.year, JUNE_SOLSTICE).astimezone(
+        config.TIMEZONE
+    )
+    post_autumnal_equinox = now_tz >= season(now_tz.year, SEPTEMBER_EQUINOX).astimezone(
+        config.TIMEZONE
+    )
 
     tags = _trending_tags()
 
@@ -174,7 +185,7 @@ def index():
             where R.competition_date >= '{}'
             ;
         """.format(today.date()))
-    today_res = meta.scoped_session().execute(q).one()  # @UndefinedVariable
+    today_res = meta.scoped_session().execute(q).one()
     today_riders = int(today_res._mapping["riders"])
     today_hours = round(today_res._mapping["moving_time"]) / 3600
     today_miles = int(today_res._mapping["distance"])
@@ -188,7 +199,7 @@ def index():
             group by personal_record
             ;
         """)
-    pr_res = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    pr_res = meta.scoped_session().execute(q).fetchall()
     prs = {res._mapping["pr"]: res._mapping["count"] for res in pr_res}
     # Don't try to do local legends. the strava api basically just tells us
     # which segments are are the legend for, at the time we call the api. so
@@ -210,10 +221,12 @@ def index():
 
     return render_template(
         "index.html",
-        show_registration=registration_open or "register" in request.args,
+        show_registration=registration_open,
         registered=bool(athlete and athlete.registered),
         year=config.START_DATE.year,
+        spring_is_over=post_summer_solstice,
         winter_is_coming=post_autumnal_equinox,
+        next_winter_ends=last_full_day_of_winter(now_tz.year + 1, config.TIMEZONE),
         team_count=len(config.COMPETITION_TEAMS),
         contestant_count=contestant_count,
         total_rides=total_rides,
@@ -300,7 +313,7 @@ def _non_rider_stats():
     today = min(now_tz, config.END_DATE).date()
     total_days = 1 + (today - start).days
     after_competition_start = now_tz >= config.START_DATE
-    before_competition_end = now_tz < config.END_DATE
+    before_competition_end = now_tz <= config.END_DATE
 
     # we could look to see if #competitors < #teams * max(#members)
     no_team = total_days <= 31 and config.COMPETITION_TEAMS
@@ -344,9 +357,10 @@ def _rider_stats(athlete_id):
     ride_days = {res[0] for res in (meta.scoped_session().execute(text("""
                     select ride_date from daily_scores DS where DS.athlete_id = :athlete_id
                     """).bindparams(athlete_id=athlete_id)).fetchall())}
-    team = (
-        meta.scoped_session().query(Team).join(Athlete).filter_by(id=athlete_id).one()
-    )
+    athlete = meta.scoped_session().get(Athlete, athlete_id)
+    # Null for an athlete in none of the season's clubs, or in two real teams.
+    team = athlete.team
+    on_team = team is not None and not team.leaderboard_exclude
     start = config.START_DATE.date()
     now_tz = datetime.now(config.TIMEZONE)
     today = min(now_tz, config.END_DATE).date()
@@ -362,7 +376,7 @@ def _rider_stats(athlete_id):
     ) + (1 if today in ride_days else 0)
     game_on = datetime.now().date() <= today
     # if within the first month you are not on a team then explain
-    no_team = total_days <= 31 and team.leaderboard_exclude and config.COMPETITION_TEAMS
+    no_team = total_days <= 31 and not on_team and config.COMPETITION_TEAMS
 
     return {
         "rank": rank[0] if rank else None,
@@ -377,8 +391,9 @@ def _rider_stats(athlete_id):
         "hour": datetime.now(config.START_DATE.tzinfo).hour,
         "streak": streak,
         "every_day": total_days > 0 and streak == total_days,
-        "team_name": team.name if not team.leaderboard_exclude else None,
+        "team_name": team.name if on_team else None,
         "no_team": no_team,
+        "unauthorized": athlete.refresh_token is None,
     }
 
 
@@ -455,6 +470,12 @@ def register():
         else None
     )
 
+    # Registering is for riders whose rides we can read, so an athlete whose
+    # tokens were forgotten goes back to connecting Strava.
+    authorized = athlete is not None and athlete.refresh_token is not None
+    if athlete and not authorized and step not in ("intro", "login"):
+        return redirect(url_for(".register", step="login"))
+
     # The form lives on the Wordpress site, which redirects back to this step.
     if step == "complete" and athlete and not athlete.registered:
         log.info(f"Athlete {athlete.id} ({athlete.name}) completed registration")
@@ -465,6 +486,7 @@ def register():
         "register.html",
         step=step,
         athlete=athlete,
+        authorized=authorized,
         team=team,
         tribal_groups=load_tribes() if step == "tribes" else [],
         tribes=query_tribes(athlete.id) if step == "tribes" and athlete else {},
@@ -472,6 +494,7 @@ def register():
         public_authorize_url=public_url,
         private_authorize_url=private_url,
         after_competition_start=now_tz >= config.START_DATE,
+        registration_open=g.registration_open,
     )
 
 
@@ -548,12 +571,28 @@ def authorization():
         scope = request.args.get("scope")
         state = request.args.get("state")
         log.info(f"Auth code: {code}, scope: {scope}, state: {state}")
+
+        # Strava sends people here with a code. Anyone arriving without one has
+        # opened the address by hand or followed a stale link, and has not
+        # failed at anything: start them off again rather than showing them an
+        # error about a code they never had.
+        if not code:
+            return redirect(url_for(".join"))
+
         client = Client()
-        token_dict = client.exchange_code_for_token(
-            client_id=config.STRAVA_CLIENT_ID,
-            client_secret=config.STRAVA_CLIENT_SECRET,
-            code=code,
-        )
+        try:
+            token_dict = client.exchange_code_for_token(
+                client_id=config.STRAVA_CLIENT_ID,
+                client_secret=config.STRAVA_CLIENT_SECRET,
+                code=code,
+            )
+        except Fault as fault:
+            # A code is good for one exchange, so a refresh or a back button
+            # arrives with one Strava has already spent.
+            log.info(f"Strava would not take the authorization code: {fault}")
+            return render_template(
+                "authorization_error.html", error="the code had already been used"
+            )
         # Use the now-authenticated client to get the current athlete
         strava_athlete = client.get_athlete()
         log.info("Strava athlete: {}", str(strava_athlete))
@@ -604,23 +643,3 @@ def authorization():
         no_teams=no_teams,
         rides_url=url_for("user.rides"),
     )
-
-
-@blueprint.route("/webhook", methods=["GET"])
-def webhook_challenge():
-    client = Client()
-    strava_request = {
-        k: request.args.get(k)
-        for k in ("hub.challenge", "hub.mode", "hub.verify_token")
-    }
-    log.info(f"Webhook challenge: {strava_request}")
-    challenge_resp = client.handle_subscription_callback(
-        strava_request, verify_token=config.STRAVA_VERIFY_TOKEN
-    )
-    return jsonify(challenge_resp)
-
-
-@blueprint.route("/webhook", methods=["POST"])
-def webhook_activity():
-    log.info(f"Activity webhook: {request.json}")
-    return jsonify()

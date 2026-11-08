@@ -9,7 +9,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from flask import Blueprint, abort, jsonify, make_response, request, session
-from sqlalchemy import func, text
+from sqlalchemy import bindparam, func, text
 from werkzeug.utils import secure_filename
 
 from freezing.common.times import parse_instant
@@ -56,7 +56,7 @@ def get_limit(request):
 def stats_general():
     q = text("""select count(*) as num_contestants from lbd_athletes""")
 
-    indiv_count_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    indiv_count_res = meta.scoped_session().execute(q).fetchone()
     contestant_count = indiv_count_res._mapping["num_contestants"]
 
     q = text("""
@@ -66,7 +66,7 @@ def stats_general():
                 ;
             """)
 
-    all_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    all_res = meta.scoped_session().execute(q).fetchone()
     total_miles = int(all_res._mapping["distance"])
     total_hours = int(all_res._mapping["moving_time"]) / 3600
     total_rides = all_res._mapping["num_rides"]
@@ -79,7 +79,7 @@ def stats_general():
                 ;
             """)
 
-    sub32_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    sub32_res = meta.scoped_session().execute(q).fetchone()
     sub_freezing_hours = int(sub32_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -90,7 +90,7 @@ def stats_general():
                 ;
             """)
 
-    rain_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    rain_res = meta.scoped_session().execute(q).fetchone()
     rain_hours = int(rain_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -101,7 +101,7 @@ def stats_general():
                 ;
             """)
 
-    snow_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    snow_res = meta.scoped_session().execute(q).fetchone()
     snow_hours = int(snow_res._mapping["moving_time"]) / 3600
 
     return jsonify(
@@ -149,7 +149,7 @@ def team_leaderboard():
              ;
              """)
 
-    team_rows = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    team_rows = meta.scoped_session().execute(q).fetchall()
 
     q = text("""
              select A.id as athlete_id, A.team_id, A.display_name as athlete_name,
@@ -163,7 +163,7 @@ def team_leaderboard():
              """)
 
     team_members = {}
-    for indiv_row in meta.scoped_session().execute(q).fetchall():  # @UndefinedVariable
+    for indiv_row in meta.scoped_session().execute(q).fetchall():
         team_members.setdefault(indiv_row["team_id"], []).append(indiv_row)
 
     for team_id in team_members:
@@ -358,7 +358,7 @@ def _track_map(
                and {'A.id = :athlete_id' if athlete_id else 'true'}
                and {'A.team_id = :team_id' if team_id else 'true'}
                and {_hashtag_filter(hash_tag)}
-               and {'FIND_IN_SET(hex(R.id), :ride_ids) > 0' if ride_ids is not None else 'true'}
+               and {'R.id in :ride_ids' if ride_ids is not None else 'true'}
              order by R.start_date {'asc' if oldest_first else 'desc'}, R.id asc
              {'limit :limit' if limit else ''}
              {'offset :offset' if offset else ''}
@@ -371,7 +371,10 @@ def _track_map(
     if hash_tag:
         q = q.bindparams(hash_tag=f"%#{hash_tag}%")
     if ride_ids is not None:
-        q = q.bindparams(ride_ids=ride_ids)
+        # Named ride by ride rather than searched for in a string: hex(R.id)
+        # hides the column from its own primary key, and every ride of the
+        # season has to be read and formatted to answer.
+        q = q.bindparams(bindparam("ride_ids", value=ride_ids, expanding=True))
     if limit:
         q = q.bindparams(limit=limit)
     if offset:
@@ -476,7 +479,7 @@ def _make_gzip_json_response(content, private=False):
     return response
 
 
-def _board_ride_ids(leaderboard: str) -> str:
+def _board_ride_ids(leaderboard: str) -> list[int]:
     """Return the rides a generic leaderboard names, for the track map to draw.
 
     The board's own query answers this, so the map asks for a board by name
@@ -490,7 +493,12 @@ def _board_ride_ids(leaderboard: str) -> str:
         abort(404, f"no leaderboard named {leaderboard}")
     if not any(field.name == "ride_ids" for field in board.fields):
         abort(404, f"leaderboard {leaderboard} names no rides")
-    return ",".join(row["ride_ids"] for row in data if row.get("ride_ids"))
+    return [
+        int(ride, 16)
+        for row in data
+        if row.get("ride_ids")
+        for ride in row["ride_ids"].split(",")
+    ]
 
 
 #: Rides in one page of the animated track map. Fixed, so that page N holds the

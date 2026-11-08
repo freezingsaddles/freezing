@@ -1,9 +1,7 @@
 # Freezing Saddles
 
 Monorepo for the [Freezing Saddles](https://freezingsaddles.org) winter cycling
-competition. It replaces the separate `freezing-model`, `freezing-web`,
-`freezing-sync`, `freezing-nq`, `freezing-beanstalkd` and `freezing-compose`
-repositories, whose histories are preserved here.
+competition.
 
 | Path | What it is |
 | --- | --- |
@@ -25,12 +23,19 @@ change to the model and the code that uses it land in one pull request; there
 is no separate model release.
 
     uv sync --all-packages --all-extras   # one virtualenv for everything
-    uv run black --check .                 # formatting; isort, flake8 and mypy the same way
+    bin/pyfmt.sh                          # reformat, then every check CI runs
     cd packages/common && uv run pytest
     cd apps/sync && APP_SETTINGS=example.cfg uv run pytest -m "not live"
     cd apps/nq && uv run pytest
 
+`bin/pyfmt.sh` runs black, isort, djlint and pymarkdown over the tree and then
+flake8, mypy, djlint, pymarkdown and fawltydeps against it. It names whatever
+is left and exits non-zero, so a pull request need not wait for CI to find out.
+
 Each app has its own `README.md` with runtime configuration details.
+
+[new-season.md](new-season.md) is the yearly rollover: archiving the season,
+wiping the database and setting up the next competition.
 
 Dependency versions are pinned by `uv.lock`; the apps declare compatible
 ranges, the model declares the ranges it supports, and dependabot updates the

@@ -1,0 +1,6 @@
+# sbt resolves through Google's read-only mirror of Maven Central. It serves
+# the same artifacts and does not rate-limit a CI runner the way repo1 does,
+# which has failed this build with a 429.
+[repositories]
+  local
+  maven-central: https://maven-central.storage-download.googleapis.com/maven2/

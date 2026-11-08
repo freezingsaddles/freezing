@@ -195,6 +195,7 @@ services:
       - beanstalkd
     environment:
       BIND_INTERFACE: "0.0.0.0"
+      CABAL: ${CABAL}
       COMPETITION_TITLE: ${COMPETITION_TITLE}
       DEBUG: ${DEBUG}
       END_DATE: ${END_DATE}
@@ -215,6 +216,9 @@ services:
       TIMEZONE: ${TIMEZONE:-America/New_York}
       VIRTUAL_HOST: ${FREEZING_WEB_FQDN}
       DISCORD_INVITATION: ${DISCORD_INVITATION}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
     volumes:
       - type: tmpfs
         target: /cache

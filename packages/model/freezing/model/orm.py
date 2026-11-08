@@ -9,6 +9,7 @@ from sqlalchemy import (
     Computed,
     Date,
     DateTime,
+    Double,
     Float,
     ForeignKey,
     Integer,
@@ -77,6 +78,8 @@ class Athlete(StravaEntity):
     expires_at = Column(BigInteger, default=0)
     # Null, not false, for everyone who registered before this was recorded.
     registered = Column(Boolean, nullable=True)
+    discord_user_id = Column(BigInteger, nullable=True, unique=True)
+    discord_username = Column(String(255), nullable=True)
 
     rides: DynamicMapped["Ride"] = orm.relationship(
         "Ride",
@@ -309,4 +312,52 @@ class Tribe(Base):
     def __repr__(self):
         return "<{} id={} tribe_name={}>".format(
             self.__class__.__name__, self.id, self.tribe_name
+        )
+
+
+class PrizeRules(Base):
+    """The rules of a sponsored pointless prize, in Markdown.
+
+    The prize is named by its kind (hashtag, segment or generic) and its name
+    within that kind, the same pair its leaderboard URL is built from.
+    """
+
+    __tablename__ = "prize_rules"
+    kind = Column(String(16), primary_key=True)
+    name = Column(String(191), primary_key=True)
+    rules = Column(Text, nullable=False)
+    # No foreign key: the rules outlive an athlete leaving the competition.
+    updated_by = Column(BigInteger, nullable=True)
+    updated_at = Column(DateTime, nullable=False)
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} kind={self.kind} name={self.name}>"
+
+
+class AthleteSeason(Base):
+    """An athlete's results from a finished season.
+
+    Written before the yearly wipe, so it keeps no foreign keys: the athletes
+    and teams it names are deleted with the season.
+    """
+
+    __tablename__ = "athlete_seasons"
+    year = Column(Integer, primary_key=True, autoincrement=False)
+    athlete_id = Column(BigInteger, primary_key=True, autoincrement=False)
+    athlete_name = Column(String(255), nullable=False)
+    team_id = Column(BigInteger, nullable=True)
+    team_name = Column(String(1000), nullable=True)
+    # As that season's own daily_scores view scored it; the rules have changed.
+    points = Column(Double, nullable=False)
+    distance = Column(Double, nullable=False)  # miles
+    moving_time = Column(Integer, nullable=False)  # seconds
+    rides = Column(Integer, nullable=False)
+    days = Column(Integer, nullable=False)
+    # Null for anyone who was not on the leaderboard, such as an observer team.
+    rank = Column(Integer, nullable=True)
+    team_rank = Column(Integer, nullable=True)
+
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__} year={self.year} athlete_id={self.athlete_id}>"
         )

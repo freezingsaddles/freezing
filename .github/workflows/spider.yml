@@ -1,0 +1,81 @@
+---
+name: Spider
+
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  spider:
+    name: Spider the web app
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: freezing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build the web image
+        run: docker build -f apps/web/Dockerfile -t freezing-web:ci .
+
+      # An empty database is created and stamped by the app itself, so the
+      # fixture has a schema to land in without replaying every migration.
+      - name: Create the schema
+        run: |
+          docker run --rm --network host \
+            -e SQLALCHEMY_URL="$SQLALCHEMY_URL" \
+            -e START_DATE=2026-01-01T00:00:00+00:00 \
+            -e END_DATE=2026-12-31T23:59:59+00:00 \
+            -e SECRET_KEY=ci -e STRAVA_CLIENT_ID=0 -e STRAVA_CLIENT_SECRET=none \
+            -e TEAMS= -e MAIN_TEAM=0 -e JSON_CACHE_DIR=/tmp/cache \
+            --entrypoint python freezing-web:ci \
+            -c 'import os, freezing.model as m; m.init_model(os.environ["SQLALCHEMY_URL"])'
+        env:
+          SQLALCHEMY_URL: >-
+            mysql+pymysql://root:test@127.0.0.1:3306/freezing?charset=utf8mb4&binary_prefix=true
+
+      # Writes START_DATE, END_DATE, TEAMS and MAIN_TEAM to the environment,
+      # having moved the fixture's dates so the competition is open today.
+      - name: Load the fixture
+        run: apps/web/test/load-fixture.sh
+
+      - name: Start the web app
+        run: |
+          docker run -d --name web --network host \
+            -e SQLALCHEMY_URL="$SQLALCHEMY_URL" \
+            -e START_DATE="$START_DATE" -e END_DATE="$END_DATE" \
+            -e TEAMS="$TEAMS" -e MAIN_TEAM="$MAIN_TEAM" \
+            -e SECRET_KEY=ci -e STRAVA_CLIENT_ID=0 -e STRAVA_CLIENT_SECRET=none \
+            -e JSON_CACHE_DIR=/tmp/cache -e ENVIRONMENT=ci \
+            freezing-web:ci
+          for _ in $(seq 1 60); do
+            curl -sf -o /dev/null http://127.0.0.1:8000/ && exit 0
+            sleep 1
+          done
+          echo "the app never came up"; docker logs web; exit 1
+        env:
+          SQLALCHEMY_URL: >-
+            mysql+pymysql://root:test@127.0.0.1:3306/freezing?charset=utf8mb4&binary_prefix=true
+
+      - name: Spider
+        run: URL=http://127.0.0.1:8000 apps/web/test/wget-spider.sh
+
+      - name: What the app said
+        if: failure()
+        run: docker logs web

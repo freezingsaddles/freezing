@@ -809,6 +809,20 @@ fieldset[disabled] .btn-strava.active {
     background-color: #ffffff;
 }
 
+.btn-discord {
+    color: #ffffff;
+    background-color: #5865f2;
+    border-color: #5865f2;
+}
+
+.btn-discord:hover,
+.btn-discord:focus,
+.btn-discord:active {
+    color: #ffffff;
+    background-color: #4752c4;
+    border-color: #4752c4;
+}
+
 .btn-primary {
   color: #ffffff;
   background-color: #007cad;

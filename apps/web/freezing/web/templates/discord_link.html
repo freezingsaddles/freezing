@@ -1,0 +1,13 @@
+{# Set discord_next to where Discord should send the rider back to. #}
+{% if g.discord_username %}
+    <form method="post"
+          action="/discord/unlink"
+          class="d-flex flex-wrap align-items-center gap-2">
+        <input type="hidden" name="next" value="{{ discord_next }}" />
+        <span>Your Discord account <strong>{{ g.discord_username }}</strong> is linked.</span>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Unlink</button>
+    </form>
+{% else %}
+    <a class="btn btn-discord"
+       href="{{ url_for('discord.link', next=discord_next) }}">Link your Discord account</a>
+{% endif %}

@@ -7,6 +7,7 @@ from colorlog import ColoredFormatter
 from datadog import DogStatsd
 from envparse import env
 
+from freezing.common.seasons import competition_end
 from freezing.common.times import parse_instant
 
 envfile = os.environ.get("APP_SETTINGS", os.path.join(os.getcwd(), ".env"))
@@ -37,13 +38,16 @@ class Config:
     MAIN_TEAM = env("MAIN_TEAM", cast=int, default=0)
 
     START_DATE = env("START_DATE", postprocessor=parse_instant)
-    END_DATE = env("END_DATE", postprocessor=parse_instant)
 
     TIMEZONE: tzinfo = env(
         "TIMEZONE",
         default="America/New_York",
         postprocessor=lambda val: ZoneInfo(val),
     )
+
+    # A winter competition ends when winter does. Left unset, that is worked
+    # out rather than written down again every year.
+    END_DATE = competition_end(env("END_DATE", default=None), START_DATE, TIMEZONE)
 
     UPLOAD_GRACE_PERIOD: timedelta = env(
         "UPLOAD_GRACE_PERIOD_DAYS",

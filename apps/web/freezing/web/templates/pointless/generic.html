@@ -26,38 +26,38 @@
 {% block title %}
     {{ title }}
 {% endblock %}
+{% import "pointless/rules.html" as rules with context %}
 {% block content %}
     <h2 class="mb-3">{{ title }}</h2>
     <p>{{ description | safe }}</p>
-    {% if discord %}
-        <p>
-            See:
+    <p>
+        {% if discord %}
+            See the
             <a href="https://discord.com/channels/1443244420358213643/{{ discord }}"
                target="_blank"
-               rel="noreferrer">Discord Channel</a>
-        </p>
-    {% endif %}
-    {% if sponsors %}
-        <p>
+               rel="noreferrer">discord channel</a>.
+        {% endif %}
+        {% if sponsors %}
             Sponsored by
             {% for sp in sponsors %}
                 {# djlint:off #}<em><a href="{{ sp.url }}">{{ sp.name }}</a></em
                 >{% if loop.last %}.{% else %}, {% endif %}{# djlint:on #}
             {% endfor %}
-        </p>
-    {% else %}
-        <p class="text-muted">This ride has no sponsor and is completely pointless.</p>
-    {% endif %}
-    {% if show_rides %}
-        <div role="tabpanel"  class="mt-lg-4 mb-lg-3">
-            <ul class="nav nav-tabs mb-0" role="tablist">
-                <li role="presentation" class="nav-item">
-                    <a href="#leaderboard"
-                       class="nav-link active"
-                       aria-controls="leaderboard"
-                       role="tab"
-                       data-bs-toggle="tab">Leaderboard</a>
-                </li>
+            {{ rules.link() }}
+        {% else %}
+            <span class="text-muted">This ride has no sponsor and is completely pointless.</span>
+        {% endif %}
+    </p>
+    <div role="tabpanel" class="mt-lg-4 mb-lg-3">
+        <ul class="nav nav-tabs mb-0" role="tablist">
+            <li role="presentation" class="nav-item">
+                <a href="#leaderboard"
+                   class="nav-link active"
+                   aria-controls="leaderboard"
+                   role="tab"
+                   data-bs-toggle="tab">Leaderboard</a>
+            </li>
+            {% if show_rides %}
                 <li role="presentation" class="nav-item">
                     <a href="#map"
                        id="map-link"
@@ -66,72 +66,49 @@
                        role="tab"
                        data-bs-toggle="tab">Ride Map</a>
                 </li>
-            </ul>
-            <div class="tab-content">
-                <div role="tabpanel"
-                     class="tab-pane active py-2 leaderboard-overflow"
-                     id="leaderboard">
-                    <table class="table table-condensed">
-                        <thead>
-                            <tr>
-                                <th class="number rank">Rank</th>
-                                {% for field in fields %}
-                                    {% if field.visible %}
-                                        <th class="{{ field.type }}">{{ field.label or field.name }}</th>
-                                    {% endif %}
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in data %}
-                                <tr class="{{ row.athlete_id | myself }}">
-                                    <td class="number rank">{{ row.rank }}</td>
-                                    {% for field in fields %}
-                                        {% if field.visible %}
-                                            <td class="{{ field.type }}">{{ row[field.name] | safe }}</td>
-                                        {% endif %}
-                                    {% endfor %}
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div role="tabpanel" class="tab-pane c3-wide my-3 my-lg-4" id="map"></div>
-            </div>
-        </div>
-    {% else %}
-        <ul class="nav nav-tabs mt-lg-4">
-            <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="">Leaderboard</a>
-            </li>
+            {% endif %}
+            {{ rules.tab() }}
         </ul>
-        <div class="leaderboard-overflow mt-2">
-            <table class="table table-condensed">
-                <thead>
-                    <tr>
-                        <th class="number rank">Rank</th>
-                        {% for field in fields %}
-                            {% if field.visible %}
-                                <th class="{{ field.type }}">{{ field.label or field.name }}</th>
-                            {% endif %}
-                        {% endfor %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in data %}
-                        <tr class="{{ row.athlete_id | myself }}">
-                            <td class="number rank">{{ row.rank }}</td>
+        <div class="tab-content">
+            <div role="tabpanel"
+                 class="tab-pane active py-2 leaderboard-overflow"
+                 id="leaderboard">
+                <table class="table table-condensed">
+                    <thead>
+                        <tr>
+                            <th class="number rank">Rank</th>
                             {% for field in fields %}
                                 {% if field.visible %}
-                                    <td class="{{ field.type }}">{{ row[field.name] | safe }}</td>
+                                    <th class="{{ field.type }}">{{ field.label or field.name }}</th>
                                 {% endif %}
                             {% endfor %}
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {% for row in data %}
+                            <tr class="{{ row.athlete_id | myself }}">
+                                <td class="number rank">{{ row.rank }}</td>
+                                {% for field in fields %}
+                                    {% if field.visible %}
+                                        <td class="{{ field.type }}">{{ row[field.name] | safe }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if show_rides %}
+                <div role="tabpanel" class="tab-pane c3-wide my-3 my-lg-4" id="map">
+                </div>
+            {% endif %}
+            {% if rules_kind %}
+                <div role="tabpanel" class="tab-pane py-3" id="rules">
+                    {{ rules.body() }}
+                </div>
+            {% endif %}
         </div>
-    {% endif %}
+    </div>
 {% endblock %}
 {% block foot %}
     {% if show_rides %}
@@ -143,4 +120,5 @@
   });
         </script>
     {% endif %}
+    {{ rules.script() }}
 {% endblock %}
