@@ -14,7 +14,7 @@ tags:
 
   - tag: adulting
     alt: freezingerrands
-    name: Errandeering
+    name: Errandeuring
     description: |
       Pointless prize for doing stuff on your bike you might be tempted to do in your car.
       Grocery store, post office, pharmacy dentist, manicurist, gym, farmers market, dry cleaning, bike shop, library, etc.
@@ -29,7 +29,6 @@ tags:
       Tag your ride with with <code>#beerneuring</code>.
     discord: 1447781269156135064
     rank_by: rides
-    sponsors: [1873089]
     min_miles: 1
 
   - tag: biathlon
@@ -55,7 +54,6 @@ tags:
       </ul>
     discord: 1456035311028277399
     rank_by: days
-    sponsors: [33937007]
 
   - tag: bikeshare
     alt: cabi
@@ -67,7 +65,6 @@ tags:
       Any bikeshare system is ok. Traveling to another city, maybe with better weather? Try out their bikes!
     discord: 1449177006204915906
     rank_by: miles
-    sponsors: [30367988]
 
   - tag: bingo
     name: Bicycle Bingo
@@ -77,7 +74,6 @@ tags:
       If you want to add commentary, just separate it with punctuation or a dash, like <code>#bingo military flag - this one was on a ride to the grocery store</code>.
     rank_by: days
     discord: 1443983774185422849
-    sponsors: [3487165]
     default_view: photos
 
   - tag: bob
@@ -149,13 +145,6 @@ tags:
       Take a photo of a flag on your ride.
     rank_by: rides
 
-  - tag: freezingerrands
-    name: Errandeering
-    description: |
-      Use your bike to run errands - not commuting, not fun stuff. Sometimes pronounced Errandaneuring.
-      Tag with <code>#FreezingErrands</code>.
-    rank_by: rides
-
   - tag: fswormhole
     name: Wormholes
     description: |
@@ -169,7 +158,6 @@ tags:
       <code>#gpsart</code>. Your ride needs to be public for anyone to see it. If you
       want the art to show up here, post a screenshot of your map on your ride and tag the
       photo <code>#gpsart</code> too.
-    sponsors: [3415618]
     rank_by: rides
 
   - tag: goldenspike
@@ -214,7 +202,6 @@ tags:
       on your ride and photo, and win.  Each unique library only counts once.
     discord: 1462202150632554730
     rank_by: days
-    sponsors: [12125159]
 
   - tag: lolfunny
     alt: lolfunny26
@@ -225,7 +212,6 @@ tags:
       If it's not obvious, add a description to the photo of what about it struck you as funny.
     discord: 1457486832831959151
     freezebot: true
-    sponsors: [2831630]
     rank_by: days
     default_view: photos
 
@@ -249,7 +235,6 @@ tags:
       </iframe>
     rank_by: days
     discord: 1462977433585062023
-    sponsors: [190447]
 
   - tag: oldGeorge
     name: Old Georgetown Bike Lane
@@ -276,7 +261,6 @@ tags:
     description: |
       Take a picture and upload your ride with hashtag <code>#publicartfinder</code>.
     discord: 1446691565555814572
-    sponsors: [38633292]
     rank_by: rides
     default_view: photos
     friendless: true
@@ -290,14 +274,12 @@ tags:
     rank_by: days
     default_view: photos
     discord: 1455974154137239787
-    sponsors: [11555517, 4704298]
     friendless: true
 
   - tag: singlespeed
     name: Singlespeed
     description: |
       Most singlespeed miles wins. Fixed gear counts, but isn't required. If your bike is cluttered with unnecessary gears, just don't shift the entire ride and it counts. Tag your rides <code>#singlespeed</code>.
-    sponsors: [516697]
     discord: 1447780972480303255
     rank_by: miles
 
@@ -333,21 +315,18 @@ tags:
     description: |
       Ride your tandem bike and tag the ride with <code>#tandem</code>. The rider who has the most tandem rides wins. Bonus points awarded for rides with a blind or visually impaired stoker (tag <code>#tandemVI</code>) or with a partner age 15 or under (<code>#tandemKid</code>).
     discord: 1446630946911686848
-    sponsors: [26341642, 17674988]
     rank_by: rides
 
   - tag: tandemVI
     name: Tandem Rides - Visually Impaired
     description: |
       Ride your tandem bike and tag the ride with <code>#tandem</code>. The rider who has the most tandem rides wins. Bonus points awarded for rides with a blind or visually impaired stoker (tag <code>#tandemVI</code>) or with a partner age 15 or under (<code>#tandemKid</code>).
-    sponsors: [26341642, 17674988]
     rank_by: rides
 
   - tag: tandemKid
     name: Tandem Kid
     description: |
       Ride your tandem bike and tag the ride with <code>#tandem</code>. The rider who has the most tandem rides wins. Bonus points awarded for rides with a blind or visually impaired stoker (tag <code>#tandemVI</code>) or with a partner age 15 or under (<code>#tandemKid</code>).
-    sponsors: [26341642, 17674988]
     rank_by: rides
 
   - tag: treats
@@ -364,14 +343,12 @@ tags:
       Tag your ride with with <code>#UnderCon</code>.
     discord: 1448069690436878568
     rank_by: rides
-    sponsors: [7188282]
     default_view: photos
 
   - tag: withkid
     name: Riding with Kids
     description: |
       For the Saddlero who rides the most miles accompanying kids who are riding under their own power.
-    sponsors: [1272438]
 
   - tag: Yum
     name: Yum
@@ -384,4 +361,3 @@ tags:
       </ol>
     discord: 1456702503981814042
     rank_by: days
-    sponsors: [380419]

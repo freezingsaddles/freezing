@@ -2,7 +2,6 @@
 title: Kidical Rides & Miles
 description: |
   For the Saddlero who carries or tows kids the farthest.
-sponsors: [1272438]
 fields:
   - name: athlete_id
     visible: false
