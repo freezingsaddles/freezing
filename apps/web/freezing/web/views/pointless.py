@@ -542,6 +542,8 @@ def arlington():
 
 
 def load_multisegment_board_data(board):
+    if board.query is None:
+        raise ObjectNotFound(f"Board {board.title} has no query")
     # include anyone who has ridden on any segment, but count as zero any segment they've missed
     result = meta.scoped_session().execute(text(board.query))
     if "segment_id" not in result.keys():
