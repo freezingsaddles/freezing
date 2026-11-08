@@ -6,7 +6,6 @@ description: |
   <strong>Important:</strong> You must post at least one ride with <code>#commute-champ</code> in the title to join this competition. After that, you can just use the Strava tag.</p>
 url: https://discord.com/channels/1443244420358213643/1457554898781470813
 discord: 1457554898781470813
-sponsors: [21807336]
 fields:
   - name: athlete_id
     visible: false
