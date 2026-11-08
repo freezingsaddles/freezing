@@ -289,7 +289,7 @@
                         </ul>
                     </li>
                 {% else %}
-                    {% if not g.finished %}
+                    {% if g.registration_open and not g.finished %}
                         <li class="nav-item">
                             <a class="nav-link{% if request.path.startswith('/register') %} active{% endif %}"
                                href="/register">Register</a>

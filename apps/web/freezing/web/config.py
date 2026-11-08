@@ -62,7 +62,8 @@ class Config:
         "OBSERVER_TEAMS", cast=list, subcast=int, default=[]
     )
     # The home page's registration card shows from here until the competition
-    # starts; unset, it never shows. /register is reachable either way.
+    # starts, and the header's Register link until it ends; unset, neither
+    # shows. /register is reachable either way.
     REGISTRATION_DATE: datetime | None = env(
         "REGISTRATION_DATE",
         default="",

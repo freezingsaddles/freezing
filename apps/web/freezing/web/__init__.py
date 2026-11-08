@@ -20,7 +20,7 @@ from marshmallow import fields
 
 from freezing.model import init_model, meta
 from freezing.model.msg import BaseMessage, BaseSchema
-from freezing.model.orm import Athlete, Team
+from freezing.model.orm import Athlete
 from freezing.web.autolog import log
 from freezing.web.utils.genericboard import load_board
 from freezing.web.utils.hashboard import load_hashboard
@@ -87,10 +87,12 @@ _register_blueprints(app)
 
 @app.before_request
 def set_logged_in_global():
-    if session.get("athlete_id"):
-        g.logged_in = True
-    else:
-        g.logged_in = False
+    athlete_id = session.get("athlete_id")
+    g.athlete = meta.scoped_session().get(Athlete, athlete_id) if athlete_id else None
+    # The new season's wipe deletes every athlete, but not their login cookies.
+    if athlete_id and g.athlete is None:
+        session.clear()
+    g.logged_in = g.athlete is not None
 
 
 @app.before_request
@@ -99,35 +101,22 @@ def set_no_team_global():
     now_tz = datetime.now(config.TIMEZONE)
     today = min(now_tz, config.END_DATE).date()
     total_days = 1 + (today - start).days
-    athlete_id = session.get("athlete_id")
     g.finished = now_tz > config.END_DATE
+    g.registration_open = (
+        config.REGISTRATION_DATE is not None and config.REGISTRATION_DATE <= now_tz
+    )
 
-    if athlete_id:
-        team = (
-            meta.scoped_session()
-            .query(Team)
-            .join(Athlete)
-            .filter_by(id=athlete_id)
-            .one()
-        )
-        g.no_team = (
-            total_days <= 31 and team.leaderboard_exclude and config.COMPETITION_TEAMS
-        )
-    else:
-        g.no_team = total_days <= 31 and config.COMPETITION_TEAMS
+    unassigned = (
+        g.athlete is None
+        or g.athlete.team is None
+        or g.athlete.team.leaderboard_exclude
+    )
+    g.no_team = total_days <= 31 and unassigned and config.COMPETITION_TEAMS
 
 
 @app.before_request
 def set_discord_global():
-    athlete_id = session.get("athlete_id")
-    g.discord_username = (
-        meta.scoped_session()
-        .query(Athlete.discord_username)
-        .filter_by(id=athlete_id)
-        .scalar()
-        if athlete_id
-        else None
-    )
+    g.discord_username = g.athlete.discord_username if g.athlete else None
 
 
 @app.teardown_request

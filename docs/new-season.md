@@ -93,7 +93,7 @@ docker compose stop freezing-freezebot
   tribes behind.
 * Insert a new record into the `teams` table matching the MAIN_TEAM id:
 
-    insert into teams values (567288, 'Freezing Saddles 2020', 1);
+    insert into teams (id, name, leaderboard_exclude) values (567288, 'Freezing Saddles 2020', 1);
 
 * Clear the cache directories for activities and weather data:
 

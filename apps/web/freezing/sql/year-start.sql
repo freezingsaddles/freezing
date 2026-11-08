@@ -45,5 +45,5 @@ delete from teams;
 /* don't forget to add the new competition's team back in after
    deleting last year's data, for example:
 
-   insert into teams values (23456, 'Freezing Saddles 2021', 1);
+   insert into teams (id, name, leaderboard_exclude) values (23456, 'Freezing Saddles 2021', 1);
 */
