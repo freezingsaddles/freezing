@@ -357,15 +357,10 @@ def _rider_stats(athlete_id):
     ride_days = {res[0] for res in (meta.scoped_session().execute(text("""
                     select ride_date from daily_scores DS where DS.athlete_id = :athlete_id
                     """).bindparams(athlete_id=athlete_id)).fetchall())}
-    team = (
-        meta.scoped_session().query(Team).join(Athlete).filter_by(id=athlete_id).one()
-    )
-    refresh_token = (
-        meta.scoped_session()
-        .query(Athlete.refresh_token)
-        .filter_by(id=athlete_id)
-        .scalar()
-    )
+    athlete = meta.scoped_session().get(Athlete, athlete_id)
+    # Null for an athlete in none of the season's clubs, or in two real teams.
+    team = athlete.team
+    on_team = team is not None and not team.leaderboard_exclude
     start = config.START_DATE.date()
     now_tz = datetime.now(config.TIMEZONE)
     today = min(now_tz, config.END_DATE).date()
@@ -381,7 +376,7 @@ def _rider_stats(athlete_id):
     ) + (1 if today in ride_days else 0)
     game_on = datetime.now().date() <= today
     # if within the first month you are not on a team then explain
-    no_team = total_days <= 31 and team.leaderboard_exclude and config.COMPETITION_TEAMS
+    no_team = total_days <= 31 and not on_team and config.COMPETITION_TEAMS
 
     return {
         "rank": rank[0] if rank else None,
@@ -396,9 +391,9 @@ def _rider_stats(athlete_id):
         "hour": datetime.now(config.START_DATE.tzinfo).hour,
         "streak": streak,
         "every_day": total_days > 0 and streak == total_days,
-        "team_name": team.name if not team.leaderboard_exclude else None,
+        "team_name": team.name if on_team else None,
         "no_team": no_team,
-        "unauthorized": refresh_token is None,
+        "unauthorized": athlete.refresh_token is None,
     }
 
 
