@@ -36,10 +36,7 @@ object Config:
     def required(name: String) =
       get(name).getOrElse(sys.error(s"missing environment variable $name"))
     val zone                   = get("TIMEZONE").map(ZoneId.of).getOrElse(ZoneId.of("America/New_York"))
-    val since                  = get("FREEZEBOT_SINCE")
-      .orElse(get("START_DATE"))
-      .map(utcTime)
-      .getOrElse(sys.error("missing environment variable FREEZEBOT_SINCE or START_DATE"))
+    val since                  = utcTime(required("START_DATE"))
     Config(
       db = DbConfig.fromUrl(required("SQLALCHEMY_URL")),
       token = get("DISCORD_BOT_TOKEN"),
