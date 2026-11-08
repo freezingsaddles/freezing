@@ -13,7 +13,8 @@ steps, in order, from the backup to the first rides of the new year.
 
 ```bash
 mkdir -p ~/backups
-time mysqldump > $HOME/backups/freezing-$(date +'%Y-%m-%d').sql
+cd ~/backups
+time mysqldump-freezing | xz > freezing-$(date +'%Y-%m-%d').sql.xz
 ```
 
 * Make a backup of the `.env` file from `/opt/compose/.env`:
