@@ -34,6 +34,9 @@ is left and exits non-zero, so a pull request need not wait for CI to find out.
 
 Each app has its own `README.md` with runtime configuration details.
 
+[new-season.md](new-season.md) is the yearly rollover: archiving the season,
+wiping the database and setting up the next competition.
+
 Dependency versions are pinned by `uv.lock`; the apps declare compatible
 ranges, the model declares the ranges it supports, and dependabot updates the
 lock. Dev tools are pinned in the root `pyproject.toml` dev group.
