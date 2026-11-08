@@ -41,7 +41,13 @@
                 through a winter before. Points are awarded for miles ridden outdoors. The
                 more miles, the more points.
             </p>
-            <p>
+            <button type="button"
+                    class="btn btn-primary me-auto"
+                    data-bs-toggle="modal"
+                    data-bs-target="#rulesModal">
+                Show me the rules
+            </button>
+            <p class="mt-3">
                 In addition to the points competition, teams and individuals compete and
                 play for Pointless Prizes, of which there are many, both serious and silly.
                 For many, these <em>reindeer games</em> are the primary reason they join and
@@ -54,9 +60,7 @@
                 play you will need a Strava account and some sort of GPS device or
                 smartphone to track your rides.
             </p>
-            <h4 class="mb-2">Rules</h4>
-            {% include "rules.html" %}
-            <p class="mt-3">
+            <p>
                 If you're lost, or have questions, <a href="{{ registration_site }}contact-form/"
                                                       target="_blank"
                                                       rel="noreferrer">Contact the Cabal</a> (the game leadership). And if all the Reindeer Games

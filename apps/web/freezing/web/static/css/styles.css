@@ -829,10 +829,20 @@ fieldset[disabled] .btn-strava.active {
   border-color: #006e99;
 }
 
+.btn-outline-primary {
+  color: #ffffff;
+  background-color: transparent;
+  border-color: #007cad;
+}
+
 .btn-primary:hover,
 .btn-primary:focus,
 .btn-primary:active,
 .btn-primary.active,
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active,
+.btn-outline-primary.active,
 .open .dropdown-toggle.btn-primary {
   color: #ffffff;
   background-color: #0084b8 !important;
