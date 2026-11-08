@@ -102,6 +102,9 @@ def set_no_team_global():
     today = min(now_tz, config.END_DATE).date()
     total_days = 1 + (today - start).days
     g.finished = now_tz > config.END_DATE
+    g.registration_open = (
+        config.REGISTRATION_DATE is not None and config.REGISTRATION_DATE <= now_tz
+    )
 
     unassigned = (
         g.athlete is None

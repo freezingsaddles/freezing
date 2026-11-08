@@ -9,6 +9,7 @@ from re import findall, fullmatch, sub
 
 from flask import (
     Blueprint,
+    g,
     redirect,
     render_template,
     request,
@@ -498,9 +499,7 @@ def register():
         public_authorize_url=public_url,
         private_authorize_url=private_url,
         after_competition_start=now_tz >= config.START_DATE,
-        registration_open=(
-            now_tz >= config.REGISTRATION_DATE if config.REGISTRATION_DATE else False
-        ),
+        registration_open=g.registration_open,
     )
 
 
