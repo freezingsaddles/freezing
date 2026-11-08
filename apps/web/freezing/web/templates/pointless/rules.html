@@ -1,0 +1,104 @@
+{# Imported with context: the variables come from utils.rules.rules_context. #}
+{% macro link(href="#rules") %}
+    {% if rules_kind %}
+        See full rules <a href="{{ href }}" class="rules-link">below</a>.
+    {% endif %}
+{% endmacro %}
+{% macro tab(active=False, href="#rules") %}
+    {% if rules_kind %}
+        <li role="presentation" class="nav-item">
+            {% if href == "#rules" %}
+                <a href="#rules"
+                   id="rules-tab"
+                   class="nav-link {{ 'active' if active }}"
+                   aria-controls="rules"
+                   role="tab"
+                   data-bs-toggle="tab">Rules</a>
+            {% else %}
+                <a href="{{ href }}"
+                   class="nav-link {{ 'active' if active }}"
+                   aria-current="{{ 'page' if active else 'false' }}">Rules</a>
+            {% endif %}
+        </li>
+    {% endif %}
+{% endmacro %}
+{% macro body() %}
+    <div class="prize-rules">
+        {% if rules_html %}
+            {{ rules_html | safe }}
+        {% else %}
+            <p class="text-muted">The sponsor has not posted the rules yet.</p>
+        {% endif %}
+    </div>
+    {% if rules_editable %}
+        <button type="button" class="btn btn-secondary btn-sm" id="rules-edit">
+            Edit Rules
+        </button>
+        <form method="post"
+              action="{{ url_for('pointless.edit_rules', kind=rules_kind, name=rules_name) }}"
+              id="rules-form"
+              hidden>
+            <textarea name="rules" id="rules-editor">{{ rules_markdown }}</textarea>
+            <button type="submit" class="btn btn-primary btn-sm mt-2">Save</button>
+            <button type="button" class="btn btn-link btn-sm mt-2" id="rules-cancel">
+                Cancel
+            </button>
+        </form>
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+              integrity="sha512-SfTiTlX6kk+qitfevl/7LibUOeJWlt9rbyDn92a1DqWOw9vWG2MFoays0sgObmWazO5BQPiFucnnEAjpAB+/Sw=="
+              crossorigin="anonymous" />
+        <link rel="stylesheet"
+              href="https://unpkg.com/easymde@2.20.0/dist/easymde.min.css"
+              integrity="sha256-56f+69jkoZPAP4feqfeC1AwOULqouLk8xVL5KqUaYcA="
+              crossorigin="" />
+        <script src="https://unpkg.com/easymde@2.20.0/dist/easymde.min.js"
+                integrity="sha256-1oTYOxou0ItmTm4UCYTbssJtfmGYplN/yuM1XoXNR7o="
+                crossorigin=""></script>
+        <script>
+  (() => {
+    const form = document.getElementById('rules-form');
+    const edit = document.getElementById('rules-edit');
+    const rules = document.querySelector('.prize-rules');
+    let editor;
+    edit.addEventListener('click', () => {
+      form.hidden = false;
+      edit.hidden = rules.hidden = true;
+      // CodeMirror cannot measure a hidden textarea, so it is built once shown.
+      editor ??= new EasyMDE({
+        element: document.getElementById('rules-editor'),
+        autoDownloadFontAwesome: false,
+        toolbarButtonClassPrefix: 'mde',
+        forceSync: true,
+        spellChecker: false,
+        status: false,
+        toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list',
+                  'ordered-list', 'table', '|', 'link', 'horizontal-rule', '|',
+                  'preview', 'guide'],
+      });
+      editor.codemirror.focus();
+    });
+    document.getElementById('rules-cancel').addEventListener('click', () => {
+      form.hidden = true;
+      edit.hidden = rules.hidden = false;
+    });
+  })();
+        </script>
+    {% endif %}
+{% endmacro %}
+{# For pages whose tabs are switched in the browser rather than by the server. #}
+{% macro script() %}
+    {% if rules_kind %}
+        <script>
+  (() => {
+    const show = () => bootstrap.Tab.getOrCreateInstance(document.getElementById('rules-tab')).show();
+    if (location.hash === '#rules') show();
+    document.querySelectorAll('.rules-link').forEach(a => a.addEventListener('click', e => {
+      e.preventDefault();
+      show();
+      document.getElementById('rules-tab').scrollIntoView({ behavior: 'smooth' });
+    }));
+  })();
+        </script>
+    {% endif %}
+{% endmacro %}
