@@ -170,6 +170,19 @@ The image is built from the repository root with
 `docker build -f apps/web/Dockerfile .`. See [deploy](../../deploy) for a guide
 to deploying this in production along with the related containers.
 
+### Past seasons from backups
+
+Seasons that ended before `athlete_seasons` existed can be filed from their
+backups. [archive-backup.sh](../../packages/model/bin/archive-backup.sh)
+restores a dump into a throwaway MySQL container, works around what keeps each
+old dump from loading into a fresh server, and prints the SQL to load into
+production:
+
+```bash
+packages/model/bin/archive-backup.sh ~/backups/freezing-2024-11-24.sql.xz > season-2024.sql
+mysql freezing < season-2024.sql
+```
+
 ### Beginning of year procedures
 
 * Ensure that someone creates a new Strava main group. Usually the person running the sign-up process does this. [Search for "Freezing"](https://www.strava.com/clubs/search?utf8=%E2%9C%93&text=freezing&location=&%5Bcountry%5D=&%5Bstate%5D=&%5Bcity%5D=&%5Blat_lng%5D=&sport_type=cycling&club_type=all) and you may be surprised to see it has already been created!
@@ -189,6 +202,18 @@ time mysqldump > $HOME/backups/freezing-$(date +'%Y-%m-%d').sql
 cd /opt/compose
 cp .env $HOME/backups/.env-$(date +'%Y-%m-%d')
 ```
+
+* File each athlete's results for the season in `athlete_seasons`, where their
+  profile page shows them in the years to come:
+
+```bash
+cd /opt/compose
+docker compose run --rm --no-deps freezing-sync freezing-archive-season
+```
+
+  It reads the points from the database's own `daily_scores` view and files
+  them under the year of the season's last ride. Running it again replaces that
+  year. `year-start.sql` leaves `athlete_seasons` alone.
 
 * Hand last season's athletes back to Strava, before anything deletes their tokens:
 

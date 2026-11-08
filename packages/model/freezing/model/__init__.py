@@ -16,6 +16,7 @@ from freezing.model.config import config
 from freezing.model.monkeypatch import collections
 from freezing.model.orm import (
     Athlete,
+    AthleteSeason,
     PrizeRules,
     Ride,
     RideEffort,
@@ -43,6 +44,7 @@ MANAGED_TABLES = [
     RideWeather.__table__,
     Tribe.__table__,
     PrizeRules.__table__,
+    AthleteSeason.__table__,
 ]
 
 
