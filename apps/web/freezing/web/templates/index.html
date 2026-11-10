@@ -190,8 +190,9 @@
     {% if not bafs_is_live %}
         <div class="mb-4 mb-lg-5 alert alert-info">
             The shiny new Freezing Saddles competition for the upcoming winter hasn't
-            started yet, although there are currently <strong>{{ contestant_count }}</strong>
-            contestants registered. There are still bike rides going on, you should go for a ride.
+            started yet. So far, <strong>{{ contestant_count }}</strong>
+            {{ "contestant has" if contestant_count == 1 else "contestants have" }} registered.
+            In the meantime, there are still bike rides going on, so go for a ride.
         </div>
     {% else %}
         {% if yourself.missed_today %}
