@@ -74,8 +74,8 @@
              src="{{ '/img/logo-blue.png' if not data.user.profile_photo else data.user.profile_photo }}"
              alt="photo of {{ data.user.display_name }}" />
         {# djlint:on #}
-        <div class="d-flex flex-column ms-3">
-            <h5 class="card-title">{{ data.user.display_name }}</h5>
+        <div class="d-flex flex-column flex-grow-1 mx-3">
+            <h5 class="card-title">{{ data.user.display_name }} <span class="text-muted float-end" style="font-size: .85rem">#{{ data.user.id }}</span></h5>
             <h6 class="card-subtitle text-body-secondary mb-3">
                 <a class="hover-underline"
                    href="/teams/{{ data.team.id }}">{{ data.team.name }}</a>
