@@ -35,7 +35,7 @@ dev = [
     "mypy==2.4.0",
     "pre-commit==4.7.0",
     "pymarkdownlnt==0.9.41",
-    "pytest==9.1.1",
+    "pytest==9.2.0",
     "pytest-mock==3.17.0",
 ]
 
