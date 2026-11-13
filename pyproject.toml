@@ -21,7 +21,7 @@ dev = [
     "djlint==1.49.8",
     "fawltydeps==0.20.0",
     "flake8==7.5.0",
-    "flake8-bugbear==26.10.27",
+    "flake8-bugbear==26.11.9",
     "flake8-builtins==3.2.0",
     "flake8-comprehensions==3.17.0",
     "flake8-docstrings==1.7.0",
