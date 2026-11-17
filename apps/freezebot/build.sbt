@@ -26,7 +26,7 @@ lazy val freezebot = (project in file("."))
     // Patched versions of vulnerable transitive dependencies of the Scala tools: scaladoc
     // brings jsoup and Jackson, the REPL brings jline. None of them reach the jar.
     dependencyOverrides ++= Seq(
-      "org.jsoup"                  % "jsoup"              % "1.23.2",
+      "org.jsoup"                  % "jsoup"              % "1.24.1",
       "com.fasterxml.jackson.core" % "jackson-core"       % "2.23.0",
       "com.fasterxml.jackson.core" % "jackson-databind"   % "2.23.0",
       "tools.jackson.core"         % "jackson-core"       % "3.1.8",
