@@ -13,15 +13,15 @@ lazy val freezebot = (project in file("."))
     ),
     libraryDependencies ++= Seq(
       "ch.qos.logback"   % "logback-classic"   % "1.6.7",
-      "com.augustnagro" %% "magnum"            % "1.3.1",
-      "com.lihaoyi"     %% "upickle"           % "4.1.0",
+      "com.augustnagro" %% "magnum"            % "2.0.0",
+      "com.lihaoyi"     %% "upickle"           % "4.4.3",
       "com.mysql"        % "mysql-connector-j" % "9.3.0",
       "org.log4s"       %% "log4s"             % "1.10.0",
       // Reads the web app's hashtag.yml for the tag to channel mapping.
       "org.snakeyaml"    % "snakeyaml-engine"  % "2.10",
       "org.scalameta"   %% "munit"             % "1.1.0"   % Test,
       // In-process MySQL-compatible database for the sync tests.
-      "com.h2database"   % "h2"                % "2.3.232" % Test,
+      "com.h2database"   % "h2"                % "2.5.252" % Test,
     ),
     // Patched versions of vulnerable transitive dependencies of the Scala tools: scaladoc
     // brings jsoup and Jackson, the REPL brings jline. None of them reach the jar.
