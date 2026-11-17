@@ -41,8 +41,8 @@ dependencyOverrides ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-databind"   % "2.23.0",
   "tools.jackson.core"         % "jackson-core"       % "3.3.0",
   "tools.jackson.core"         % "jackson-databind"   % "3.3.0",
-  "org.jline"                  % "jline-native"       % "4.3.1",
-  "org.jline"                  % "jline-reader"       % "4.3.1",
-  "org.jline"                  % "jline-terminal"     % "4.3.1",
-  "org.jline"                  % "jline-terminal-jni" % "4.3.1",
+  "org.jline"                  % "jline-native"       % "4.7.0",
+  "org.jline"                  % "jline-reader"       % "4.7.0",
+  "org.jline"                  % "jline-terminal"     % "4.7.0",
+  "org.jline"                  % "jline-terminal-jni" % "4.7.0",
 )
