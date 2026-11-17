@@ -32,7 +32,7 @@ dev = [
     "flake8-raise==0.0.5",
     "flake8-simplify==0.31.1",
     "isort==9.0.2",
-    "mypy==2.4.0",
+    "mypy==2.4.1",
     "pre-commit==4.7.0",
     "pymarkdownlnt==0.9.41",
     "pytest==9.2.0",
