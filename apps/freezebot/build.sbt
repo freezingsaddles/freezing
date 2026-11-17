@@ -3,7 +3,7 @@ ThisBuild / organization := "org.freezingsaddles"
 
 lazy val freezebot = (project in file("."))
   .settings(
-    name := "freezebot",
+    name                             := "freezebot",
     // Target Java 21 bytecode: the runtime image is a 21 JRE even when dev runs newer.
     scalacOptions ++= Seq(
       "-deprecation",
@@ -21,7 +21,7 @@ lazy val freezebot = (project in file("."))
       "org.snakeyaml"    % "snakeyaml-engine"  % "2.10",
       "org.scalameta"   %% "munit"             % "1.1.0"   % Test,
       // In-process MySQL-compatible database for the sync tests.
-      "com.h2database"   % "h2"                % "2.3.232" % Test,
+      "com.h2database"   % "h2"                % "2.5.252" % Test,
     ),
     run / fork                       := true,
     Compile / mainClass              := Some("org.freezingsaddles.freezebot.run"),
