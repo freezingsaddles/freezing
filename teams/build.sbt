@@ -25,7 +25,7 @@ scalacOptions ++= Seq(
 libraryDependencies ++= Seq(
   "com.learningobjects"    %% "scaloi"                     % "0.3.1",
   "com.nrinaudo"           %% "kantan.csv"                 % "0.8.0",
-  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
+  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.3.0",
 ).map(_.cross(CrossVersion.for3Use2_13))
 
 libraryDependencies ++= Seq(
