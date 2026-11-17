@@ -19,7 +19,7 @@ lazy val freezebot = (project in file("."))
       "org.log4s"       %% "log4s"             % "1.10.0",
       // Reads the web app's hashtag.yml for the tag to channel mapping.
       "org.snakeyaml"    % "snakeyaml-engine"  % "2.10",
-      "org.scalameta"   %% "munit"             % "1.1.0"   % Test,
+      "org.scalameta"   %% "munit"             % "1.1.1"   % Test,
       // In-process MySQL-compatible database for the sync tests.
       "com.h2database"   % "h2"                % "2.5.252" % Test,
     ),
