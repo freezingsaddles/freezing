@@ -33,12 +33,16 @@ libraryDependencies ++= Seq(
   "org.scalatest"    %% "scalatest" % "3.2.20" % "test",
 )
 
-// Patched versions of vulnerable transitive dependencies of org.scala-lang:scaladoc;
-// removable once scaladoc catches up
+// Patched versions of vulnerable transitive dependencies of the Scala tools: scaladoc
+// brings jsoup and Jackson, the REPL brings jline; removable once they catch up
 dependencyOverrides ++= Seq(
-  "org.jsoup"                  % "jsoup"            % "1.23.2",
-  "com.fasterxml.jackson.core" % "jackson-core"     % "2.22.4",
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.22.4",
-  "tools.jackson.core"         % "jackson-core"     % "3.1.8",
-  "tools.jackson.core"         % "jackson-databind" % "3.1.8",
+  "org.jsoup"                  % "jsoup"              % "1.23.2",
+  "com.fasterxml.jackson.core" % "jackson-core"       % "2.22.4",
+  "com.fasterxml.jackson.core" % "jackson-databind"   % "2.22.4",
+  "tools.jackson.core"         % "jackson-core"       % "3.1.8",
+  "tools.jackson.core"         % "jackson-databind"   % "3.1.8",
+  "org.jline"                  % "jline-native"       % "4.3.1",
+  "org.jline"                  % "jline-reader"       % "4.3.1",
+  "org.jline"                  % "jline-terminal"     % "4.3.1",
+  "org.jline"                  % "jline-terminal-jni" % "4.3.1",
 )
