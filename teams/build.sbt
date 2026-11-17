@@ -25,7 +25,7 @@ scalacOptions ++= Seq(
 libraryDependencies ++= Seq(
   "com.learningobjects"    %% "scaloi"                     % "0.3.1",
   "com.nrinaudo"           %% "kantan.csv"                 % "0.8.0",
-  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
+  "org.scala-lang.modules" %% "scala-parallel-collections" % "1.3.0",
 ).map(_.cross(CrossVersion.for3Use2_13))
 
 libraryDependencies ++= Seq(
@@ -36,7 +36,7 @@ libraryDependencies ++= Seq(
 // Patched versions of vulnerable transitive dependencies of the Scala tools: scaladoc
 // brings jsoup and Jackson, the REPL brings jline; removable once they catch up
 dependencyOverrides ++= Seq(
-  "org.jsoup"                  % "jsoup"              % "1.23.2",
+  "org.jsoup"                  % "jsoup"              % "1.24.1",
   "com.fasterxml.jackson.core" % "jackson-core"       % "2.23.0",
   "com.fasterxml.jackson.core" % "jackson-databind"   % "2.23.0",
   "tools.jackson.core"         % "jackson-core"       % "3.3.0",
