@@ -15,7 +15,7 @@ lazy val freezebot = (project in file("."))
       "ch.qos.logback"   % "logback-classic"   % "1.6.7",
       "com.augustnagro" %% "magnum"            % "2.0.0",
       "com.lihaoyi"     %% "upickle"           % "4.4.3",
-      "com.mysql"        % "mysql-connector-j" % "9.7.0",
+      "com.mysql"        % "mysql-connector-j" % "26.10.0",
       "org.log4s"       %% "log4s"             % "1.10.0",
       // Reads the web app's hashtag.yml for the tag to channel mapping.
       "org.snakeyaml"    % "snakeyaml-engine"  % "3.2",
