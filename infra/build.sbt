@@ -31,7 +31,7 @@ lazy val registration = (project in file("."))
       // MIME parsing: the API plus the Eclipse implementation that provides it.
       "jakarta.mail"          % "jakarta.mail-api"       % "2.1.3",
       "org.eclipse.angus"     % "angus-mail"             % "2.0.3",
-      "org.jsoup"             % "jsoup"                  % "1.19.1",
+      "org.jsoup"             % "jsoup"                  % "1.24.1",
       "org.log4s"            %% "log4s"                  % "1.10.0",
       awsSdk("s3"),
       awsSdk("ssm"),
@@ -39,6 +39,18 @@ lazy val registration = (project in file("."))
       "org.scalameta"        %% "munit"                  % "1.1.0"   % Test,
       // In-process MySQL-compatible database for the repository tests.
       "com.h2database"        % "h2"                     % "2.3.232" % Test,
+    ),
+    // Patched versions of vulnerable transitive dependencies of the Scala tools: scaladoc
+    // brings Jackson, the REPL brings jline. None of them reach the jar.
+    dependencyOverrides ++= Seq(
+      "com.fasterxml.jackson.core" % "jackson-core"       % "2.23.0",
+      "com.fasterxml.jackson.core" % "jackson-databind"   % "2.23.0",
+      "tools.jackson.core"         % "jackson-core"       % "3.3.0",
+      "tools.jackson.core"         % "jackson-databind"   % "3.3.0",
+      "org.jline"                  % "jline-native"       % "4.7.0",
+      "org.jline"                  % "jline-reader"       % "4.7.0",
+      "org.jline"                  % "jline-terminal"     % "4.7.0",
+      "org.jline"                  % "jline-terminal-jni" % "4.7.0",
     ),
     run / fork                       := true,
     assembly / assemblyJarName       := "registration.jar",
