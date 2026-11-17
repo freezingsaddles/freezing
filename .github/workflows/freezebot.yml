@@ -22,7 +22,7 @@ jobs:
     permissions:
       checks: write        # for test results
       pull-requests: write # for test results
-      contents: read
+      contents: write      # for sbt-dependency-submission
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -41,3 +41,7 @@ jobs:
         with:
           files: |
             apps/freezebot/target/out/**/test-reports/*.xml
+      - name: Upload dependency graph
+        uses: scalacenter/sbt-dependency-submission@7b2f7e1418cb4a77fee99f9eb07c3f7577b9a867 # v3
+        with:
+          working-directory: apps/freezebot
