@@ -21,7 +21,7 @@ lazy val freezebot = (project in file("."))
       "org.snakeyaml"    % "snakeyaml-engine"  % "2.10",
       "org.scalameta"   %% "munit"             % "1.1.0"   % Test,
       // In-process MySQL-compatible database for the sync tests.
-      "com.h2database"   % "h2"                % "2.3.232" % Test,
+      "com.h2database"   % "h2"                % "2.5.252" % Test,
     ),
     // Patched versions of vulnerable transitive dependencies of the Scala tools: scaladoc
     // brings jsoup and Jackson, the REPL brings jline. None of them reach the jar.
