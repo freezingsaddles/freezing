@@ -27,8 +27,8 @@ lazy val freezebot = (project in file("."))
     // brings jsoup and Jackson, the REPL brings jline. None of them reach the jar.
     dependencyOverrides ++= Seq(
       "org.jsoup"                  % "jsoup"              % "1.23.2",
-      "com.fasterxml.jackson.core" % "jackson-core"       % "2.22.4",
-      "com.fasterxml.jackson.core" % "jackson-databind"   % "2.22.4",
+      "com.fasterxml.jackson.core" % "jackson-core"       % "2.23.0",
+      "com.fasterxml.jackson.core" % "jackson-databind"   % "2.23.0",
       "tools.jackson.core"         % "jackson-core"       % "3.1.8",
       "tools.jackson.core"         % "jackson-databind"   % "3.1.8",
       "org.jline"                  % "jline-native"       % "4.3.1",
