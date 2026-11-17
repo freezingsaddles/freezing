@@ -23,6 +23,19 @@ lazy val freezebot = (project in file("."))
       // In-process MySQL-compatible database for the sync tests.
       "com.h2database"   % "h2"                % "2.3.232" % Test,
     ),
+    // Patched versions of vulnerable transitive dependencies of the Scala tools: scaladoc
+    // brings jsoup and Jackson, the REPL brings jline. None of them reach the jar.
+    dependencyOverrides ++= Seq(
+      "org.jsoup"                  % "jsoup"              % "1.23.2",
+      "com.fasterxml.jackson.core" % "jackson-core"       % "2.23.0",
+      "com.fasterxml.jackson.core" % "jackson-databind"   % "2.23.0",
+      "tools.jackson.core"         % "jackson-core"       % "3.1.8",
+      "tools.jackson.core"         % "jackson-databind"   % "3.1.8",
+      "org.jline"                  % "jline-native"       % "4.3.1",
+      "org.jline"                  % "jline-reader"       % "4.3.1",
+      "org.jline"                  % "jline-terminal"     % "4.3.1",
+      "org.jline"                  % "jline-terminal-jni" % "4.3.1",
+    ),
     run / fork                       := true,
     Compile / mainClass              := Some("org.freezingsaddles.freezebot.run"),
     assembly / assemblyJarName       := "freezebot.jar",
