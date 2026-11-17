@@ -69,7 +69,22 @@ def leaderboard():
 @blueprint.route("/individual")
 def individual():
     tribal_groups = load_tribes()
-    cur_group = next(group for group in tribal_groups if request.args.get(group.id))
+
+    # The page is one tribe's leaderboard, and the query string is what says
+    # which. A request that names none of them, or names a tribe that is not in
+    # the group it claims, has nothing to show: send it to the board the link
+    # came from rather than raising.
+    cur_group = next(
+        (
+            group
+            for group in tribal_groups
+            if request.args.get(group.id) in (group.tribes or [])
+        ),
+        None,
+    )
+    if cur_group is None:
+        return redirect(url_for(".leaderboard"))
+
     cur_tribe = request.args.get(cur_group.id)
     athlete_id = session.get("athlete_id")
 

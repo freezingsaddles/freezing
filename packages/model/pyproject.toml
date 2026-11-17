@@ -38,7 +38,12 @@ dependencies = [
     "marshmallow>=3.18,<5",
 ]
 
+[project.scripts]
+freezing-archive-season = "freezing.model.archive:main"
+
 [tool.fawltydeps]
+# pytest comes from the workspace dev group
+ignore_undeclared = ["pytest"]
 # Dev tools and flake8 plugins are run, never imported
 ignore_unused = [
     "black",

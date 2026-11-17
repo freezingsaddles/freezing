@@ -10,8 +10,10 @@ from freezing.sync.autolog import log
 from freezing.sync.config import config, init_logging
 from freezing.sync.data.activity import ActivitySync
 from freezing.sync.data.athlete import AthleteSync
-from freezing.sync.data.photos import PhotoSync
+from freezing.sync.data.photos import POLL_INTERVAL, PhotoSync
+from freezing.sync.data.streams import StreamSync
 from freezing.sync.data.weather import WeatherSync
+from freezing.sync.exc import CompetitionOver
 from freezing.sync.subscribe import ActivityUpdateSubscriber
 
 
@@ -39,6 +41,7 @@ def main():
     weather_sync = WeatherSync()
     athlete_sync = AthleteSync()
     photo_sync = PhotoSync()
+    stream_sync = StreamSync()
 
     # Every hour run a sync on the activities for athletes
     # falling into the specified segment (those whose athlete_id modulo
@@ -47,16 +50,28 @@ def main():
     # to match rate limits.  Admittedly that will make the time-based segment
     # calculation a little trickier.
     def segmented_sync_activities():
-        activity_sync.sync_rides_distributed(
-            total_segments=4, segment=(datetime.now().hour % 4)
-        )
+        try:
+            activity_sync.sync_rides_distributed(
+                total_segments=4, segment=(datetime.now().hour % 4)
+            )
+        except CompetitionOver as over:
+            # Every hour of the closed season, so it is a remark and not a
+            # traceback. Asking for this by hand still gets an argument back.
+            log.info(str(over))
 
     scheduler.add_job(segmented_sync_activities, "cron", minute="50")
 
-    # Sync ride details every 5 minutes. This only fetches rides flagged
-    # for detail sync so won't hammer Strava. Mostly this only happens
-    # when photo sync identifies photos but no primary.
+    # Fetch ride details. A ride comes here either without them -- new from the
+    # hourly scan, or cropped since -- or because its efforts are due another
+    # look, which happens to every ride four times over its first eleven days.
+    # Photo sync asks for one too when a ride has photos but none of them is
+    # the primary.
     scheduler.add_job(activity_sync.sync_rides_detail, "interval", minutes=5)
+
+    # Fetch the GPS tracks of rides that have none. Strava serves streams
+    # late, so a ride often arrives without one, and a trimmed ride needs its
+    # track read again; the detail sync asks for both on its own schedule.
+    scheduler.add_job(stream_sync.sync_streams, "interval", minutes=5)
 
     # Sync weather every hour
     scheduler.add_job(weather_sync.sync_weather, "cron", minute="45")
@@ -64,15 +79,23 @@ def main():
     # Sync athletes every hour
     scheduler.add_job(athlete_sync.sync_athletes, "cron", minute="30")
 
-    # Sync photos every 5 minutes. This only fetches rides flagged
-    # for sync so won't hammer Strava.
-    scheduler.add_job(photo_sync.sync_photos, "interval", minutes=5)
+    # Look for photos due a fetch. Only rides whose backoff has come round are
+    # read, so this costs one indexed query on the passes where none have.
+    scheduler.add_job(
+        photo_sync.sync_photos,
+        "interval",
+        seconds=POLL_INTERVAL.total_seconds(),
+        max_instances=1,
+    )
 
     scheduler.start()
 
     beanclient = Client(
         (config.BEANSTALKD_HOST, config.BEANSTALKD_PORT),
-        watch=[DefinedTubes.activity_update.value],
+        watch=[
+            DefinedTubes.activity_update.value,
+            DefinedTubes.athlete_update.value,
+        ],
     )
 
     subscriber = ActivityUpdateSubscriber(

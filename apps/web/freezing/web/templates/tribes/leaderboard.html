@@ -31,9 +31,11 @@
                     </span>
                 </h5>
                 <div class="progress" style="margin-bottom: 5px">
+                    {# djlint:off #}
                     <div class="progress-bar progress-bar-{{"success" if stats[(group.name, tribe)]["points"] >= maxima[group.name]["points"] else "warning"}} progress-bar-striped"
                          style="width: {{ 100 * stats[(group.name, tribe)]["points"] / maxima[group.name]["points"] }}%">
                     </div>
+                    {# djlint:on #}
                 </div>
             {% endfor %}
         </div>

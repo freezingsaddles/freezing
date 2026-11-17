@@ -56,7 +56,11 @@ trap finish EXIT
 OUTFILE=${OUTFILE:-$TMPFILE}
 URL=${URL:-http://localhost:5000}
 
-if ! time wget -r -nd --delete-after "$URL" > "$OUTFILE" 2>&1; then
+# Pages that answer with something other than 200 by design: /my needs a rider
+# to be logged in, and /teams has no page of its own, only one per team.
+REJECT=${REJECT:-'/my(/|$)|/teams/$'}
+
+if ! time wget -r -nd --delete-after --reject-regex "$REJECT" "$URL" > "$OUTFILE" 2>&1; then
     RETCODE=$?
     cat <<EOF
 ERROR: wget spider returned non-zero exit code $RETCODE

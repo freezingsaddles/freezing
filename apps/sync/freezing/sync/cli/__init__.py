@@ -10,6 +10,9 @@ from freezing.sync.exc import CommandError
 class BaseCommand(metaclass=abc.ABCMeta):
     logger: logging.Logger | None = None
 
+    #: Whether the command needs the competition database to be reachable.
+    needs_database = True
+
     @property
     @abc.abstractmethod
     def name(self) -> str:
@@ -81,7 +84,8 @@ class BaseCommand(metaclass=abc.ABCMeta):
         args = parser.parse_args(argv)
 
         self.init_logging(args)
-        init_model(sqlalchemy_url=config.SQLALCHEMY_URL)
+        if self.needs_database:
+            init_model(sqlalchemy_url=config.SQLALCHEMY_URL)
 
         try:
             self.execute(args)

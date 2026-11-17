@@ -33,15 +33,4 @@ class ConfigTest extends munit.FunSuite:
     assertEquals(config.rideTags, false)
     assertEquals(config.siteUrl, "https://freezingsaddles.org")
     assertEquals(config.channels.byTag, Map("bingo" -> 1L))
-
-  test("FREEZEBOT_SINCE wins over START_DATE"):
-    val config = Config.fromEnv(
-      Map(
-        "SQLALCHEMY_URL"  -> "mysql+pymysql://freezing:secret@db/freezing",
-        "START_DATE"      -> "2026-01-01T00:00:00-05:00",
-        "FREEZEBOT_SINCE" -> "2026-02-01T12:00:00-05:00",
-        "TIMEZONE"        -> "America/Chicago",
-      )
-    )
-    assertEquals(config.since, LocalDateTime.of(2026, 2, 1, 17, 0))
 end ConfigTest

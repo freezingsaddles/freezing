@@ -20,14 +20,33 @@ from freezing.model.orm import Athlete, Ride, RideEffort, RideError, RideGeo, Ri
 from freezing.sync.config import config, statsd
 from freezing.sync.exc import (
     ActivityNotFound,
-    CommandError,
+    AthleteDeauthorized,
+    CompetitionOver,
     DataEntryError,
     IneligibleActivity,
 )
 from freezing.sync.utils import wktutils
 from freezing.sync.utils.cache import CachingActivityFetcher
 
-from . import BaseSync, StravaClientForAthlete
+from . import BaseSync, StravaClientForAthlete, has_strava_authorization
+from .photos import schedule_fetch, schedule_one_more_fetch
+from .streams import schedule_track_retry
+
+# Strava is late and sometimes partial with a ride's efforts, so each one is
+# read again on a backoff of 1, 6, 36 and 216 hours -- eleven days in all --
+# and then left alone.
+MAX_EFFORT_RESYNCS = 4
+
+
+def schedule_effort_resync(ride: Ride) -> None:
+    """Ask for this ride's efforts again later, or stop asking."""
+    sync_count = ride.resync_count or 0
+    if sync_count >= MAX_EFFORT_RESYNCS:
+        ride.efforts_fetched = True
+    else:
+        ride.resync_count = 1 + sync_count
+        ride.resync_date = datetime.now() + timedelta(hours=6**sync_count)
+
 
 # Amount of activity overlap to permit
 _overlap_ignore = timedelta(minutes=3)
@@ -163,7 +182,7 @@ class ActivitySync(BaseSync):
         ride.timezone = getattr(tz, "key", None) or str(tz)
 
         if ride.photos_fetched is None and strava_activity.total_photo_count:
-            ride.photos_fetched = False
+            schedule_fetch(ride)
 
         # # Short-circuit things that might result in more obscure db errors later.
         if ride.elapsed_time is None:
@@ -237,19 +256,7 @@ class ActivitySync(BaseSync):
                 session.add(effort)
                 session.flush()
 
-            # It would appear that Strava has some delayed consistency. Sometimes, no efforts are returned
-            # and sometimes partial attempts are returned, so use an exponential backoff to re-fetch every
-            # activity at least _MAX_EFFORT_RESYNCS times over an extended period of time.
-            _MAX_EFFORT_RESYNCS = 3
-
-            sync_count = ride.resync_count or 0
-            if sync_count > _MAX_EFFORT_RESYNCS:
-                ride.efforts_fetched = True
-            else:
-                ride.resync_count = 1 + sync_count
-                ride.resync_date = datetime.now() + timedelta(
-                    hours=6**sync_count
-                )  # 1, 6, 36 hours
+            schedule_effort_resync(ride)
 
         except Exception:
             self.logger.exception(f"Error adding effort for ride: {ride}")
@@ -345,6 +352,7 @@ class ActivitySync(BaseSync):
 
         # TODO: Construct a more complex query to catch photos_fetched=False, track_fetched=False, etc.
         q = q.filter(Ride.private == False)  # noqa: E712
+        q = q.filter(Ride.athlete.has(has_strava_authorization()))
 
         if not rewrite:
             no_detail = Ride.detail_fetched == False  # noqa: E712
@@ -417,7 +425,12 @@ class ActivitySync(BaseSync):
             )
 
     def fetch_and_store_activity_detail(
-        self, *, athlete_id: int, activity_id: int, use_cache: bool = False
+        self,
+        *,
+        athlete_id: int,
+        activity_id: int,
+        use_cache: bool = False,
+        photos_changed: bool = False,
     ):
         with meta.transaction_context() as session:
             self.logger.info(
@@ -461,6 +474,13 @@ class ActivitySync(BaseSync):
 
                 ride = self.write_ride(strava_activity)
                 self.update_ride_complete(strava_activity=strava_activity, ride=ride)
+                if photos_changed:
+                    # The rider is editing the ride, and captions land minutes
+                    # later, so go back to looking every couple of minutes.
+                    schedule_fetch(ride)
+            except AthleteDeauthorized:
+                # Nothing to log a traceback over: they have disconnected us.
+                raise
             except ObjectNotFound as e:
                 raise ActivityNotFound(
                     f"Activity {activity_id} not found, ignoring."
@@ -525,12 +545,12 @@ class ActivitySync(BaseSync):
             )
             raise
         ride.detail_fetched = True
-        # We don't get events when photo descriptions are updated, so instead
-        # every time we fetch the details we schedule a photo fetch. This will
-        # trigger alongside our automatic ride-effort re-sync. We don't gate
-        # this on activity.total_photo_count because if someone deletes their
-        # photos in Strava we probably want to resync and delete our photos.
-        ride.photos_fetched = False
+        # The effort re-sync runs long after the photo backoff has given up, so
+        # take the chance to look once more. Not gated on total_photo_count
+        # because photos deleted in Strava should be deleted here too.
+        schedule_one_more_fetch(ride)
+        # The same four visits are all the retries a missing track gets.
+        schedule_track_retry(ride)
 
     def check_activity(
         self,
@@ -786,7 +806,7 @@ class ActivitySync(BaseSync):
 
                 # update_ride_basic will do this anyway
                 if activity.total_photo_count:
-                    ride.photos_fetched = False
+                    schedule_fetch(ride)
 
                 session.add(ride)
 
@@ -841,9 +861,6 @@ class ActivitySync(BaseSync):
         removed_ride_ids = list(stored_ride_ids - returned_ride_ids)
 
         num_rides = len(api_ride_entries)
-
-        ride_ids_needing_detail = []
-        ride_ids_needing_streams = []
 
         for i, strava_activity in enumerate(api_ride_entries):
             self.logger.debug(
@@ -916,12 +933,6 @@ class ActivitySync(BaseSync):
                     except Exception:
                         self.logger.exception("Error maybe-clearing ride-error entry.")
 
-                    if ride.detail_fetched is False:
-                        ride_ids_needing_detail.append(ride.id)
-
-                    if ride.track_fetched is False:
-                        ride_ids_needing_streams.append(ride.id)
-
             else:
                 ride = db_rides_by_id[strava_activity.id]
                 strava_miles = round(
@@ -980,7 +991,7 @@ class ActivitySync(BaseSync):
         """
         with meta.transaction_context() as sess:
             q = sess.query(Athlete)
-            q = q.filter(Athlete.access_token is not None)
+            q = q.filter(has_strava_authorization())
             q = q.filter(func.mod(Athlete.id, total_segments) == segment)
             athletes: list[Athlete] = q.all()
             self.logger.info(
@@ -1022,9 +1033,10 @@ class ActivitySync(BaseSync):
             if (
                 datetime.now(UTC) > (end_date + config.UPLOAD_GRACE_PERIOD)
             ) and not force:
-                raise CommandError(
-                    "Current time is after competition end date + grace "
-                    "period, not syncing rides. (Use `force` to override.)"
+                raise CompetitionOver(
+                    "the competition ended {}, and its upload grace period "
+                    "with it, so there are no rides to sync. Pass force to "
+                    "sync anyway.".format(end_date.date())
                 )
 
             if rewrite:
@@ -1033,7 +1045,7 @@ class ActivitySync(BaseSync):
             # We iterate over all of our athletes that have access tokens.  (We can't fetch anything
             # for those that don't.)
             q = sess.query(Athlete)
-            q = q.filter(Athlete.access_token is not None)
+            q = q.filter(has_strava_authorization())
 
             if athlete_ids is not None:
                 q = q.filter(Athlete.id.in_(athlete_ids))
@@ -1043,7 +1055,7 @@ class ActivitySync(BaseSync):
             # without teams.
             # (The way the athlete sync works, athletes will only be configured for a single team
             # that is one of the configured competition teams.)
-            q = q.filter(Athlete.team_id is not None)
+            q = q.filter(Athlete.team_id.isnot(None))
 
             for athlete in q.all():
                 assert isinstance(athlete, Athlete)

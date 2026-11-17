@@ -4,12 +4,12 @@
         <h2 class="page-header mb-4">Competition Photos</h2>
         <div class="photo-grid mb-4 gap-lg-4 gallery-wrapper">
             {% for photo in photos %}
+                {# djlint:off #}
                 <a href="{{ photo.img_l }}" data-toggle="lightbox" data-gallery="multiimages" class="photo-thumbnail" data-title="{{ photo.ride.name }}" data-parent=".gallery-wrapper"
-                    {# djlint:off #}
                     data-info='{{ photo.caption or "" | safe }}'
                     data-footer='Taken on {{photo.ride.start_date.strftime("%-m/%-d")}} by <a href="/people/{{ photo.ride.athlete.id }}" class="hover-underline">{{ photo.ride.athlete.display_name }}</a>'
-                    style="background-image: url('{{ photo.img_l }}'), url('/img/logo-blue.png');">
-                    {# djlint:on #} </a>
+                    style="background-image: url('{{ photo.img_l }}'), url('/img/logo-blue.png');"></a>
+                {# djlint:on #}
             {% endfor %}
         </div>
         <nav class="d-flex justify-content-center">

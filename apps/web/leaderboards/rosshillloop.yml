@@ -46,6 +46,8 @@ query: |
         rides R on R.athlete_id = A.id
       inner join
         ride_efforts E on E.ride_id = R.id
+      where
+        E.segment_id in (1072528, 4934241)
       group by
         A.id, A.display_name, R.id
     ) as Q

@@ -7,6 +7,7 @@ from colorlog import ColoredFormatter
 from datadog import DogStatsd
 from envparse import env
 
+from freezing.common.seasons import competition_end
 from freezing.common.times import parse_instant
 
 envfile = os.environ.get("APP_SETTINGS", os.path.join(os.getcwd(), ".env"))
@@ -37,13 +38,16 @@ class Config:
     MAIN_TEAM = env("MAIN_TEAM", cast=int, default=0)
 
     START_DATE = env("START_DATE", postprocessor=parse_instant)
-    END_DATE = env("END_DATE", postprocessor=parse_instant)
 
     TIMEZONE: tzinfo = env(
         "TIMEZONE",
         default="America/New_York",
         postprocessor=lambda val: ZoneInfo(val),
     )
+
+    # A winter competition ends when winter does. Left unset, that is worked
+    # out rather than written down again every year.
+    END_DATE = competition_end(env("END_DATE", default=None), START_DATE, TIMEZONE)
 
     UPLOAD_GRACE_PERIOD: timedelta = env(
         "UPLOAD_GRACE_PERIOD_DAYS",
@@ -67,6 +71,20 @@ class Config:
 
 
 config = Config()
+
+
+class _WithoutAutoRefreshWarning(logging.Filter):
+    """Drop stravalib's complaint that we did not hand it our refresh token.
+
+    We withhold it deliberately; see StravaClientForAthlete. stravalib warns
+    once per API call, through the module-level logging.warning, so the record
+    arrives on the root logger and only its call site identifies it.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not (
+            record.module == "protocol" and record.funcName == "refresh_expired_token"
+        )
 
 
 def init_logging(loglevel: int = logging.INFO, color: bool = False):
@@ -97,6 +115,7 @@ def init_logging(loglevel: int = logging.INFO, color: bool = False):
         formatter = logging.Formatter("%(levelname)-8s [%(name)s] %(message)s")
 
     ch.setFormatter(formatter)
+    ch.addFilter(_WithoutAutoRefreshWarning())
 
     loggers = [
         logging.getLogger("freezing"),

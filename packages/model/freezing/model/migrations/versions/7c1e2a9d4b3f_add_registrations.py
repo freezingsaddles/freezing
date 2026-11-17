@@ -4,14 +4,14 @@ from alembic import op
 """add registrations
 
 Revision ID: 7c1e2a9d4b3f
-Revises: 536a0f435c79
+Revises: 7c2e9b4f1a06
 Create Date: 2026-09-17 03:10:00.000000
 
 """
 
 # revision identifiers, used by Alembic.
 revision = "7c1e2a9d4b3f"
-down_revision = "536a0f435c79"
+down_revision = "7c2e9b4f1a06"
 
 
 def upgrade():

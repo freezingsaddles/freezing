@@ -28,6 +28,13 @@ class SyncWeatherScript(BaseCommand):
         )
 
         parser.add_argument(
+            "--retry-failed",
+            action="store_true",
+            default=False,
+            help="Ask again about rides whose weather we had given up on.",
+        )
+
+        parser.add_argument(
             "--limit",
             type=int,
             default=0,
@@ -39,7 +46,10 @@ class SyncWeatherScript(BaseCommand):
     def execute(self, args):
         fetcher = WeatherSync(logger=self.logger)
         fetcher.sync_weather(
-            clear=args.clear, cache_only=args.cache_only, limit=args.limit
+            clear=args.clear,
+            cache_only=args.cache_only,
+            limit=args.limit,
+            retry_failed=args.retry_failed,
         )
 
 

@@ -9,6 +9,10 @@ class CommandError(RuntimeError):
     pass
 
 
+class CompetitionOver(CommandError):
+    """There is nothing left to sync, which is a refusal only if you asked."""
+
+
 class DataEntryError(ValueError):
     pass
 
@@ -19,3 +23,7 @@ class IneligibleActivity(ValueError):
 
 class ActivityNotFound(RuntimeError):
     pass
+
+
+class AthleteDeauthorized(RuntimeError):
+    """We hold no authorisation for this athlete, and asking again will not help."""

@@ -243,9 +243,26 @@
                     <button type="button"
                             class="nav-link"
                             data-bs-toggle="modal"
-                            data-bs-target="#discordModal">
-                        Discord
+                            data-bs-target="#rulesModal">
+                        Rules
                     </button>
+                </li>
+                <li class="nav-item">
+                    {% if g.discord_username %}
+                        <a class="nav-link"
+                           rel="noreferrer"
+                           target="_blank"
+                           href="https://discord.com/channels/1443244420358213643/1443244605263970416">
+                            Discord
+                        </a>
+                    {% else %}
+                        <button type="button"
+                                class="nav-link"
+                                data-bs-toggle="modal"
+                                data-bs-target="#discordModal">
+                            Discord
+                        </button>
+                    {% endif %}
                 </li>
                 {% if g.logged_in %}
                     <li class="nav-item dropdown">
@@ -272,7 +289,7 @@
                         </ul>
                     </li>
                 {% else %}
-                    {% if not g.finished %}
+                    {% if g.registration_open and not g.finished %}
                         <li class="nav-item">
                             <a class="nav-link{% if request.path.startswith('/register') %} active{% endif %}"
                                href="/register">Register</a>
@@ -346,67 +363,49 @@
                         data-bs-dismiss="modal"
                         aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p>
-                    Freezing Saddles is a winter riding competition for bike riders in the
-                    general DC area.
-                </p>
-                <p>
-                    The competition is for contestants to ride their bikes outside all
-                    winter,
-                    <a href="/leaderboard/individual_various?api=indiv_freezing">in the cold</a>,
-                    <a href="/leaderboard/individual_various?api=indiv_after_sunset">in the dark</a>
-                    and
-                    <a href="/leaderboard/individual_various?api=indiv_snowiest">in the snow</a>. The <a href="/explore/indiv_elev_dist">farther you ride</a>, the
-                    <a href="/leaderboard/individual_text">more points</a> you earn. The
-                    colder it is, the colder you'll be. Not everyone can ride every day,
-                    but <a href="/people/ridedays">many do</a>, and everyone is encouraged
-                    to ride more than they would otherwise.
-                </p>
-                <blockquote style="border-left: 4px solid gray;
-                                   padding: 0.5rem 1rem;
-                                   background-color: #ffffff08">
-                    [BAFS] probably most closely resembles organizing a game of freeze tag
-                    on the grade-school playground
-                    <cite style="margin-left: 0.125rem;
-                                 white-space: nowrap">— Steve O</cite>
-                </blockquote>
-                <p>
-                    Freezing Saddles runs from January 1 through the last
-                    <em>full</em> day of Winter ({{ end_date.strftime("%B %d") }} in {{
-                    end_date.year }}). We divide contestants into teams of 10 or so
-                    people, striving for competitive parity. Each team is a mix of riders
-                    who typically ride enough to qualify as insane, people who ride
-                    regularly but like sane people, people who ride occasionally, and
-                    people who have never ridden through a winter before.
-                </p>
-                <p>
-                    In addition to the points competition, teams and individuals compete
-                    and play for Pointless Prizes, of which there are many, both serious
-                    and silly. For many, these <em>reindeer games</em> are the primary
-                    reason they join and play Freezing Saddles.
-                </p>
-                <p>
-                    Registration typically opens around Thanksgiving and closes on
-                    Christmas Eve, and/or when we have reached the participation limit. We
-                    use Strava for data collection and team organization, which means that
-                    to play you will need a Strava account and some sort of GPS device or
-                    smartphone to track your rides. We have in-person happy hours near the
-                    start of the game to formally announce teams and after the end of the
-                    game to hand out prizes.
-                </p>
-                <p class="mb-0">
-                    Come join us, it'll be <s>freezing</s>fun.
-                </p>
-            </div>
+            <div class="modal-body">{% include "about.html" %}</div>
             <div class="modal-footer">
                 <p>
                     Contact us on <a href="https://discord.com/channels/1443244420358213643/1444469363498291231"
-    target="_blank"
-    rel="noreferrer">Discord</a>
+                                     target="_blank"
+                                     rel="noreferrer">Discord</a>
                     or using our <a href="{{ registration_site }}contact-form/"
-    target="_blank"
-    rel="noreferrer">Contact Form</a>.
+                                    target="_blank"
+                                    rel="noreferrer">Contact Form</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade"
+     id="rulesModal"
+     tabindex="-1"
+     aria-labelledby="rulesModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="overflow: hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <img src="/img/logo-blue-sm.png"
+                     style="width: 1.875rem;
+                            height: 1.875rem;
+                            margin: -0.4375rem 0"
+                     alt="logo" />
+                <h1 class="modal-title fs-5 ps-2"
+                    id="rulesModalLabel">Rules of Freezing Saddles</h1>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">{% include "rules.html" %}</div>
+            <div class="modal-footer">
+                <p>
+                    Contact us on <a href="https://discord.com/channels/1443244420358213643/1444469363498291231"
+                                     target="_blank"
+                                     rel="noreferrer">Discord</a>
+                    or using our <a href="{{ registration_site }}contact-form/"
+                                    target="_blank"
+                                    rel="noreferrer">Contact Form</a>.
                 </p>
             </div>
         </div>
@@ -453,12 +452,27 @@
                            href="https://discord.com/channels/1443244420358213643/1443244605263970416">Go Straight to Discord</a>.
                     </li>
                     {% if g.logged_in %}
-                        <li>
-                            Otherwise, please
-                            <a rel="noreferrer"
-                               target="_blank"
-                               href="{{ discord_invitation }}">Join the Freezing Saddles Discord Server</a>.
-                        </li>
+                        {% if discord_linking %}
+                            <li>
+                                Please link your Discord account to your Freezing Saddles account, so that
+                                the website knows who you are on Discord.
+                                {% if discord_joining and not g.discord_username %}
+                                    Linking also adds you to the server if you haven't joined it yet.
+                                {% endif %}
+                                <div class="my-2">
+                                    {% with discord_next="" %}
+                                        {% include "discord_link.html" %}
+                                    {% endwith %}
+                                </div>
+                            </li>
+                        {% else %}
+                            <li>
+                                Otherwise, please
+                                <a rel="noreferrer"
+                                   target="_blank"
+                                   href="{{ discord_invitation }}">Join the Freezing Saddles Discord Server</a>.
+                            </li>
+                        {% endif %}
                     {% else %}
                         <li>
                             Otherwise, please <a href="/login">Log In</a> and then

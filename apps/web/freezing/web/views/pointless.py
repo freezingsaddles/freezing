@@ -1,19 +1,26 @@
-import base64
-import gzip
-import math
+import contextlib
 import operator
 from datetime import datetime, timezone
 
-from flask import Blueprint, abort, redirect, render_template, request, session
+from flask import (
+    Blueprint,
+    abort,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from sqlalchemy import text
 
 from freezing.model import meta
 from freezing.model.orm import Athlete
-from freezing.web.autolog import log
 from freezing.web.config import config
 from freezing.web.exc import ObjectNotFound
 from freezing.web.utils.genericboard import format_rows, load_board, load_board_and_data
 from freezing.web.utils.hashboard import load_hashtag
+from freezing.web.utils.paging import requested_page
+from freezing.web.utils.rules import can_edit, rules_context, save_rules
 from freezing.web.utils.segboard import load_segment
 
 blueprint = Blueprint("pointless", __name__)
@@ -31,24 +38,6 @@ def generic(leaderboard):
             if board.sponsors
             else None
         )
-        rides = None
-        if any(f.name == "ride_ids" for f in board.fields):
-            length = len(data)
-            while not rides:
-                # hex|join|utf-8|gzip|base64|utf-8 :strong:
-                ride_ids = ",".join([d["ride_ids"] for d in data[:length]])
-                rides = base64.b64encode(
-                    gzip.compress(ride_ids.encode("utf-8")), b"-_"
-                ).decode("utf-8")
-                log.info(
-                    f"Compressed {ride_ids.count(',')} rides from {len(ride_ids)} to {len(rides)} chars"
-                )
-                # some piece of infrastructure craps out at 40xx chars
-                if len(rides) > 4000:
-                    log.info(f"Ride IDs too long ({len(rides)} chars), shrinking")
-                    rides = None
-                    length = length // 2
-
         return render_template(
             "pointless/generic.html",
             fields=board.fields,
@@ -59,7 +48,10 @@ def generic(leaderboard):
             url=board.url,
             discord=board.discord,
             data=data,
-            rides=rides,
+            leaderboard=leaderboard,
+            **rules_context(
+                "generic", leaderboard, board.sponsors, session.get("athlete_id")
+            ),
         )
 
 
@@ -99,7 +91,28 @@ def points_per_mile():
     )
 
 
-def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
+def _tagged_rides(photo_tags: bool) -> str:
+    """Return the rides carrying the tag, as a set of ids.
+
+    A board whose photos are the point takes the tag from a photo's description
+    as well as from the ride title, so that a rider need only tag the photo.
+    """
+    by_title = """
+        select R.id from rides R
+        where R.name like concat('%', '#', :hashtag, '%')
+           or R.name like concat('%', '#', :alttag, '%')
+    """
+    if not photo_tags:
+        return by_title
+    return by_title + """
+        union
+        select P.ride_id from ride_photos P
+        where lower(P.caption) like concat('%', '#', :hashtag, '%')
+           or lower(P.caption) like concat('%', '#', :alttag, '%')
+    """
+
+
+def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_tags):
     """Build the hashtag table data; orderby is 'miles', 'rides' or 'days'."""
     sess = meta.scoped_session()
     rank_by = "hashtag_miles"
@@ -108,20 +121,18 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
     elif orderby == "rides":
         rank_by = "hashtag_rides"
     q = text(f"""
-        with hash_rides as (
+        with tagged as (
+            {_tagged_rides(photo_tags)}
+        ), hash_rides as (
             select
                 R.id,
                 R.athlete_id,
                 R.distance,
                 R.competition_date as start_date
             from
-                rides R
+                rides R join tagged T on T.id = R.id
             where
-                R.distance >= :min_miles and
-                (
-                    R.name like concat('%', '#', :hashtag, '%') or
-                    R.name like concat('%', '#', :alttag, '%')
-                )
+                R.distance >= :min_miles
         ), daily_rides as (
             select
                 H.athlete_id,
@@ -172,21 +183,20 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles):
     return {"tdata": retval}
 
 
-def _get_phototag_tdata(request, hashtag):
-    page = int(request.args.get("page", 1))
-    if page < 1:
-        page = 1
+def _get_phototag_tdata(request, hashtag, photo_tags):
     date = request.args.get("date")
     mine = request.args.get("mine") == "true"
     myself = session.get("athlete_id") if mine else None
 
     page_size = 24
-    offset = page_size * (page - 1)
-    limit = page_size
 
-    # clunky query so if a tagged ride has tagged photos then include
-    # those, else include its primary photo.
-    with_union_photos = """
+    # On a photo board the tag on the photo is enough, whatever the ride is
+    # called. Elsewhere the photo still has to sit on a tagged ride. Either way
+    # a tagged ride with no tagged photo falls back to its primary photo.
+    photo_tags_sql = (
+        "true" if photo_tags else "R.id in (select ride_id from tagged_rides)"
+    )
+    with_union_photos = f"""
         with tagged_rides as (
             select
                 R.id AS ride_id,
@@ -210,19 +220,25 @@ def _get_phototag_tdata(request, hashtag):
                 P.primary
         ), tagged_photos as (
             select
-                P.id, P.caption, P.img_l, R.*
+                P.id, P.caption, P.img_l,
+                R.id AS ride_id,
+                R.name,
+                R.athlete_id,
+                convert_tz(R.start_date, 'UTC', :tz) AS start_date,
+                A.display_name
             from
-                tagged_rides R join
-                ride_photos P ON P.ride_id = R.ride_id
+                rides R join athletes A on A.id = R.athlete_id join
+                ride_photos P on P.ride_id = R.id
             where
-                P.caption like '%#%'
+                lower(P.caption) like :tag and
+                ({photo_tags_sql}) and
+                (:myself is null or A.id = :myself) and
+                (:date is null or R.competition_date = :date)
         ), union_photos as (
             select
                 P.*
             from
                 tagged_photos P
-            where
-                lower(P.caption) like :tag
             union all
             select
                 P.*
@@ -244,6 +260,10 @@ def _get_phototag_tdata(request, hashtag):
     )
     num_photos = meta.scoped_session().execute(total_q).scalar_one()
 
+    # Settled before the query is built, so that the page a reader is shown
+    # and the page they are told they are on cannot disagree.
+    page, offset, total_pages = requested_page(page_size, num_photos)
+
     photo_q = text(f"""
         {with_union_photos}
         select
@@ -261,17 +281,9 @@ def _get_phototag_tdata(request, hashtag):
         date=date,
         myself=myself,
         offset=offset,
-        limit=limit,
+        limit=page_size,
     )
     photos = meta.scoped_session().execute(photo_q)
-
-    if num_photos < offset:
-        page = 1
-
-    total_pages = int(math.ceil((1.0 * num_photos) / page_size))
-
-    if page > total_pages:
-        page = total_pages
 
     return {
         "photos": list(photos),
@@ -299,6 +311,9 @@ def hashtag_leaderboard(hashtag):
     rank_by = meta.rank_by if meta else "miles"
     default_view = meta.default_view if meta else None
     view = request.args.get("view", default_view or "leaderboard")
+    # A board whose photos are the point takes the tag from a photo description
+    # as well as from the ride title, on every tab.
+    photo_tags = default_view == "photos"
     sponsors = (
         [_load_sponsor(sponsor) for sponsor in meta.sponsors]
         if meta and meta.sponsors
@@ -318,9 +333,10 @@ def hashtag_leaderboard(hashtag):
             orderby=rank_by,
             friendless=meta.friendless if meta else None,
             min_miles=meta.min_miles if meta else None,
+            photo_tags=photo_tags,
         )
     elif view == "photos":
-        args = _get_phototag_tdata(request=request, hashtag=ht)
+        args = _get_phototag_tdata(request=request, hashtag=ht, photo_tags=photo_tags)
 
     return render_template(
         "pointless/hashtag.html",
@@ -332,14 +348,14 @@ def hashtag_leaderboard(hashtag):
             "sponsors": sponsors,
             "banned": banned,
             **args,
+            **rules_context(
+                "hashtag",
+                ht.lower(),
+                meta.sponsors if meta else None,
+                session.get("athlete_id"),
+            ),
         },
     )
-
-
-# Junk but someone posted the wrong url everywhere
-@blueprint.route("/phototag/<string:hashtag>")
-def phototag_leaderboard(hashtag):
-    return redirect(f"/pointless/hashtag/{hashtag}?view=photos")
 
 
 def _get_segment_tdata(segment):
@@ -404,6 +420,12 @@ def segment_leaderboard(segment):
         meta=meta,
         sponsors=sponsors,
         banned=banned,
+        **rules_context(
+            "segment",
+            str(segment),
+            meta.sponsors if meta else None,
+            session.get("athlete_id"),
+        ),
     )
 
 
@@ -453,8 +475,11 @@ class FakeRow:
 
 @blueprint.route("/multisegment/<string:leaderboard>")
 def multisegment(leaderboard):
-    board = load_board(leaderboard)
-    data = load_multisegment_board_data(board)
+    try:
+        board = load_board(leaderboard)
+        data = load_multisegment_board_data(board)
+    except ObjectNotFound:
+        abort(404)
     data.sort(key=lambda d: (-d["segment_rides"], d["athlete_name"]))
     formatted = format_rows([FakeRow(d) for d in data], board)
     return render_template(
@@ -517,8 +542,13 @@ def arlington():
 
 
 def load_multisegment_board_data(board):
+    if board.query is None:
+        raise ObjectNotFound(f"Board {board.title} has no query")
     # include anyone who has ridden on any segment, but count as zero any segment they've missed
-    rides = meta.scoped_session().execute(text(board.query)).fetchall()
+    result = meta.scoped_session().execute(text(board.query))
+    if "segment_id" not in result.keys():
+        raise ObjectNotFound(f"Board {board.title} is not a multisegment board")
+    rides = result.fetchall()
     # segment_id -> segment_name
     segments = {
         ride._mapping["segment_id"]: ride._mapping["segment_name"] for ride in rides
@@ -637,3 +667,36 @@ def civilwarhistory():
         "pointless/civilwarhistory.html",
         data={"tdata": sorted(data, key=lambda v: v[6], reverse=True)},
     )
+
+
+def _prize(kind: str, name: str) -> tuple[list[int] | None, str]:
+    """Return the sponsors of a prize and the page it is shown on."""
+    with contextlib.suppress(ObjectNotFound):
+        if kind == "hashtag":
+            tag = load_hashtag(name)
+            if tag and tag.tag.lower() == name:
+                return tag.sponsors, url_for(
+                    ".hashtag_leaderboard", hashtag=tag.tag, view="rules"
+                )
+        elif kind == "segment" and name.isdigit():
+            seg = load_segment(int(name))
+            if seg:
+                return seg.sponsors, url_for(
+                    ".segment_leaderboard", segment=seg.segment, _anchor="rules"
+                )
+        elif kind == "generic":
+            board = load_board(name)
+            return board.sponsors, url_for(
+                ".generic", leaderboard=name, _anchor="rules"
+            )
+    abort(404)
+
+
+@blueprint.route("/rules/<kind>/<name>", methods=["POST"])
+def edit_rules(kind, name):
+    sponsors, page = _prize(kind, name)
+    athlete_id = session.get("athlete_id")
+    if not sponsors or not can_edit(athlete_id, sponsors):
+        abort(403)
+    save_rules(kind, name, request.form.get("rules", "").strip(), athlete_id)
+    return redirect(page)

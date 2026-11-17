@@ -1,16 +1,19 @@
 import decimal
+import logging
 import os
 from datetime import datetime
 from typing import Any
 
 import yaml
-from marshmallow import fields
+from marshmallow import ValidationError, fields
 from sqlalchemy import text
 
 from freezing.model import meta
 from freezing.model.msg import BaseMessage, BaseSchema
 from freezing.web.config import config
 from freezing.web.exc import ObjectNotFound
+
+log = logging.getLogger(__name__)
 
 
 class GenericBoardField(BaseMessage):
@@ -86,7 +89,9 @@ class GenericBoardSchema(BaseSchema):
     discord = fields.Int()
     sponsors = fields.List(fields.Int())
     banned = fields.List(fields.Int())
-    query = fields.Str(required=True, allow_none=False)
+    # Absent for a board whose rows are put together in Python, such as
+    # arlington, which has only its title and fields here.
+    query = fields.Str(load_default=None)
     fields = fields.Nested(GenericBoardFieldSchema, many=True, required=False)
 
 
@@ -114,8 +119,12 @@ def load_board(leaderboard) -> GenericBoard:
     with open(path, encoding="utf-8") as fp:
         doc = yaml.safe_load(fp)
 
-    schema = GenericBoardSchema()
-    board: GenericBoard = schema.load(doc)
+    # The directory also holds the hashtag, segment, tribe and prize lists.
+    try:
+        board: GenericBoard = GenericBoardSchema().load(doc)
+    except ValidationError as e:
+        log.warning("%s is not a board definition: %s", path, e.messages)
+        raise ObjectNotFound(f"{path} is not a board definition") from e
 
     return board
 

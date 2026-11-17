@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from colorlog import ColoredFormatter
 from envparse import env
 
+from freezing.common.seasons import competition_end
 from freezing.common.times import parse_instant
 
 from .version import branch, build_date, commit
@@ -29,15 +30,25 @@ class Config:
     BEANSTALKD_HOST: str = env("BEANSTALKD_HOST", default="localhost")
     BEANSTALKD_PORT: str = env("BEANSTALKD_PORT", cast=int, default=11300)
     BIND_INTERFACE: str = env("BIND_INTERFACE", default="127.0.0.1")
+    # Strava ids of the administrators, who may edit the rules of any prize.
+    CABAL: list[int] = env("CABAL", cast=list, subcast=int, default=[])
     COMPETITION_TEAMS: list[int] = env("TEAMS", cast=list, subcast=int, default=[])
     COMPETITION_TITLE: str = env("COMPETITION_TITLE", default="Freezing Saddles")
     DEBUG: bool = env("DEBUG", cast=bool, default=False)
-    END_DATE: datetime = env("END_DATE", postprocessor=parse_instant)
     # Environment (localdev, production, etc.)
     ENVIRONMENT: str = env("ENVIRONMENT", default="localdev")
     DISCORD_INVITATION: str = env(
         "DISCORD_INVITATION",
         "https://example.org/",
+    )
+    # The OAuth2 client of the Discord application Freezebot runs as. Unset,
+    # the site does not offer to link Discord accounts.
+    DISCORD_CLIENT_ID: str = env("DISCORD_CLIENT_ID", default="")
+    DISCORD_CLIENT_SECRET: str = env("DISCORD_CLIENT_SECRET", default="")
+    # With the bot token, linking an account also adds it to the server.
+    DISCORD_BOT_TOKEN: str = env("DISCORD_BOT_TOKEN", default="")
+    DISCORD_GUILD_ID: int = env(
+        "DISCORD_GUILD_ID", cast=int, default=1443244420358213643
     )
     INSTANCE_PATH: str = env(
         "INSTANCE_PATH", default=os.path.join(_basedir, "data/instance")
@@ -51,7 +62,8 @@ class Config:
         "OBSERVER_TEAMS", cast=list, subcast=int, default=[]
     )
     # The home page's registration card shows from here until the competition
-    # starts; unset, it never shows. /register is reachable either way.
+    # starts, and the header's Register link until it ends; unset, neither
+    # shows. /register is reachable either way.
     REGISTRATION_DATE: datetime | None = env(
         "REGISTRATION_DATE",
         default="",
@@ -72,6 +84,11 @@ class Config:
         "TIMEZONE",
         default="America/New_York",
         postprocessor=lambda val: ZoneInfo(val),
+    )
+    # A winter competition ends when winter does. Left unset, that is worked
+    # out rather than written down again every year.
+    END_DATE: datetime = competition_end(
+        env("END_DATE", default=None), START_DATE, TIMEZONE
     )
     VERSION_NUM: str = version("freezing-web")
     VERSION_STRING: str = f"{VERSION_NUM}+{branch}.{commit}.{build_date}"

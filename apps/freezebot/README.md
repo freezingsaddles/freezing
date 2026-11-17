@@ -19,7 +19,7 @@ Every poll (`FREEZEBOT_POLL_SECONDS`, default 60):
 
 1. Read the candidate photos: every public ride's photo with a `#` in its
    caption or its ride's name, joined to the ride and the athlete, from
-   `FREEZEBOT_SINCE` on, plus any photo that already has a post.
+   `START_DATE` on, plus any photo that already has a post.
 2. Work out which channels each photo belongs in from the hashtags in its
    caption. With `FREEZEBOT_RIDE_TAGS=true`, a ride whose *name* carries a tag
    that none of its photos' captions do puts its primary photo in that channel
@@ -60,9 +60,8 @@ Each row keeps a fingerprint of the message as sent, which is how an edit is
 noticed. A message that a person deletes on Discord is remembered as such
 (message id 0) and the photo is not posted again.
 
-Two things never take a post down: turning a tag's `freezebot` off and
-moving `FREEZEBOT_SINCE` later. Both stop new posts; Freezebot only touches
-channels it is currently configured for.
+Turning a tag's `freezebot` off never takes a post down. It stops new posts;
+Freezebot only touches channels it is currently configured for.
 
 Discord is reached over its REST API with a bot token, no gateway connection:
 five endpoints over `java.net.http`, with rate limits waited out. The database
@@ -79,7 +78,7 @@ Environment variables; the ones shared with the Python apps mean the one
 | `DISCORD_BOT_TOKEN` | the bot's token from the Discord developer portal |
 | `FREEZEBOT_TAGS_FILE` | the web app's `leaderboards/hashtag.yml`. A tag posts when it has a `discord` channel and `freezebot: true`; `alt` is a second name for it. The image carries a copy at `/data/leaderboards/hashtag.yml`. |
 | `FREEZEBOT_CHANNELS` | optional `tag=channel,...` to add a channel the yaml does not name or override one it does, for trying a test channel |
-| `START_DATE` / `FREEZEBOT_SINCE` | photos of rides before this instant are not posted. `FREEZEBOT_SINCE` overrides `START_DATE`; set it to now when first starting mid-season, or the season so far posts. |
+| `START_DATE` | photos of rides before this instant are not posted |
 | `TIMEZONE` | the competition's zone, for reading `START_DATE` (default `America/New_York`) |
 | `FREEZEBOT_RIDE_TAGS` | `true` to post a tagged ride's primary photo as above (default `false`) |
 | `FREEZEBOT_SITE_URL` | where riders' pages are (default `https://freezingsaddles.org`) |

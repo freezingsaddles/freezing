@@ -9,6 +9,7 @@ from . import BaseMessage, BaseSchema
 
 class ObjectType(enum.Enum):
     activity = "activity"
+    athlete = "athlete"
 
 
 class AspectType(enum.Enum):

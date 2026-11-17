@@ -1,4 +1,3 @@
-import base64
 import datetime
 import gzip
 import hashlib
@@ -10,7 +9,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from flask import Blueprint, abort, jsonify, make_response, request, session
-from sqlalchemy import func, text
+from sqlalchemy import bindparam, func, text
 from werkzeug.utils import secure_filename
 
 from freezing.common.times import parse_instant
@@ -18,8 +17,11 @@ from freezing.model import meta
 from freezing.model.orm import Athlete, Ride, RidePhoto, RideTrack
 from freezing.web import config
 from freezing.web.autolog import log
+from freezing.web.exc import ObjectNotFound
 from freezing.web.serialize import RidePhotoSchema
 from freezing.web.utils import auth
+from freezing.web.utils.genericboard import load_board_and_data
+from freezing.web.utils.hashboard import load_hashtag
 from freezing.web.utils.wktutils import parse_linestring, parse_point_wkt
 
 blueprint = Blueprint("api", __name__)
@@ -38,10 +40,15 @@ def get_limit(request):
     limit = request.args.get("limit")
     if limit is None:
         return config.TRACK_LIMIT_DEFAULT
-    limit = int(limit)
+    try:
+        limit = int(limit)
+    except ValueError:
+        abort(400, "limit must be an integer")
+    if limit < 1:
+        abort(400, "limit must be positive")
     if limit > config.TRACK_LIMIT_MAX:
         abort(400, f"limit {limit} exceeds {config.TRACK_LIMIT_MAX}")
-    return min(config.TRACK_LIMIT_MAX, int(limit))
+    return limit
 
 
 @blueprint.route("/stats/general")
@@ -49,7 +56,7 @@ def get_limit(request):
 def stats_general():
     q = text("""select count(*) as num_contestants from lbd_athletes""")
 
-    indiv_count_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    indiv_count_res = meta.scoped_session().execute(q).fetchone()
     contestant_count = indiv_count_res._mapping["num_contestants"]
 
     q = text("""
@@ -59,7 +66,7 @@ def stats_general():
                 ;
             """)
 
-    all_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    all_res = meta.scoped_session().execute(q).fetchone()
     total_miles = int(all_res._mapping["distance"])
     total_hours = int(all_res._mapping["moving_time"]) / 3600
     total_rides = all_res._mapping["num_rides"]
@@ -72,7 +79,7 @@ def stats_general():
                 ;
             """)
 
-    sub32_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    sub32_res = meta.scoped_session().execute(q).fetchone()
     sub_freezing_hours = int(sub32_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -83,7 +90,7 @@ def stats_general():
                 ;
             """)
 
-    rain_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    rain_res = meta.scoped_session().execute(q).fetchone()
     rain_hours = int(rain_res._mapping["moving_time"]) / 3600
 
     q = text("""
@@ -94,7 +101,7 @@ def stats_general():
                 ;
             """)
 
-    snow_res = meta.scoped_session().execute(q).fetchone()  # @UndefinedVariable
+    snow_res = meta.scoped_session().execute(q).fetchone()
     snow_hours = int(snow_res._mapping["moving_time"]) / 3600
 
     return jsonify(
@@ -142,7 +149,7 @@ def team_leaderboard():
              ;
              """)
 
-    team_rows = meta.scoped_session().execute(q).fetchall()  # @UndefinedVariable
+    team_rows = meta.scoped_session().execute(q).fetchall()
 
     q = text("""
              select A.id as athlete_id, A.team_id, A.display_name as athlete_name,
@@ -156,7 +163,7 @@ def team_leaderboard():
              """)
 
     team_members = {}
-    for indiv_row in meta.scoped_session().execute(q).fetchall():  # @UndefinedVariable
+    for indiv_row in meta.scoped_session().execute(q).fetchall():
         team_members.setdefault(indiv_row["team_id"], []).append(indiv_row)
 
     for team_id in team_members:
@@ -303,6 +310,26 @@ def _parse_point(wkt):
 
 
 # The full geojson structure is triple the size of what we need
+def _hashtag_filter(hash_tag) -> str:
+    """Match a ride to a hashtag, by title and, on a photo board, by caption.
+
+    A board whose photos are the point takes the tag from a photo's description,
+    so the map has to find those rides the same way the other tabs do.
+    """
+    if not hash_tag:
+        return "true"
+    try:
+        board = load_hashtag(hash_tag)
+    except ObjectNotFound:
+        board = None
+    if board and board.default_view == "photos":
+        return (
+            "(R.name like :hash_tag or R.id in "
+            "(select P.ride_id from ride_photos P where lower(P.caption) like :hash_tag))"
+        )
+    return "R.name like :hash_tag"
+
+
 def _track_map(
     team_id=None,
     athlete_id=None,
@@ -310,6 +337,8 @@ def _track_map(
     hash_tag=None,
     ride_ids=None,
     limit=None,
+    offset=None,
+    oldest_first=False,
 ):
     teamsq = text("select id, name from teams order by id asc")
     teams = [
@@ -318,7 +347,8 @@ def _track_map(
     ]
 
     q = text(f"""
-             select ST_AsText(T.gps_track), ST_AsText(G.start_geo), ST_AsText(G.end_geo), A.team_id
+             select ST_AsText(T.gps_track), ST_AsText(G.start_geo), ST_AsText(G.end_geo),
+                    A.team_id, R.competition_date
              from ride_tracks T
              join ride_geo G on G.ride_id = T.ride_id
              join rides R on R.id = T.ride_id
@@ -327,10 +357,11 @@ def _track_map(
                {'true' if include_private else "not(R.private) and R.visibility = 'everyone'"}
                and {'A.id = :athlete_id' if athlete_id else 'true'}
                and {'A.team_id = :team_id' if team_id else 'true'}
-               and {'R.name like :hash_tag' if hash_tag else 'true'}
-               and {'FIND_IN_SET(hex(R.id), :ride_ids) > 0' if ride_ids else 'true'}
-             order by R.start_date DESC
+               and {_hashtag_filter(hash_tag)}
+               and {'R.id in :ride_ids' if ride_ids is not None else 'true'}
+             order by R.start_date {'asc' if oldest_first else 'desc'}, R.id asc
              {'limit :limit' if limit else ''}
+             {'offset :offset' if offset else ''}
              """)
 
     if team_id:
@@ -339,16 +370,21 @@ def _track_map(
         q = q.bindparams(athlete_id=athlete_id)
     if hash_tag:
         q = q.bindparams(hash_tag=f"%#{hash_tag}%")
-    if ride_ids:
-        q = q.bindparams(ride_ids=ride_ids)
+    if ride_ids is not None:
+        # Named ride by ride rather than searched for in a string: hex(R.id)
+        # hides the column from its own primary key, and every ride of the
+        # season has to be read and formatted to answer.
+        q = q.bindparams(bindparam("ride_ids", value=ride_ids, expanding=True))
     if limit:
         q = q.bindparams(limit=limit)
+    if offset:
+        q = q.bindparams(offset=offset)
 
     # Be warned, the terms "lon" and lat" in the following code should not be read as longitude and
     # latitude. There is confusion about which order these fields occur in the database; it has
     # varied from year to year.
     tracks = []
-    for [gps_track, start_geowkt, end_geowkt, team_id] in (
+    for [gps_track, start_geowkt, end_geowkt, team_id, day] in (
         meta.scoped_session().execute(q).fetchall()
     ):
         start_geo = _parse_point(start_geowkt)
@@ -388,10 +424,11 @@ def _track_map(
             # Break tracks that span flights and train journeys
             if not point or _distance2(lon, lat, point[0], point[1]) > _max_contiguous2:
                 track = []
-                tracks.append({"team": team_id, "track": track})
+                tracks.append({"team": team_id, "day": day.isoformat(), "track": track})
             point = (lon, lat)
             track.append(point)
-    tracks.reverse()
+    if not oldest_first:
+        tracks.reverse()
 
     return {"tracks": tracks, "teams": teams}
 
@@ -442,19 +479,107 @@ def _make_gzip_json_response(content, private=False):
     return response
 
 
+def _board_ride_ids(leaderboard: str) -> list[int]:
+    """Return the rides a generic leaderboard names, for the track map to draw.
+
+    The board's own query answers this, so the map asks for a board by name
+    rather than being handed the rides it found. A name is a handful of bytes
+    whatever the board turns up, where the rides themselves outgrew the
+    request line the moment a board became popular.
+    """
+    try:
+        board, data = load_board_and_data(leaderboard)
+    except ObjectNotFound:
+        abort(404, f"no leaderboard named {leaderboard}")
+    if not any(field.name == "ride_ids" for field in board.fields):
+        abort(404, f"leaderboard {leaderboard} names no rides")
+    return [
+        int(ride, 16)
+        for row in data
+        if row.get("ride_ids")
+        for ride in row["ride_ids"].split(",")
+    ]
+
+
+#: Rides in one page of the animated track map. Fixed, so that page N holds the
+#: same rides from one request to the next and can be cached for as long as
+#: anyone likes. Paging by ride rather than by date is what makes that true: a
+#: ride uploaded late lands in whichever page is being written, instead of
+#: pushing every later ride into a different one.
+TRACK_PAGE_RIDES = 1000
+
+#: A page nobody will write to again. The season is in its URL, so this cannot
+#: outlive the data it describes.
+_SETTLED_PAGE = "public, max-age=31536000, immutable"
+
+
+def _public_ride_count():
+    q = text("""
+             select count(*)
+             from ride_tracks T
+             join ride_geo G on G.ride_id = T.ride_id
+             join rides R on R.id = T.ride_id
+             where not(R.private) and R.visibility = 'everyone'
+             """)
+    return meta.scoped_session().execute(q).scalar() or 0
+
+
+@blueprint.route("/all/trackmap/pages.json")
+def track_map_pages():
+    """Describe the pages of the animated track map."""
+    rides = _public_ride_count()
+    response = jsonify(
+        {
+            "season": config.START_DATE.year,
+            "rides": rides,
+            "page_rides": TRACK_PAGE_RIDES,
+            "pages": -(-rides // TRACK_PAGE_RIDES),
+        }
+    )
+    response.headers["Cache-Control"] = (
+        f"max-age={config.JSON_CACHE_MINUTES * 60}, public"
+    )
+    return response
+
+
+@blueprint.route("/all/trackmap/<int:season>/<int:page>.json")
+def track_map_page(season: int, page: int):
+    """One page of the animated track map, oldest rides first."""
+    if season != config.START_DATE.year:
+        abort(404, "no such season")
+
+    content = _get_cached(
+        f"track_map/page/{season}-{page}.json.gz",
+        lambda: gzip.compress(
+            json.dumps(
+                _track_map(
+                    limit=TRACK_PAGE_RIDES,
+                    offset=page * TRACK_PAGE_RIDES,
+                    oldest_first=True,
+                ),
+                indent=None,
+            ).encode("utf8"),
+            5,
+        ),
+    )
+    response = _make_gzip_json_response(content)
+    # Every page but the one still being written to is finished with.
+    if (page + 1) * TRACK_PAGE_RIDES < _public_ride_count():
+        response.headers["Cache-Control"] = _SETTLED_PAGE
+    return response
+
+
 @blueprint.route("/all/trackmap.json")
 def track_map_all():
     hash_tag = request.args.get("hashtag")
-    rides = request.args.get("rides")
+    board = request.args.get("board")
     limit = get_limit(request)
 
-    ride_ids = (
-        gzip.decompress(base64.b64decode(rides, b"-_")).decode("utf-8")
-        if rides
-        else None
-    )
+    ride_ids = _board_ride_ids(board) if board else None
 
-    key_str = hash_tag or ride_ids
+    # The board is keyed by name, not by what it found: its rides change as the
+    # season goes on, and the cache has an age limit of its own to catch that.
+    key_str = hash_tag or board
     # bandit in github curses this as insecure, but not locally, so just go wild to suppress
     key = (  # nosec
         hashlib.md5(  # nosec

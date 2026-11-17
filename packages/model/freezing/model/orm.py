@@ -9,6 +9,7 @@ from sqlalchemy import (
     Computed,
     Date,
     DateTime,
+    Double,
     Float,
     ForeignKey,
     Integer,
@@ -77,9 +78,14 @@ class Athlete(StravaEntity):
     expires_at = Column(BigInteger, default=0)
     # Null, not false, for everyone who registered before this was recorded.
     registered = Column(Boolean, nullable=True)
+    discord_user_id = Column(BigInteger, nullable=True, unique=True)
+    discord_username = Column(String(255), nullable=True)
 
     rides: DynamicMapped["Ride"] = orm.relationship(
-        "Ride", backref="athlete", lazy="dynamic", cascade="all, delete, delete-orphan"
+        "Ride",
+        back_populates="athlete",
+        lazy="dynamic",
+        cascade="all, delete, delete-orphan",
     )
 
 
@@ -104,13 +110,13 @@ class Registration(Base):
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
     zip_code = Column(String(32), nullable=False)
-    email = Column(String(255), nullable=False)
+    email = Column(String(255), nullable=False, index=True)
     strava_id = Column(String(64), nullable=True)
     athlete_id = Column(
         BigInteger, ForeignKey("athletes.id", ondelete="set null"), nullable=True
     )
     previous_mileage = Column(String(255), nullable=True)
-    team_captain = Column(Boolean, nullable=False, default=False)
+    team_captain = Column(Boolean, nullable=False, default=False, server_default="0")
 
     athlete: Mapped["Athlete | None"] = orm.relationship(
         "Athlete", backref=orm.backref("registrations", lazy="dynamic")
@@ -138,6 +144,10 @@ class Ride(StravaEntity):
         nullable=False,
         index=True,
     )
+    # Spelled out rather than left to a backref on Athlete.rides: a backref is
+    # only attached once the mappers are configured, and queries that select
+    # columns rather than entities reach Ride.athlete before that happens.
+    athlete: Mapped["Athlete"] = orm.relationship("Athlete", back_populates="rides")
     description = Column(String(1024), nullable=True)
     elapsed_time = Column(Integer, nullable=False)  # Seconds
     # in case we want to convert that to a TIME type, time.strftime with time.gmtime
@@ -186,11 +196,18 @@ class Ride(StravaEntity):
         "RideTrack", uselist=False, backref="ride", cascade="all, delete, delete-orphan"
     )
 
-    photos_fetched = Column(Boolean, default=None, nullable=True)
+    # How many times we have fetched this ride's photos. NULL means the ride has
+    # no photos to fetch; the count drives the interval to the next fetch.
+    photos_fetched = Column(Integer, default=None, nullable=True)
+    # When the next photo fetch falls due. NULL means we have stopped looking.
+    photos_resync_date = Column(DateTime, nullable=True, index=True)
     track_fetched = Column(Boolean, default=None, nullable=True)
     detail_fetched = Column(Boolean, default=False, nullable=False)
     resync_count = Column(Integer, default=0, nullable=False)
     resync_date = Column(DateTime, nullable=True)
+    # Failed attempts at this ride's weather. A ride the forecaster has nothing
+    # for is asked about again, but not for ever.
+    weather_attempts = Column(Integer, default=0, server_default="0", nullable=False)
 
     private = Column(Boolean, default=False, nullable=False)
     visibility = Column(String(255), nullable=True)
@@ -329,4 +346,52 @@ class Tribe(Base):
     def __repr__(self):
         return "<{} id={} tribe_name={}>".format(
             self.__class__.__name__, self.id, self.tribe_name
+        )
+
+
+class PrizeRules(Base):
+    """The rules of a sponsored pointless prize, in Markdown.
+
+    The prize is named by its kind (hashtag, segment or generic) and its name
+    within that kind, the same pair its leaderboard URL is built from.
+    """
+
+    __tablename__ = "prize_rules"
+    kind = Column(String(16), primary_key=True)
+    name = Column(String(191), primary_key=True)
+    rules = Column(Text, nullable=False)
+    # No foreign key: the rules outlive an athlete leaving the competition.
+    updated_by = Column(BigInteger, nullable=True)
+    updated_at = Column(DateTime, nullable=False)
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} kind={self.kind} name={self.name}>"
+
+
+class AthleteSeason(Base):
+    """An athlete's results from a finished season.
+
+    Written before the yearly wipe, so it keeps no foreign keys: the athletes
+    and teams it names are deleted with the season.
+    """
+
+    __tablename__ = "athlete_seasons"
+    year = Column(Integer, primary_key=True, autoincrement=False)
+    athlete_id = Column(BigInteger, primary_key=True, autoincrement=False)
+    athlete_name = Column(String(255), nullable=False)
+    team_id = Column(BigInteger, nullable=True)
+    team_name = Column(String(1000), nullable=True)
+    # As that season's own daily_scores view scored it; the rules have changed.
+    points = Column(Double, nullable=False)
+    distance = Column(Double, nullable=False)  # miles
+    moving_time = Column(Integer, nullable=False)  # seconds
+    rides = Column(Integer, nullable=False)
+    days = Column(Integer, nullable=False)
+    # Null for anyone who was not on the leaderboard, such as an observer team.
+    rank = Column(Integer, nullable=True)
+    team_rank = Column(Integer, nullable=True)
+
+    def __repr__(self):
+        return (
+            f"<{self.__class__.__name__} year={self.year} athlete_id={self.athlete_id}>"
         )

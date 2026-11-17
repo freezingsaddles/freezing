@@ -5,15 +5,41 @@ from time import sleep
 import greenstalk
 
 from freezing.model import meta
-from freezing.model.msg.mq import ActivityUpdate, ActivityUpdateSchema
+from freezing.model.msg.mq import (
+    ActivityUpdate,
+    ActivityUpdateSchema,
+    AthleteUpdate,
+    AthleteUpdateSchema,
+    DefinedTubes,
+)
 from freezing.model.msg.strava import AspectType
 from freezing.model.orm import Athlete
 from freezing.sync.autolog import log
-from freezing.sync.config import Config, statsd
+from freezing.sync.config import Config, config, statsd
+from freezing.sync.data import forget_athlete
 from freezing.sync.data.activity import ActivitySync
 from freezing.sync.data.photos import PhotoSync
 from freezing.sync.data.streams import StreamSync
-from freezing.sync.exc import ActivityNotFound, IneligibleActivity
+from freezing.sync.exc import (
+    ActivityNotFound,
+    AthleteDeauthorized,
+    IneligibleActivity,
+)
+
+
+def too_late_to_matter(message: ActivityUpdate) -> bool:
+    """Say whether this event is past everything the competition will take.
+
+    Strava keeps sending events for as long as a rider leaves us authorised,
+    and riders go on riding, so out of season every upload in the field arrives
+    here. Reading one costs a Strava call and a cache file to decide it is not
+    a competition ride. The upload grace period is the last date the scores
+    move, so nothing after it is worth the fetch.
+    """
+    return (
+        message.event_time is not None
+        and message.event_time > config.END_DATE + config.UPLOAD_GRACE_PERIOD
+    )
 
 
 class ActivityUpdateSubscriber:
@@ -32,6 +58,12 @@ class ActivityUpdateSubscriber:
 
     def handle_message(self, message: ActivityUpdate):
         self.logger.info(f"Processing activity update {message}")
+
+        # A deletion is ours to honour whenever it comes: it costs no Strava
+        # call, and a ride a rider has removed should not stay in our database.
+        if message.operation is not AspectType.delete and too_late_to_matter(message):
+            self.logger.info(f"Out of season, ignoring {message}")
+            return
 
         with meta.transaction_context() as session:
             athlete: Athlete = session.get(Athlete, message.athlete_id)
@@ -59,7 +91,9 @@ class ActivityUpdateSubscriber:
                         tags=[f"team:{athlete.team_id}"],
                     )
                     self.activity_sync.fetch_and_store_activity_detail(
-                        athlete_id=message.athlete_id, activity_id=message.activity_id
+                        athlete_id=message.athlete_id,
+                        activity_id=message.activity_id,
+                        photos_changed=True,
                     )
                     self.streams_sync.fetch_and_store_activity_streams(
                         athlete_id=message.athlete_id, activity_id=message.activity_id
@@ -84,14 +118,46 @@ class ActivityUpdateSubscriber:
                     self.photos_sync.sync_photos(
                         athlete_id=message.athlete_id, activity_id=message.activity_id
                     )
-            except (ActivityNotFound, IneligibleActivity) as x:
+            except (ActivityNotFound, AthleteDeauthorized, IneligibleActivity) as x:
                 log.info(str(x))
+
+    def handle_athlete_message(self, message: AthleteUpdate):
+        self.logger.info(f"Processing athlete update {message}")
+
+        if not message.deauthorized:
+            self.logger.info(f"Nothing to do for {message}")
+            return
+
+        with meta.transaction_context() as session:
+            athlete: Athlete = session.get(Athlete, message.athlete_id)
+            if not athlete:
+                self.logger.info(
+                    f"Athlete {message.athlete_id} not found in database, "
+                    f"ignoring {message}"
+                )
+                return
+            statsd.increment(
+                "strava.athlete.deauthorize",
+                tags=[f"team:{athlete.team_id}"],
+            )
+            # Their rides stay: the competition is scored on what was ridden,
+            # not on who is still connected. Only the tokens go.
+            forget_athlete(athlete, self.logger)
 
     def run_forever(self):
         # This is expecting to run in the main thread. Needs a bit of redesign
         # if this is to be moved to a background thread.
         try:
-            schema = ActivityUpdateSchema()
+            schemas = {
+                DefinedTubes.activity_update.value: (
+                    ActivityUpdateSchema(),
+                    self.handle_message,
+                ),
+                DefinedTubes.athlete_update.value: (
+                    AthleteUpdateSchema(),
+                    self.handle_athlete_message,
+                ),
+            }
 
             while not self.shutdown_event.is_set():
                 try:
@@ -105,9 +171,10 @@ class ActivityUpdateSubscriber:
                     continue
                 else:
                     try:
-                        self.logger.info(f"Received message: {job.body!r}")
-                        update = schema.loads(job.body)
-                        self.handle_message(update)
+                        tube = self.client.stats_job(job)["tube"]
+                        self.logger.info(f"Received {tube} message: {job.body!r}")
+                        schema, handle = schemas[tube]
+                        handle(schema.loads(job.body))
                     except Exception:
                         msg = "Error processing message, will requeue w/ delay of {} seconds."
                         self.logger.exception(msg.format(Config.REQUEUE_DELAY))
