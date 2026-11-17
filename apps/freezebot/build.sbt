@@ -3,7 +3,7 @@ ThisBuild / organization := "org.freezingsaddles"
 
 lazy val freezebot = (project in file("."))
   .settings(
-    name := "freezebot",
+    name                             := "freezebot",
     // Target Java 21 bytecode: the runtime image is a 21 JRE even when dev runs newer.
     scalacOptions ++= Seq(
       "-deprecation",
@@ -12,7 +12,7 @@ lazy val freezebot = (project in file("."))
       "-java-output-version:21",
     ),
     libraryDependencies ++= Seq(
-      "ch.qos.logback"   % "logback-classic"   % "1.6.3",
+      "ch.qos.logback"   % "logback-classic"   % "1.6.7",
       "com.augustnagro" %% "magnum"            % "1.3.1",
       "com.lihaoyi"     %% "upickle"           % "4.1.0",
       "com.mysql"        % "mysql-connector-j" % "9.3.0",
