@@ -4,8 +4,8 @@ description: |
   <p><strong>BE A COMMUTE CHAMP!</strong> Bikes are transportation! Ride your bike to work, soak in the sunshine, arrive in a good mood (if a little sweaty). Do it again on the way home - decompress from your day and enjoy the sights. It’s good for you, good for the planet!</p>
   <p>Use the Strava <em>Commute</em> built-in tag and/or add <code>#commute</code> to your ride title to count the ride. A maximum of 2 rides per day will be counted, minimum 1 mile.
   <strong>Important:</strong> You must post at least one ride with <code>#commute-champ</code> in the title to join this competition. After that, you can just use the Strava tag.</p>
-url: https://discord.com/channels/1443244420358213643/1457554898781470813
-discord: 1457554898781470813
+# url: https://discord.com/channels/1443244420358213643/1457554898781470813
+# discord: 1457554898781470813
 fields:
   - name: athlete_id
     visible: false
