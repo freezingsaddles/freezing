@@ -27,7 +27,7 @@ tags:
     description: |
       You must ride a bike (per contest rules – outdoors, no ELFs, etc) at least one mile to a brewing establishment and taste one beer that was brewed on site.
       Tag your ride with with <code>#beerneuring</code>.
-    discord: 1447781269156135064
+    # discord: 1447781269156135064
     rank_by: rides
     min_miles: 1
 
@@ -52,7 +52,7 @@ tags:
       <li>Sleep outdoors or in unheated rustic lodging</li>
       <li>Use <code>#bikepacking</code> tag on Strava for the ride to your destination</li>
       </ul>
-    discord: 1456035311028277399
+    # discord: 1456035311028277399
     rank_by: days
 
   - tag: bikeshare
@@ -63,7 +63,7 @@ tags:
       Whoever gets the most mileage wins!
       Any bike that actually requires pedaling counts.
       Any bikeshare system is ok. Traveling to another city, maybe with better weather? Try out their bikes!
-    discord: 1449177006204915906
+    # discord: 1449177006204915906
     rank_by: miles
 
   - tag: bingo
@@ -73,7 +73,7 @@ tags:
       Follow the hashtag with the item from the bingo card, as in <code>#bingo military flag</code> (for a bingo card <em>Flag (Military)</em>), so the photo can be matched to the right square.
       If you want to add commentary, just separate it with punctuation or a dash, like <code>#bingo military flag - this one was on a ride to the grocery store</code>.
     rank_by: days
-    discord: 1443983774185422849
+    discord: 1573024035468738782
     default_view: photos
 
   - tag: bob
@@ -96,7 +96,7 @@ tags:
       Do not put the ball on or adjacent to military or government installations (i.e., on the grounds at the Pentagon or outside the gate at Ft Myer is a no-no). Take a picture that
       clearly shows where the ball is “hiding” so that seekers will have a good chance of finding it. Please place the ball during daylight hours to make the location clearer and don't
       hold onto the ball for more than a few hours before redeploying it.</p>
-    discord: 1469393581382041730
+    # discord: 1469393581382041730
     rank_by: rides
 
   - tag: civilwarforts
@@ -200,7 +200,7 @@ tags:
       Beginning <strong>February 1</strong> (and through the end of Freezing Saddles), once per day, visit an
       active public library, take a picture of said library, use hashtag <code>#library</code>
       on your ride and photo, and win.  Each unique library only counts once.
-    discord: 1462202150632554730
+    # discord: 1462202150632554730
     rank_by: days
 
   - tag: lolfunny
@@ -210,7 +210,7 @@ tags:
       Ride 1+ miles and post a photo of something you find that is laugh-out-loud funny to YOU.
       Tag your ride with hashtag <code>lolfunny</code> and add the photo to your ride in Strava.
       If it's not obvious, add a description to the photo of what about it struck you as funny.
-    discord: 1457486832831959151
+    # discord: 1457486832831959151
     freezebot: true
     rank_by: days
     default_view: photos
@@ -234,7 +234,7 @@ tags:
       <iframe class="c3-wide my-3 my-lg-4" src="https://www.arcgis.com/apps/Embed/index.html?webmap=28848aa8c63f4780843f5a3ea358debd&extent=-78.5714,38.1209,-75.0255,39.8226&zoom=true&scale=true&disable_scroll=false&theme=light">
       </iframe>
     rank_by: days
-    discord: 1462977433585062023
+    # discord: 1462977433585062023
 
   - tag: oldGeorge
     name: Old Georgetown Bike Lane
@@ -260,7 +260,7 @@ tags:
     name: Public Art Finder
     description: |
       Take a picture and upload your ride with hashtag <code>#publicartfinder</code>.
-    discord: 1446691565555814572
+    # discord: 1446691565555814572
     rank_by: rides
     default_view: photos
     friendless: true
@@ -273,14 +273,14 @@ tags:
       with <code>#scavhunt</code> in the photo description.
     rank_by: days
     default_view: photos
-    discord: 1455974154137239787
+    # discord: 1455974154137239787
     friendless: true
 
   - tag: singlespeed
     name: Singlespeed
     description: |
       Most singlespeed miles wins. Fixed gear counts, but isn't required. If your bike is cluttered with unnecessary gears, just don't shift the entire ride and it counts. Tag your rides <code>#singlespeed</code>.
-    discord: 1447780972480303255
+    # discord: 1447780972480303255
     rank_by: miles
 
   - tag: socks
@@ -314,7 +314,7 @@ tags:
     name: Tandem Rides
     description: |
       Ride your tandem bike and tag the ride with <code>#tandem</code>. The rider who has the most tandem rides wins. Bonus points awarded for rides with a blind or visually impaired stoker (tag <code>#tandemVI</code>) or with a partner age 15 or under (<code>#tandemKid</code>).
-    discord: 1446630946911686848
+    # discord: 1446630946911686848
     rank_by: rides
 
   - tag: tandemVI
@@ -341,7 +341,7 @@ tags:
     description: |
       Post a picture taken while on a bike ride of new transportation infrastructure under construction.
       Tag your ride with with <code>#UnderCon</code>.
-    discord: 1448069690436878568
+    # discord: 1448069690436878568
     rank_by: rides
     default_view: photos
 
@@ -359,5 +359,5 @@ tags:
       <li>Add the photo to your Strava ride</li>
       <li>Include <code>#Yum</code> in your Strava ride title</li>
       </ol>
-    discord: 1456702503981814042
+    # discord: 1456702503981814042
     rank_by: days
