@@ -34,7 +34,7 @@ dev = [
     "isort==9.0.2",
     "mypy==2.4.1",
     "pre-commit==4.7.0",
-    "pymarkdownlnt==0.9.41",
+    "pymarkdownlnt==0.9.42",
     "pytest==9.2.0",
     "pytest-mock==3.17.0",
 ]
