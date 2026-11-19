@@ -371,7 +371,6 @@ Create the persistent volumes needed for production:
 ```shell
 docker volume create --name=freezing-data
 docker volume create --name=beanstalkd-data
-docker volume create --name=wordpress-data
 ```
 
 ### 2.3 Configure MySQL production server
