@@ -8,7 +8,8 @@ from freezing.sync.exc import CommandError
 
 
 class BaseCommand(metaclass=abc.ABCMeta):
-    logger: logging.Logger | None = None
+    # Replaced by init_logging, which run() calls before execute().
+    logger: logging.Logger = logging.getLogger(__name__)
 
     #: Whether the command needs the competition database to be reachable.
     needs_database = True

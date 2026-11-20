@@ -17,6 +17,7 @@ from flask import (
     session,
     url_for,
 )
+from flask.typing import ResponseReturnValue
 from sqlalchemy import text
 from stravalib import Client
 from stravalib.exc import Fault
@@ -568,7 +569,7 @@ def register():
 
 
 @blueprint.route("/authorization")
-def authorization():
+def authorization() -> ResponseReturnValue:
     """
     Handle the redirect from Strava that includes parameters.
 

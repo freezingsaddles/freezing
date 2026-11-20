@@ -174,7 +174,7 @@ class PointlessPrizesSchema(BaseSchema):
     prizes = fields.Nested(PointlessPrizeSchema, many=True, required=True)
 
 
-def _load_pointless():
+def _load_pointless() -> PointlessPrizes:
     # doesn't belong in leaderboards but guess what? idk
     path = os.path.join(config.LEADERBOARDS_DIR, "pointless.yml")
     with open(path, encoding="utf-8") as fp:
