@@ -476,10 +476,20 @@ def register():
     if athlete and not authorized and step not in ("intro", "login"):
         return redirect(url_for(".register", step="login"))
 
-    # The form lives on the Wordpress site, which redirects back to this step.
+    # Both forms live on the Wordpress site, which redirects back to this step;
+    # the friends' form adds friend=true. The Next button for riders already
+    # registered comes here without it, so only a new registration says
+    # they're not a friend.
+    friend = request.args.get("friend") == "true"
     if step == "complete" and athlete and not athlete.registered:
-        log.info(f"Athlete {athlete.id} ({athlete.name}) completed registration")
+        log.info(
+            f"Athlete {athlete.id} ({athlete.name}) completed registration"
+            f"{' as a friend' if friend else ''}"
+        )
         athlete.registered = True
+        athlete.friend = friend
+    elif step == "complete" and athlete and friend:
+        athlete.friend = True
 
     now_tz = datetime.now(config.START_DATE.tzinfo)
     return render_template(
