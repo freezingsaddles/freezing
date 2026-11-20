@@ -378,7 +378,28 @@
 {% elif step == "complete" %}
     <h3 class="mb-3">Registration Complete</h3>
     <ul>
-        <li>Congratulations! Your registration is complete.</li>
+        <li>
+            Congratulations! Your registration is complete.
+            <ul>
+                <li>
+                    {% if "friend" in request.args %}
+                        Please check your inbox or spam folder to confirm your email address.
+                        You will not be on the mailing list unless you click on the link to confirm.
+                        If you don't receive the email, please
+                        <a rel="noreferrer"
+                           target="_blank"
+                           href="{{ registration_site }}contact-form/">contact us</a>.
+                    {% else %}
+                        Expect to receive a registration confirmation email and then later a second
+                        email asking you to confirm your email subscription.
+                        If you don't receive the email, please
+                        <a rel="noreferrer"
+                           target="_blank"
+                           href="{{ registration_site }}contact-form/">contact us</a>.
+                    {% endif %}
+                </li>
+            </ul>
+        </li>
         <li>
             You may now return to the home page and await the start of the
             competition.
@@ -409,7 +430,7 @@
             </ul>
         </li>
     </ul>
-    <a class="btn btn-primary mb-1" href="/">Done</a>
+    <a class="btn btn-primary btn-lg me-auto mb-1 px-5" href="/">Done</a>
 {% endif %}
 </div>
 {% endblock %}
