@@ -23,6 +23,7 @@ from freezing.web.utils import auth
 from freezing.web.utils.genericboard import load_board_and_data
 from freezing.web.utils.hashboard import load_hashtag
 from freezing.web.utils.wktutils import parse_linestring, parse_point_wkt
+from freezing.web.views.shared_sql import team_riders
 
 blueprint = Blueprint("api", __name__)
 
@@ -224,7 +225,9 @@ def _geo_tracks(start_date=None, end_date=None, team_id=None, limit=None):
     q = q.filter(~(Ride.private))
 
     if team_id is not None:
-        q = q.filter(Athlete.team_id == team_id)
+        q = q.filter(
+            text(f"athletes.id in ({team_riders(team_id)})").bindparams(team_id=team_id)
+        )
 
     if start_date is not None:
         q = q.filter(Ride.start_date >= start_date)
@@ -356,7 +359,7 @@ def _track_map(
              where
                {'true' if include_private else "not(R.private) and R.visibility = 'everyone'"}
                and {'A.id = :athlete_id' if athlete_id else 'true'}
-               and {'A.team_id = :team_id' if team_id else 'true'}
+               and {f'A.id in ({team_riders(team_id)})' if team_id else 'true'}
                and {_hashtag_filter(hash_tag)}
                and {'R.id in :ride_ids' if ride_ids is not None else 'true'}
              order by R.start_date {'asc' if oldest_first else 'desc'}, R.id asc

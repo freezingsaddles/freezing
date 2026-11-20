@@ -2,6 +2,19 @@
 
 from sqlalchemy import text
 
+from freezing.web.config import config
+
+
+def team_riders(team_id: int) -> str:
+    """
+    Return SQL selecting the ids of the riders a team's pages cover, by :team_id.
+
+    An observer club's are all its members, some of whom ride for other teams.
+    """
+    if team_id in config.OBSERVER_TEAMS:
+        return "select athlete_id from athlete_clubs where team_id = :team_id"
+    return "select id from athletes where team_id = :team_id"
+
 
 def team_sleaze_query():
     return text("""
