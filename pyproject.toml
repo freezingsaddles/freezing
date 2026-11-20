@@ -55,10 +55,6 @@ files = [
     "apps/sync/freezing",
     "apps/nq/freezing",
 ]
-# The ORM is declarative_base() with Column attributes, which mypy reads only
-# with SQLAlchemy's plugin (deprecated in 2.0 in favour of Mapped[] annotations,
-# still shipped).
-plugins = ["sqlalchemy.ext.mypy.plugin"]
 # Libraries without type information are Any rather than errors.
 ignore_missing_imports = true
 
