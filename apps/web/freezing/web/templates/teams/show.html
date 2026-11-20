@@ -55,6 +55,10 @@
                    rel="noreferrer"
                    target="_blank"
                    href="https://www.strava.com/clubs/{{ team.id }}">View on Strava</a>
+                {% if club %}
+                    <a class="btn btn-primary btn-sm ms-3"
+                       href="{{ url_for('pointless.club', team_id=team.id) }}">View Leaderboard</a>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -127,6 +127,7 @@ def teams_show_team(team_id):
     return render_template(
         "teams/show.html",
         team=our_team,
+        club=our_team.id in config.OBSERVER_TEAMS,
         members=list(members),
         stats=stats,
         mosaic=mosaic,
