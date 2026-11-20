@@ -1,6 +1,11 @@
 """Functions for interacting with the datastore and the strava apis."""
 
+import time
+
+from stravalib import Client
+
 from freezing.common import athletes, teams
+from freezing.model import meta
 from freezing.web import config
 
 
@@ -34,3 +39,32 @@ def register_athlete_team(strava_athlete, athlete_model):
         observer_teams=config.OBSERVER_TEAMS,
         main_team=config.MAIN_TEAM,
     )
+
+
+def refresh_athlete_team(athlete_model):
+    """
+    Read the athlete's clubs from Strava now and register their team.
+
+    Renews the access token first if it is about to expire.
+
+    :raise MultipleTeamsError: as :func:`register_athlete_team` does.
+    :raise NoTeamsError: as :func:`register_athlete_team` does.
+    """
+    client = Client(access_token=athlete_model.access_token)
+    if (
+        athlete_model.access_token is None
+        or athlete_model.expires_at < time.time() + 60
+    ):
+        token = client.refresh_access_token(
+            client_id=config.STRAVA_CLIENT_ID,
+            client_secret=config.STRAVA_CLIENT_SECRET,
+            refresh_token=athlete_model.refresh_token,
+        )
+        athlete_model.access_token = token["access_token"]
+        athlete_model.refresh_token = token["refresh_token"]
+        athlete_model.expires_at = token["expires_at"]
+        # Strava may retire the old refresh token, so keep the new one even if
+        # what follows fails.
+        meta.scoped_session().commit()
+        client.access_token = token["access_token"]
+    return register_athlete_team(client.get_athlete(), athlete_model)
