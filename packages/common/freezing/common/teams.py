@@ -43,9 +43,13 @@ def fill_clubs(client, strava_athlete):
     return strava_athlete
 
 
+# A blank account can pick up a few followers or friends of its own.
+BLANK_MAX_FOLLOWERS = 5
+
+
 def looks_blank(strava_athlete) -> bool:
     """
-    Say whether the athlete has no clubs, gear, followers or friends at all.
+    Say whether the athlete has no clubs or gear, and hardly any followers or friends.
 
     Signing in to Strava with Google, Apple or Facebook can make a new, empty
     account instead of using the one the rider rides with.
@@ -54,8 +58,8 @@ def looks_blank(strava_athlete) -> bool:
         strava_athlete.clubs
         or getattr(strava_athlete, "bikes", None)
         or getattr(strava_athlete, "shoes", None)
-        or getattr(strava_athlete, "follower_count", None)
-        or getattr(strava_athlete, "friend_count", None)
+        or (getattr(strava_athlete, "follower_count", None) or 0) > BLANK_MAX_FOLLOWERS
+        or (getattr(strava_athlete, "friend_count", None) or 0) > BLANK_MAX_FOLLOWERS
     )
 
 

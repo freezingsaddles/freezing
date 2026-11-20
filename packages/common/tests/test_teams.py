@@ -171,6 +171,17 @@ def test_fill_clubs_leaves_listed_clubs_alone():
 def test_looks_blank():
     assert looks_blank(athlete())
     assert not looks_blank(athlete(club(RED)))
-    followed = athlete()
-    followed.follower_count = 3
-    assert not looks_blank(followed)
+    geared = athlete()
+    geared.bikes = [SimpleNamespace(id="b1")]
+    assert not looks_blank(geared)
+
+
+@pytest.mark.parametrize(
+    "followers, friends, blank",
+    [(1, 0, True), (5, 5, True), (6, 0, False), (0, 6, False), (None, None, True)],
+)
+def test_looks_blank_allows_a_few_followers(followers, friends, blank):
+    a = athlete()
+    a.follower_count = followers
+    a.friend_count = friends
+    assert looks_blank(a) is blank
