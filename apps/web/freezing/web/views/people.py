@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 from math import ceil
 
-from flask import Blueprint, abort, render_template
+from flask import Blueprint, abort, render_template, session
 from sqlalchemy import case, distinct, func, text
 
 from freezing.model import meta
 from freezing.model.orm import Athlete, AthleteSeason, Team
 from freezing.web import config
+from freezing.web.utils.auth import requires_auth
 from freezing.web.utils.tribes import load_tribes, query_tribes
 
 blueprint = Blueprint("people", __name__)
@@ -63,6 +64,12 @@ def people_list_users():
         weekstart=week_start,
         weekend=week_end,
     )
+
+
+@blueprint.route("/me")
+@requires_auth
+def people_show_me():
+    return people_show_person(session["athlete_id"])
 
 
 @blueprint.route("/<user_id>")
