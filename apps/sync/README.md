@@ -31,7 +31,7 @@ This component is designed to run as a container and should be configured with e
 - `VISUAL_CROSSING_API_KEY`: The key to your visualcrossing.com development account.
 - `VISUAL_CROSSING_CACHE_DIR`: The directory for visualcrossing.com cache files
 - `TEAMS`: A comma-separated list of team (Strava club) IDs for the competition. = env('TEAMS', cast=list, subcast=int, default=[])
-- `OBSERVER_TEAMS`: Comma-separated list of team (Strava club) IDs for teams outside the main competition. Each gets its own leaderboard at `/pointless/club/<id>`; to link it from the header, add `url: /pointless/club/<id>` to `leaderboards/pointless.yml`. Riders who belong only to an observer team are left off the main leaderboards. A rider can belong to an observer team and a main competition team at the same time. Every ID here must also be in `TEAMS`, or riders who belong only to an observer team can't register.
+- `OBSERVER_TEAMS`: Comma-separated list of team (Strava club) IDs for teams outside the main competition. Each gets its own leaderboard at `/pointless/club/<id>`; to link it from the header, add `url: /pointless/club/<id>` to `leaderboards/pointless.yml`. Riders who belong only to an observer team are left off the main leaderboards. A rider can belong to an observer team and a main competition team at the same time.
 - `START_DATE`: The beginning of the competition.
 - `END_DATE`: The end of the competition.
 - `UPLOAD_GRACE_PERIOD`: How long (days) can people upload rides after competition>

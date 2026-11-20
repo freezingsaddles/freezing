@@ -47,19 +47,18 @@ def register_athlete_team(
         ``Client.get_athlete()``; only ``id``, ``firstname``, ``lastname`` and
         ``clubs`` are used.
     :param athlete_model: The athlete's database row.
-    :param competition_teams: Strava club ids of every team in the competition,
-        observers included.
-    :param observer_teams: Club ids of teams excluded from the leaderboard.
-        Membership of one of these does not count as a conflict with a real
-        team.
+    :param competition_teams: Strava club ids of the competition's teams.
+    :param observer_teams: Club ids of teams outside the competition, whose
+        riders are left off its leaderboards. Membership of one of these does
+        not count as a conflict with a real team.
     :param main_team: The club everyone joins; used as a fallback when the
         athlete is in no other configured team.
     :raise MultipleTeamsError: if the athlete is in more than one real team.
     :raise NoTeamsError: if no configured team matches.
     """
-    competition_teams = set(competition_teams)
     observer_teams = set(observer_teams)
-    logger.info("Checking %r against %r", strava_athlete.clubs, competition_teams)
+    configured = set(competition_teams) | observer_teams
+    logger.info("Checking %r against %r", strava_athlete.clubs, configured)
 
     if strava_athlete.clubs is None:
         raise NoTeamsError(
@@ -76,11 +75,11 @@ def register_athlete_team(
     teams = {
         c.id: _team(session, c, observer_teams)
         for c in strava_athlete.clubs
-        if c.id in competition_teams | observer_teams
+        if c.id in configured
     }
     athlete_model.clubs = list(teams.values())
 
-    matches = [c for c in strava_athlete.clubs if c.id in competition_teams]
+    matches = [c for c in strava_athlete.clubs if c.id in configured]
     logger.debug("Matched: %r", matches)
     athlete_model.team = None
     if len(matches) > 1:

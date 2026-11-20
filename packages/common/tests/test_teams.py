@@ -11,7 +11,7 @@ from freezing.common.teams import (
 from freezing.model.orm import Athlete, Team
 
 MAIN, RED, BLUE, OBSERVERS = 1, 10, 11, 99
-TEAMS = {"competition_teams": [RED, BLUE, OBSERVERS], "observer_teams": [OBSERVERS]}
+TEAMS = {"competition_teams": [RED, BLUE], "observer_teams": [OBSERVERS]}
 
 
 def club(club_id, name="Club"):
@@ -102,15 +102,17 @@ def test_every_configured_club_is_recorded(session):
     }
 
 
-def test_observer_listed_only_in_observer_teams_is_recorded(session):
+def test_observer_also_listed_in_teams_still_works(session):
     model = Athlete()
-    register_athlete_team(
-        athlete(club(RED), club(77)),
+    team = register_athlete_team(
+        athlete(club(OBSERVERS)),
         model,
-        competition_teams=[RED],
-        observer_teams=[77],
+        competition_teams=[RED, BLUE, OBSERVERS],
+        observer_teams=[OBSERVERS],
     )
-    assert sorted(t.id for t in model.clubs) == [RED, 77]
+    assert team.id == OBSERVERS
+    assert team.leaderboard_exclude is True
+    assert [t.id for t in model.clubs] == [OBSERVERS]
 
 
 def test_main_team_fallback_is_a_club_too(session):

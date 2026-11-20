@@ -107,7 +107,7 @@ sudo /opt/compose/bin/clear-cache-directories.sh
 
 * Once the teams are announced (for the original Freezing Saddles competition, typically at the Happy Hour in early January):
   * Add the team IDs for the competition teams and any observer teams (ringer teams) into the production `.env` file
-  * Add each observer team's ID to both `TEAMS` and `OBSERVER_TEAMS`, and add `url: /pointless/club/<id>` to `leaderboards/pointless.yml` to link its leaderboard from the header
+  * Add each observer team's ID to `OBSERVER_TEAMS`, and add `url: /pointless/club/<id>` to `leaderboards/pointless.yml` to link its leaderboard from the header
   * Restart the services:
 
     cd /opt/compose && docker compose up -d
