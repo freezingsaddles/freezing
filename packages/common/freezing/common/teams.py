@@ -38,27 +38,27 @@ def register_athlete_team(
     """
     Update the database with the configured team that matches the athlete's clubs.
 
-    Sets ``athlete_model.team`` to the created or updated team. The team row is
-    added to the current scoped session but not committed; the caller owns the
-    transaction.
+    Sets ``athlete_model.clubs`` to every configured club the athlete is in, even
+    when no team can be chosen, and ``athlete_model.team`` to the chosen one. The
+    team rows are added to the current scoped session but not committed; the
+    caller owns the transaction.
 
     :param strava_athlete: The athlete returned by ``stravalib``'s
         ``Client.get_athlete()``; only ``id``, ``firstname``, ``lastname`` and
         ``clubs`` are used.
     :param athlete_model: The athlete's database row.
-    :param competition_teams: Strava club ids of every team in the competition,
-        observers included.
-    :param observer_teams: Club ids of teams excluded from the leaderboard.
-        Membership of one of these does not count as a conflict with a real
-        team.
+    :param competition_teams: Strava club ids of the competition's teams.
+    :param observer_teams: Club ids of teams outside the competition, whose
+        riders are left off its leaderboards. Membership of one of these does
+        not count as a conflict with a real team.
     :param main_team: The club everyone joins; used as a fallback when the
         athlete is in no other configured team.
     :raise MultipleTeamsError: if the athlete is in more than one real team.
     :raise NoTeamsError: if no configured team matches.
     """
-    competition_teams = set(competition_teams)
     observer_teams = set(observer_teams)
-    logger.info("Checking %r against %r", strava_athlete.clubs, competition_teams)
+    configured = set(competition_teams) | observer_teams
+    logger.info("Checking %r against %r", strava_athlete.clubs, configured)
 
     if strava_athlete.clubs is None:
         raise NoTeamsError(
@@ -71,7 +71,15 @@ def register_athlete_team(
             )
         )
 
-    matches = [c for c in strava_athlete.clubs if c.id in competition_teams]
+    session = meta.scoped_session()
+    teams = {
+        c.id: _team(session, c, observer_teams)
+        for c in strava_athlete.clubs
+        if c.id in configured
+    }
+    athlete_model.clubs = list(teams.values())
+
+    matches = [c for c in strava_athlete.clubs if c.id in configured]
     logger.debug("Matched: %r", matches)
     athlete_model.team = None
     if len(matches) > 1:
@@ -95,7 +103,16 @@ def register_athlete_team(
         )
 
     club = matches[0]
-    session = meta.scoped_session()
+    team = teams.get(club.id)
+    if team is None:
+        team = _team(session, club, observer_teams)
+        athlete_model.clubs.append(team)
+    athlete_model.team = team
+    return team
+
+
+def _team(session, club, observer_teams: set[int]) -> Team:
+    """Create or update the club's row in the session."""
     team = session.get(Team, club.id)
     if team is None:
         team = Team()
@@ -104,6 +121,5 @@ def register_athlete_team(
     team.cover_photo = getattr(club, "cover_photo", None)
     team.profile_photo = getattr(club, "profile", None)
     team.leaderboard_exclude = club.id in observer_teams
-    athlete_model.team = team
     session.add(team)
     return team

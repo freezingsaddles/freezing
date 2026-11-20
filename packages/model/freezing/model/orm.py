@@ -14,6 +14,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Table,
     Text,
     Time,
     orm,
@@ -92,6 +93,30 @@ class Athlete(StravaEntity):
         lazy="dynamic",
         cascade="all, delete, delete-orphan",
     )
+    clubs: Mapped[list["Team"]] = orm.relationship("Team", secondary="athlete_clubs")
+
+
+# Every configured club an athlete is in, their team among them. Observer clubs
+# have leaderboards of their own, so riders on a real team can be in one too.
+athlete_clubs = Table(
+    "athlete_clubs",
+    Base.metadata,
+    Column(
+        "athlete_id",
+        BigInteger,
+        ForeignKey("athletes.id", ondelete="cascade"),
+        primary_key=True,
+    ),
+    Column(
+        "team_id",
+        BigInteger,
+        ForeignKey("teams.id", ondelete="cascade"),
+        primary_key=True,
+        index=True,
+    ),
+    mysql_engine="InnoDB",
+    mysql_charset="utf8mb4",
+)
 
 
 class RideError(StravaEntity):

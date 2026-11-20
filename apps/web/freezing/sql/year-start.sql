@@ -35,9 +35,10 @@ select 'cleaning out ride_weather';
 truncate ride_weather;
 select 'cleaning out rides';
 delete from rides;
-/* tribes has a foreign key on athletes with on delete cascade, so it empties
-   with them. It has to be a delete rather than a truncate for that to happen. */
-select 'cleaning out athletes, and tribes with them';
+/* tribes and athlete_clubs have foreign keys on athletes with on delete
+   cascade, so they empty with them. It has to be a delete rather than a
+   truncate for that to happen. */
+select 'cleaning out athletes, and tribes and athlete_clubs with them';
 delete from athletes;
 select 'cleaning out teams';
 delete from teams;

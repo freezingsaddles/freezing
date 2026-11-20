@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block head %}
+    <style>
+  li.large a {
+    font-size: 1.25rem
+  }
+  li.large::marker {
+    font-size: 1.125rem;
+  }
+  li:nth-of-type(11) {
+    margin-top: .25rem;
+  }
+  .myself {
+    background-color: #ffff0020;
+    outline: 3px solid #ffff0020;
+    border-radius: 4px;
+  }
+    </style>
+{% endblock %}
+{% block title %}
+    {{ team.name }}
+{% endblock %}
+{% block content %}
+    <h2 class="mb-3">{{ team.name }}</h2>
+    <p>
+        The members of <a href="/teams/{{ team.id }}">{{ team.name }}</a>, ranked by their points.
+    </p>
+    {% if rows %}
+        <ol>
+            {% for row in rows %}
+                <li class="{{ 'large' if loop.index <= 10 else '' }} {{ row._mapping['athlete_id'] | myself }}">
+                    <a href="/people/{{ row._mapping['athlete_id'] }}"
+                       class="hover-underline">{{ row._mapping['athlete_name'] }}</a> –
+                    <strong>{{ row._mapping['total_score']|round|int|groupnum }}</strong> points
+                    ({{ row._mapping['days_ridden'] }} day{{ row._mapping['days_ridden']|ess }},
+                    {{ row._mapping['total_distance']|round|int|groupnum }} miles)
+                    {% if row._mapping["team_id"] and row._mapping["team_id"] != team.id %}
+                        – <a href="/teams/{{ row._mapping['team_id'] }}"
+                             class="hover-underline">{{ row._mapping['team_name'] }}</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    {% else %}
+        <p class="text-muted">No member has ridden yet.</p>
+    {% endif %}
+{% endblock %}

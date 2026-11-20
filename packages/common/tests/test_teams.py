@@ -11,7 +11,7 @@ from freezing.common.teams import (
 from freezing.model.orm import Athlete, Team
 
 MAIN, RED, BLUE, OBSERVERS = 1, 10, 11, 99
-TEAMS = {"competition_teams": [RED, BLUE, OBSERVERS], "observer_teams": [OBSERVERS]}
+TEAMS = {"competition_teams": [RED, BLUE], "observer_teams": [OBSERVERS]}
 
 
 def club(club_id, name="Club"):
@@ -87,3 +87,57 @@ def test_no_clubs_means_reauthorize(session):
     strava_athlete.clubs = None
     with pytest.raises(NoTeamsError, match="re-authorize"):
         register_athlete_team(strava_athlete, Athlete(), **TEAMS)
+
+
+def test_every_configured_club_is_recorded(session):
+    model = Athlete()
+    team = register_athlete_team(
+        athlete(club(RED), club(OBSERVERS), club(12345)), model, **TEAMS
+    )
+    assert team.id == RED
+    assert sorted(t.id for t in model.clubs) == [RED, OBSERVERS]
+    assert {t.id: t.leaderboard_exclude for t in model.clubs} == {
+        RED: False,
+        OBSERVERS: True,
+    }
+
+
+def test_observer_also_listed_in_teams_still_works(session):
+    model = Athlete()
+    team = register_athlete_team(
+        athlete(club(OBSERVERS)),
+        model,
+        competition_teams=[RED, BLUE, OBSERVERS],
+        observer_teams=[OBSERVERS],
+    )
+    assert team.id == OBSERVERS
+    assert team.leaderboard_exclude is True
+    assert [t.id for t in model.clubs] == [OBSERVERS]
+
+
+def test_main_team_fallback_is_a_club_too(session):
+    model = Athlete()
+    team = register_athlete_team(
+        athlete(club(MAIN), club(OBSERVERS)), model, main_team=MAIN, **TEAMS
+    )
+    assert team.id == OBSERVERS
+    model = Athlete()
+    team = register_athlete_team(athlete(club(MAIN)), model, main_team=MAIN, **TEAMS)
+    assert team.id == MAIN
+    assert [t.id for t in model.clubs] == [MAIN]
+
+
+def test_clubs_are_recorded_when_no_team_can_be_chosen(session):
+    model = Athlete()
+    with pytest.raises(MultipleTeamsError):
+        register_athlete_team(
+            athlete(club(RED), club(BLUE), club(OBSERVERS)), model, **TEAMS
+        )
+    assert sorted(t.id for t in model.clubs) == [RED, BLUE, OBSERVERS]
+
+
+def test_clubs_left_are_dropped(session):
+    model = Athlete()
+    register_athlete_team(athlete(club(RED), club(OBSERVERS)), model, **TEAMS)
+    register_athlete_team(athlete(club(RED)), model, **TEAMS)
+    assert [t.id for t in model.clubs] == [RED]

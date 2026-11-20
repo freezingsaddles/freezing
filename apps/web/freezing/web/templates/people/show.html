@@ -170,6 +170,22 @@
                     </li>
                 {% endfor %}
             </ul>
+            {% if data.other_teams %}
+                <h5 class="ps-2 mt-3 mt-lg-4">Other Teams</h5>
+                <ul class="list-group">
+                    {% for other in data.other_teams %}
+                        <li class="list-group-item">
+                            {% if other.id in data.observer_teams %}
+                                <a href="/pointless/club/{{ other.id }}"
+                                   class="hover-underline">{{ other.name }}</a>
+                            {% else %}
+                                <a href="/teams/{{ other.id }}"
+                                   class="hover-underline">{{ other.name }}</a>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
         </div>
     </div>
     <h5 class="ps-2 mt-3 mt-lg-4">Ride Mosaic</h5>
