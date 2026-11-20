@@ -18,7 +18,9 @@ def before_cursor_execute(
 
 
 @event.listens_for(Engine, "after_cursor_execute")
-def after_cursor_execute(conn, _cursor, statement, _parameters, _context, _executemany):
+def after_cursor_execute(
+    conn, _cursor, statement, _parameters, _context, _executemany
+) -> None:
     total: float = time.time() - conn.info["query_start_time"].pop(-1)
     if total > 0.5:
         logger.warning("SQL query took %f seconds: %s", total, statement)

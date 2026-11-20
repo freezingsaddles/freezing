@@ -17,6 +17,7 @@ from flask import (
     session,
     url_for,
 )
+from flask.typing import ResponseReturnValue
 from sqlalchemy import text
 from stravalib import Client
 from stravalib.exc import Fault
@@ -424,17 +425,19 @@ def logout():
 @blueprint.route("/authorize")
 @blueprint.route("/login")
 def join():
+    # Forced, Strava asks again which account and what it may read.
+    approval_prompt = "force" if "reconnect" in request.args else "auto"
     c = Client()
     public_url = c.authorization_url(
         client_id=config.STRAVA_CLIENT_ID,
         redirect_uri=url_for(".authorization", _external=True),
-        approval_prompt="auto",
+        approval_prompt=approval_prompt,
         scope=["read", "activity:read", "profile:read_all"],
     )
     private_url = c.authorization_url(
         client_id=config.STRAVA_CLIENT_ID,
         redirect_uri=url_for(".authorization", _external=True),
-        approval_prompt="auto",
+        approval_prompt=approval_prompt,
         scope=["read_all", "activity:read_all", "profile:read_all"],
     )
     now_tz = datetime.now(config.START_DATE.tzinfo)
@@ -568,7 +571,7 @@ def register():
 
 
 @blueprint.route("/authorization")
-def authorization():
+def authorization() -> ResponseReturnValue:
     """
     Handle the redirect from Strava that includes parameters.
 
@@ -715,5 +718,6 @@ def authorization():
         main_team_page=f"https://strava.com/clubs/{config.MAIN_TEAM}",
         multiple_teams=multiple_teams,
         no_teams=no_teams,
+        blank=blank,
         rides_url=url_for("user.rides"),
     )

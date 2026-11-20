@@ -1,5 +1,6 @@
 """Hand back authorisations from seasons whose database is long gone."""
 
+import argparse
 import json
 import time
 from collections import defaultdict
@@ -109,7 +110,6 @@ class DeauthorizeHistoryScript(BaseCommand):
                 athlete = int(row["id"])
                 seen[athlete][token] = max(seen[athlete].get(token, 0), expires)
                 count += 1
-            assert self.logger is not None
             named = "standard input" if backup == STDIN else backup.name
             if not count:
                 # `docker exec` without -i hands the command an empty stdin and
@@ -168,7 +168,7 @@ class DeauthorizeHistoryScript(BaseCommand):
             return "deauthorized"
         return "already-gone"
 
-    def execute(self, args):
+    def execute(self, args: argparse.Namespace) -> None:
         by_athlete = self.tokens_by_athlete(args.backups)
         done = self.read_ledger(args.ledger)
 
