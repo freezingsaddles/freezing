@@ -18,12 +18,14 @@ from sqlalchemy import (
     Time,
     orm,
 )
-from sqlalchemy.orm import DynamicMapped, Mapped, declarative_base
+from sqlalchemy.orm import DeclarativeBase, DynamicMapped, Mapped
 
 from . import meta, satypes
 from .config import config
 
-Base = declarative_base(metadata=meta.metadata)
+
+class Base(DeclarativeBase):
+    metadata = meta.metadata
 
 
 class _SqlView:
