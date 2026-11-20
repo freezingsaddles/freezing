@@ -38,6 +38,60 @@ def teams_show_team(team_id):
 
     members = meta.scoped_session().execute(q).fetchall()
 
+    # Counted as the team leaderboard counts them.
+    q = text("""
+             select
+               coalesce(sum(DS.points), 0) as points,
+               count(DS.points) as days,
+               coalesce(sum(DS.distance), 0) as distance
+             from daily_scores DS
+             where DS.team_id = :team
+             ;
+             """).bindparams(team=team_id)
+    totals = meta.scoped_session().execute(q).one()._mapping
+
+    q = text("""
+             select
+               coalesce(sum(case when W.ride_temp_avg < 32 then R.moving_time end), 0)
+                 as sub_freezing,
+               coalesce(sum(case when W.ride_rain = 1 then R.moving_time end), 0)
+                 as rain,
+               coalesce(sum(case when W.ride_snow = 1 then R.moving_time end), 0)
+                 as snow
+             from rides R
+               join athletes A on A.id = R.athlete_id
+               join ride_weather W on W.ride_id = R.id
+             where A.team_id = :team
+             ;
+             """).bindparams(team=team_id)
+    weather = meta.scoped_session().execute(q).one()._mapping
+
+    q = text("""
+             select RE.personal_record as pr, count(*) as count
+             from ride_efforts RE
+               join rides R on R.id = RE.ride_id
+               join athletes A on A.id = R.athlete_id
+             where A.team_id = :team and RE.personal_record is not null
+             group by RE.personal_record
+             ;
+             """).bindparams(team=team_id)
+    prs = {
+        res._mapping["pr"]: res._mapping["count"]
+        for res in meta.scoped_session().execute(q).fetchall()
+    }
+
+    stats = {
+        "points": totals["points"],
+        "days": totals["days"],
+        "miles": totals["distance"],
+        "sub_freezing_hours": int(weather["sub_freezing"]) / 3600,
+        "rain_hours": int(weather["rain"]) / 3600,
+        "snow_hours": int(weather["snow"]) / 3600,
+        "pr_gold": prs.get(1, 0),
+        "pr_silver": prs.get(2, 0),
+        "pr_bronze": prs.get(3, 0),
+    }
+
     q = text("""
            with daily_rides as (
             select R.competition_date as ride_date,
@@ -74,6 +128,7 @@ def teams_show_team(team_id):
         "teams/show.html",
         team=our_team,
         members=list(members),
+        stats=stats,
         mosaic=mosaic,
         weeks=weeks,
         first_day=(config.START_DATE - start).days,
