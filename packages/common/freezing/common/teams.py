@@ -38,9 +38,10 @@ def register_athlete_team(
     """
     Update the database with the configured team that matches the athlete's clubs.
 
-    Sets ``athlete_model.team`` to the created or updated team. The team row is
-    added to the current scoped session but not committed; the caller owns the
-    transaction.
+    Sets ``athlete_model.clubs`` to every configured club the athlete is in, even
+    when no team can be chosen, and ``athlete_model.team`` to the chosen one. The
+    team rows are added to the current scoped session but not committed; the
+    caller owns the transaction.
 
     :param strava_athlete: The athlete returned by ``stravalib``'s
         ``Client.get_athlete()``; only ``id``, ``firstname``, ``lastname`` and
@@ -71,6 +72,14 @@ def register_athlete_team(
             )
         )
 
+    session = meta.scoped_session()
+    teams = {
+        c.id: _team(session, c, observer_teams)
+        for c in strava_athlete.clubs
+        if c.id in competition_teams | observer_teams
+    }
+    athlete_model.clubs = list(teams.values())
+
     matches = [c for c in strava_athlete.clubs if c.id in competition_teams]
     logger.debug("Matched: %r", matches)
     athlete_model.team = None
@@ -95,7 +104,16 @@ def register_athlete_team(
         )
 
     club = matches[0]
-    session = meta.scoped_session()
+    team = teams.get(club.id)
+    if team is None:
+        team = _team(session, club, observer_teams)
+        athlete_model.clubs.append(team)
+    athlete_model.team = team
+    return team
+
+
+def _team(session, club, observer_teams: set[int]) -> Team:
+    """Create or update the club's row in the session."""
     team = session.get(Team, club.id)
     if team is None:
         team = Team()
@@ -104,6 +122,5 @@ def register_athlete_team(
     team.cover_photo = getattr(club, "cover_photo", None)
     team.profile_photo = getattr(club, "profile", None)
     team.leaderboard_exclude = club.id in observer_teams
-    athlete_model.team = team
     session.add(team)
     return team
