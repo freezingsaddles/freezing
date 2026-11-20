@@ -624,7 +624,7 @@ def authorization():
         code = request.args.get("code")
         scope = request.args.get("scope")
         state = request.args.get("state")
-        log.info(f"Auth code: {code}, scope: {scope}, state: {state}")
+        log.info(f"Authorization scope: {scope}, state: {state}")
         profile_missing = "profile:read_all" not in (scope or "").split(",")
 
         # Strava sends people here with a code. Anyone arriving without one has
@@ -650,7 +650,10 @@ def authorization():
             )
         # Use the now-authenticated client to get the current athlete
         strava_athlete = teams.fill_clubs(client, client.get_athlete())
-        log.info("Strava athlete: {}", str(strava_athlete))
+        log.info(
+            f"Strava athlete {strava_athlete.id} ({strava_athlete.firstname} "
+            f"{strava_athlete.lastname}), {len(strava_athlete.clubs or [])} clubs"
+        )
         athlete = data.register_athlete(strava_athlete, token_dict)
         log.info(f"Received athlete auth [id: {athlete.id}, name: {athlete.name}]")
         try:
