@@ -1,7 +1,7 @@
 """Athlete clubs.
 
 Revision ID: 75d6da077a30
-Revises: a454b1c73435
+Revises: 3f8b2d6c9e41
 Create Date: 2026-11-20
 
 The athlete sync fills it in for everyone already registered.
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "75d6da077a30"
-down_revision = "a454b1c73435"
+down_revision = "3f8b2d6c9e41"
 
 
 def upgrade():
