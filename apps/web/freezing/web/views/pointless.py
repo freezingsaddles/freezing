@@ -14,7 +14,7 @@ from flask import (
 from sqlalchemy import text
 
 from freezing.model import meta
-from freezing.model.orm import Athlete
+from freezing.model.orm import Athlete, Team
 from freezing.web.config import config
 from freezing.web.exc import ObjectNotFound
 from freezing.web.utils.genericboard import format_rows, load_board, load_board_and_data
@@ -426,6 +426,36 @@ def segment_leaderboard(segment):
             meta.sponsors if meta else None,
             session.get("athlete_id"),
         ),
+    )
+
+
+@blueprint.route("/club/<int:team_id>")
+def club(team_id):
+    team = meta.scoped_session().get(Team, team_id)
+    if team_id not in config.OBSERVER_TEAMS or not team:
+        abort(404)
+    q = text("""
+        select
+          A.id as athlete_id,
+          A.display_name as athlete_name,
+          T.id as team_id,
+          T.name as team_name,
+          sum(DS.distance) as total_distance,
+          sum(DS.points) as total_score,
+          count(DS.points) as days_ridden
+        from athlete_clubs AC
+          join athletes A on A.id = AC.athlete_id
+          join daily_scores DS on DS.athlete_id = A.id
+          left join teams T on T.id = A.team_id
+        where AC.team_id = :club
+        group by A.id, A.display_name, T.id, T.name
+        order by total_score desc
+        ;
+    """).bindparams(club=team_id)
+    return render_template(
+        "pointless/club.html",
+        team=team,
+        rows=meta.scoped_session().execute(q).fetchall(),
     )
 
 

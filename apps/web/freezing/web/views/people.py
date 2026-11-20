@@ -126,6 +126,10 @@ def people_show_person(user_id):
         (res._mapping["ride_date"] - start.date()).days: color(res) for res in indiv_q
     }
 
+    other_teams = sorted(
+        (t for t in our_user.clubs if t.id != our_user.team_id), key=lambda t: t.name
+    )
+
     tribal_groups = load_tribes()
     my_tribes = query_tribes(user_id)
 
@@ -135,6 +139,8 @@ def people_show_person(user_id):
         data={
             "environment": config.ENVIRONMENT,
             "my_tribes": my_tribes,
+            "other_teams": other_teams,
+            "observer_teams": config.OBSERVER_TEAMS,
             "team": our_team,
             "todaydist": today_dist,
             "todayrides": today_rides,

@@ -7,6 +7,7 @@ from sqlalchemy import text
 from freezing.model import meta
 from freezing.model.orm import Team
 from freezing.web import config
+from freezing.web.views.shared_sql import team_riders
 
 blueprint = Blueprint("teams", __name__)
 
@@ -19,8 +20,9 @@ def teams_show_team(team_id):
 
     if our_team.profile_photo and not str.startswith(our_team.profile_photo, "http"):
         our_team.profile_photo = None
+    riders = team_riders(our_team.id)
 
-    q = text("""
+    q = text(f"""
              select
                A.id as athlete_id,
                A.display_name as athlete_name,
@@ -29,28 +31,28 @@ def teams_show_team(team_id):
                count(DS.points) as days_ridden
              from
                daily_scores DS
-                 join lbd_athletes A on A.id = DS.athlete_id
-             where A.team_id = :team
+                 join athletes A on A.id = DS.athlete_id
+             where A.id in ({riders})
              group by A.id, A.display_name
              order by display_name asc
              ;
-             """).params(team=team_id)
+             """).bindparams(team_id=our_team.id)
 
     members = meta.scoped_session().execute(q).fetchall()
 
     # Counted as the team leaderboard counts them.
-    q = text("""
+    q = text(f"""
              select
                coalesce(sum(DS.points), 0) as points,
                count(DS.points) as days,
                coalesce(sum(DS.distance), 0) as distance
              from daily_scores DS
-             where DS.team_id = :team
+             where DS.athlete_id in ({riders})
              ;
-             """).bindparams(team=team_id)
+             """).bindparams(team_id=our_team.id)
     totals = meta.scoped_session().execute(q).one()._mapping
 
-    q = text("""
+    q = text(f"""
              select
                coalesce(sum(case when W.ride_temp_avg < 32 then R.moving_time end), 0)
                  as sub_freezing,
@@ -59,22 +61,20 @@ def teams_show_team(team_id):
                coalesce(sum(case when W.ride_snow = 1 then R.moving_time end), 0)
                  as snow
              from rides R
-               join athletes A on A.id = R.athlete_id
                join ride_weather W on W.ride_id = R.id
-             where A.team_id = :team
+             where R.athlete_id in ({riders})
              ;
-             """).bindparams(team=team_id)
+             """).bindparams(team_id=our_team.id)
     weather = meta.scoped_session().execute(q).one()._mapping
 
-    q = text("""
+    q = text(f"""
              select RE.personal_record as pr, count(*) as count
              from ride_efforts RE
                join rides R on R.id = RE.ride_id
-               join athletes A on A.id = R.athlete_id
-             where A.team_id = :team and RE.personal_record is not null
+             where R.athlete_id in ({riders}) and RE.personal_record is not null
              group by RE.personal_record
              ;
-             """).bindparams(team=team_id)
+             """).bindparams(team_id=our_team.id)
     prs = {
         res._mapping["pr"]: res._mapping["count"]
         for res in meta.scoped_session().execute(q).fetchall()
@@ -92,13 +92,13 @@ def teams_show_team(team_id):
         "pr_bronze": prs.get(3, 0),
     }
 
-    q = text("""
+    q = text(f"""
            with daily_rides as (
             select R.competition_date as ride_date,
-            A.id as athlete_id,
+            R.athlete_id,
             sum(R.distance) as distance
-            from rides R inner join athletes A on A.id = R.athlete_id
-            where A.team_id = :team_id
+            from rides R
+            where R.athlete_id in ({riders})
             group by ride_date, athlete_id
           )
           select ride_date, count(athlete_id) as athletes
@@ -106,7 +106,7 @@ def teams_show_team(team_id):
             where distance >= 1
             group by ride_date
             order by ride_date;
-            """).bindparams(team_id=team_id)
+            """).bindparams(team_id=our_team.id)
 
     indiv_q = meta.scoped_session().execute(q).fetchall()
     start = config.START_DATE - timedelta(days=(config.START_DATE.weekday() + 1) % 7)
@@ -127,6 +127,7 @@ def teams_show_team(team_id):
     return render_template(
         "teams/show.html",
         team=our_team,
+        club=our_team.id in config.OBSERVER_TEAMS,
         members=list(members),
         stats=stats,
         mosaic=mosaic,

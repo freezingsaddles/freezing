@@ -20,7 +20,7 @@ from marshmallow import fields
 
 from freezing.model import init_model, meta
 from freezing.model.msg import BaseMessage, BaseSchema
-from freezing.model.orm import Athlete
+from freezing.model.orm import Athlete, Team
 from freezing.web.autolog import log
 from freezing.web.utils.genericboard import load_board
 from freezing.web.utils.hashboard import load_hashboard
@@ -195,6 +195,12 @@ def _load_pointless():
             if seg:
                 prize.name = prize.name or seg.name
                 prize.discord = prize.discord or seg.discord
+        elif prize.url and prize.url.startswith("/pointless/club/"):
+            club = meta.scoped_session().get(
+                Team, int(prize.url.removeprefix("/pointless/club/"))
+            )
+            if club:
+                prize.name = prize.name or club.name
         elif prize.url and prize.url.startswith("/pointless/generic/"):
             board_name = prize.url.removeprefix("/pointless/generic/")
             try:
