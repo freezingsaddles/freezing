@@ -41,14 +41,11 @@ def register_athlete_team(strava_athlete, athlete_model):
     )
 
 
-def refresh_athlete_team(athlete_model):
+def fetch_strava_athlete(athlete_model):
     """
-    Read the athlete's clubs from Strava now and register their team.
+    Read the athlete and their clubs from Strava now.
 
     Renews the access token first if it is about to expire.
-
-    :raise MultipleTeamsError: as :func:`register_athlete_team` does.
-    :raise NoTeamsError: as :func:`register_athlete_team` does.
     """
     client = Client(access_token=athlete_model.access_token)
     if (
@@ -67,5 +64,4 @@ def refresh_athlete_team(athlete_model):
         # what follows fails.
         meta.scoped_session().commit()
         client.access_token = token["access_token"]
-    strava_athlete = teams.fill_clubs(client, client.get_athlete())
-    return register_athlete_team(strava_athlete, athlete_model)
+    return teams.fill_clubs(client, client.get_athlete())

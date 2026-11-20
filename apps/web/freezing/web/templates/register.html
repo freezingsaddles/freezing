@@ -1,4 +1,26 @@
 {% extends "base.html" %}
+{% macro blank_warning(athlete) %}
+    <div class="alert alert-danger">
+        <strong>Is this the Strava account you ride with?</strong>
+        The account you connected{% if athlete %}, <em>{{ athlete.name }}</em>,{% endif %}
+        has no clubs, bikes, followers or friends. Signing in to Strava with Google, Apple
+        or Facebook can create a new, blank Strava account instead of using your own.
+        <ul class="mb-0 mt-2">
+            <li>
+                If you have another Strava account, go to
+                <a href="https://www.strava.com"
+                   target="_blank"
+                   rel="noreferrer">strava.com</a>,
+                log out, log in to the account you ride with, then come back and
+                <a href="/register?step=login&profile=blank">connect Strava again</a>.
+            </li>
+            <li>
+                If this really is your Strava account,
+                <a href="/register?step=club">carry on</a>.
+            </li>
+        </ul>
+    </div>
+{% endmacro %}
 {% block title %}
     {{ "Register for " + competition_title }}
 {% endblock %}
@@ -85,8 +107,10 @@
             <h3 class="mb-3">
                 <strong>Step 1.</strong> <span>Connect Strava and Login</span>
             </h3>
-            {% if not authorized or request.args.get("profile") == "missing" %}
-                {% if request.args.get("profile") == "missing" %}
+            {% if not authorized or request.args.get("profile") in ("missing", "blank") %}
+                {% if request.args.get("profile") == "blank" %}
+                    {{ blank_warning(athlete) }}
+                {% elif request.args.get("profile") == "missing" %}
                     <div class="alert alert-warning">
                         Freezing Saddles needs permission to <em>View your complete Strava
                         profile</em>, or it can't see which Strava clubs you have joined. Please
@@ -186,6 +210,9 @@
                         <a class="btn btn-primary mb-1"
                            href="/register?step={{ 'discord' if discord_linking else 'tribes' }}">Next</a>
                 {% else %}
+                    {% if blank_strava %}
+                        {{ blank_warning(athlete) }}
+                    {% endif %}
                     <ul>
                         <li>
                             The next step is to join the Freezing Saddles {{ end_date.year }} Strava
