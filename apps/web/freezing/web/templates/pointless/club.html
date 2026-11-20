@@ -23,7 +23,8 @@
 {% block content %}
     <h2 class="mb-3">{{ team.name }}</h2>
     <p>
-        The members of <a href="/teams/{{ team.id }}">{{ team.name }}</a>, ranked by their points.
+        The members of <a href="/teams/{{ team.id }}"
+                          class="hover-underline">{{ team.name }}</a>, ranked by their points.
     </p>
     {% if rows %}
         <ol>
