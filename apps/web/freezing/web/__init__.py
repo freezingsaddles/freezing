@@ -15,7 +15,7 @@ from time import sleep
 from urllib.parse import urlparse
 
 import yaml
-from flask import Flask, g, session
+from flask import Flask, g, session, url_for
 from marshmallow import fields
 
 from freezing.model import init_model, meta
@@ -219,6 +219,14 @@ def _load_pointless():
 def inject_config():
     return {
         "competition_title": config.COMPETITION_TITLE,
+        # Link previews need an absolute url, and the proxy in front of
+        # gunicorn does not say the request came in over https.
+        "og_image": url_for(
+            "static",
+            filename="img/logo-blue.png",
+            _external=True,
+            _scheme="http" if config.ENVIRONMENT == "localdev" else "https",
+        ),
         "environment": config.ENVIRONMENT,
         "registration_site": config.REGISTRATION_SITE,
         "discord_invitation": config.DISCORD_INVITATION,
