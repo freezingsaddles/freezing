@@ -110,6 +110,12 @@ def index():
     contestant_count = indiv_count_res._mapping["num_contestants"]
 
     q = text("""
+             select count(*) from athletes
+             where registered and not coalesce(friend, false)
+             """)
+    registered_count = meta.scoped_session().execute(q).scalar_one()
+
+    q = text("""
             select count(*) as num_rides, coalesce(sum(R.moving_time),0) as moving_time,
                 coalesce(sum(R.distance),0) as distance
             from rides R
@@ -231,6 +237,7 @@ def index():
         next_winter_ends=last_full_day_of_winter(now_tz.year + 1, config.TIMEZONE),
         team_count=len(config.COMPETITION_TEAMS),
         contestant_count=contestant_count,
+        registered_count=registered_count,
         total_rides=total_rides,
         total_hours=total_hours,
         total_miles=total_miles,
