@@ -110,7 +110,7 @@ This component is designed to run as a container and should be configured with e
 * `STRAVA_CLIENT_ID`: The ID of the Strava application.
 * `STRAVA_CLIENT_SECRET`: Secret key for the app (available from App settings page in Strava)
 * `TEAMS`: A comma-separated list of team (Strava club) IDs for the competition. = env('TEAMS', cast=list, subcast=int, default=[])
-* `OBSERVER_TEAMS`: Comma-separated list of teams outside the main competition. Riders whose only team is one of these are left off its leaderboards; riders on a real team may be in one too. Each has its own leaderboard at `/pointless/club/<id>`, which an entry in `leaderboards/pointless.yml` puts in the header. List them in `TEAMS` as well, so that riders who are only in one can register.
+* `OBSERVER_TEAMS`: Comma-separated list of team (Strava club) IDs for teams outside the main competition. Each gets its own leaderboard at `/pointless/club/<id>`; to link it from the header, add `url: /pointless/club/<id>` to `leaderboards/pointless.yml`. Riders who belong only to an observer team are left off the main leaderboards. A rider can belong to an observer team and a main competition team at the same time. Every ID here must also be in `TEAMS`, or riders who belong only to an observer team can't register.
 * `START_DATE`: The beginning of the competition.
 * `END_DATE`: The end of the competition.
 
