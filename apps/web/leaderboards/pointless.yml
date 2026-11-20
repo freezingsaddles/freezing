@@ -17,6 +17,8 @@ prizes:
     category: unsponsored
   - url: /pointless/hashtag/bingo
     category: active
+  - url: /pointless/hashtag/bridge
+    category: active
   - url: /pointless/hashtag/bikepacking
     category: hidden
   - url: /pointless/hashtag/biathlon

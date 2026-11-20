@@ -113,13 +113,15 @@ def _tagged_rides(photo_tags: bool) -> str:
 
 
 def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_tags):
-    """Build the hashtag table data; orderby is 'miles', 'rides' or 'days'."""
+    """Build the hashtag table data; orderby is 'miles', 'rides', 'days' or 'photos'."""
     sess = meta.scoped_session()
     rank_by = "hashtag_miles"
     if orderby == "days":
         rank_by = "hashtag_days"
     elif orderby == "rides":
         rank_by = "hashtag_rides"
+    elif orderby == "photos":
+        rank_by = "hashtag_photos"
     q = text(f"""
         with tagged as (
             {_tagged_rides(photo_tags)}
@@ -133,6 +135,12 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_ta
                 rides R join tagged T on T.id = R.id
             where
                 R.distance >= :min_miles
+        ), photo_counts as (
+            select R.athlete_id, count(*) as photos
+            from ride_photos P join hash_rides R on R.id = P.ride_id
+            where lower(P.caption) like concat('%', '#', :hashtag, '%')
+               or lower(P.caption) like concat('%', '#', :alttag, '%')
+            group by R.athlete_id
         ), daily_rides as (
             select
                 H.athlete_id,
@@ -146,11 +154,13 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_ta
                 A.display_name as athlete_name,
                 sum(R.rides) as hashtag_rides,
                 sum(R.distance) as hashtag_miles,
-                count(*) as hashtag_days
+                count(*) as hashtag_days,
+                coalesce(max(PC.photos), 0) as hashtag_photos
             from
                 athletes A join
                 daily_rides R on R.athlete_id = A.id join
-                teams T on T.id = A.team_id
+                teams T on T.id = A.team_id left join
+                photo_counts PC on PC.athlete_id = A.id
             where
                 not :friendless or not T.leaderboard_exclude
             group by
@@ -177,6 +187,7 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_ta
             x._mapping["hashtag_miles"],
             x._mapping["hashtag_days"],
             x._mapping["hashtag_rank"],
+            x._mapping["hashtag_photos"],
         )
         for x in sess.execute(q).fetchall()
     ]
@@ -313,7 +324,7 @@ def hashtag_leaderboard(hashtag):
     view = request.args.get("view", default_view or "leaderboard")
     # A board whose photos are the point takes the tag from a photo description
     # as well as from the ride title, on every tab.
-    photo_tags = default_view == "photos"
+    photo_tags = default_view == "photos" or rank_by == "photos"
     sponsors = (
         [_load_sponsor(sponsor) for sponsor in meta.sponsors]
         if meta and meta.sponsors
