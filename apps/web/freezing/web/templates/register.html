@@ -1,26 +1,5 @@
 {% extends "base.html" %}
-{% macro blank_warning(athlete) %}
-    <div class="alert alert-danger">
-        <strong>Is this the Strava account you ride with?</strong>
-        The account you connected{% if athlete %}, <em>{{ athlete.name }}</em>,{% endif %}
-        has no clubs, bikes, followers or friends. Signing in to Strava with Google, Apple
-        or Facebook can create a new, blank Strava account instead of using your own.
-        <ul class="mb-0 mt-2">
-            <li>
-                If you have another Strava account, go to
-                <a href="https://www.strava.com"
-                   target="_blank"
-                   rel="noreferrer">strava.com</a>,
-                log out, log in to the account you ride with, then come back and
-                <a href="/register?step=login&profile=blank">connect Strava again</a>.
-            </li>
-            <li>
-                If this really is your Strava account,
-                <a href="/register?step=club">carry on</a>.
-            </li>
-        </ul>
-    </div>
-{% endmacro %}
+{% from "blank_strava.html" import blank_warning %}
 {% block title %}
     {{ "Register for " + competition_title }}
 {% endblock %}
@@ -109,7 +88,7 @@
             </h3>
             {% if not authorized or request.args.get("profile") in ("missing", "blank") %}
                 {% if request.args.get("profile") == "blank" %}
-                    {{ blank_warning(athlete) }}
+                    {{ blank_warning(athlete.name if athlete else None, "/register?step=login&profile=blank", "/register?step=club") }}
                 {% elif request.args.get("profile") == "missing" %}
                     <div class="alert alert-warning">
                         Freezing Saddles needs permission to <em>View your complete Strava
@@ -211,7 +190,7 @@
                            href="/register?step={{ 'discord' if discord_linking else 'tribes' }}">Next</a>
                 {% else %}
                     {% if blank_strava %}
-                        {{ blank_warning(athlete) }}
+                        {{ blank_warning(athlete.name if athlete else None, "/register?step=login&profile=blank", "/register?step=club") }}
                     {% endif %}
                     <ul>
                         <li>

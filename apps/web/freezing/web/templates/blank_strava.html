@@ -1,0 +1,29 @@
+{#
+    A strong warning for a Strava account with nothing in it: signing in to Strava
+    with Google, Apple or Facebook can make a new one instead of using the rider's own.
+#}
+{% macro blank_warning(name, reconnect_url, carry_on_url=None) %}
+    <div class="alert alert-danger">
+        <strong>Is this the Strava account you ride with?</strong>
+        The account you connected{% if name %}, <em>{{ name }}</em>,{% endif %}
+        has no clubs or bikes and hardly any followers or friends. Signing in to Strava
+        with Google, Apple or Facebook can create a new, blank Strava account instead of
+        using your own.
+        <ul class="mb-0 mt-2">
+            <li>
+                If you have another Strava account, go to
+                <a href="https://www.strava.com"
+                   target="_blank"
+                   rel="noreferrer">strava.com</a>,
+                log out, log in to the account you ride with, then come back and
+                <a href="{{ reconnect_url }}">connect Strava again</a>.
+            </li>
+            {% if carry_on_url %}
+                <li>
+                    If this really is your Strava account,
+                    <a href="{{ carry_on_url }}">carry on</a>.
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+{% endmacro %}
