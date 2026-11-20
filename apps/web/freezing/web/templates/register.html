@@ -85,8 +85,14 @@
             <h3 class="mb-3">
                 <strong>Step 1.</strong> <span>Connect Strava and Login</span>
             </h3>
-            {% if not authorized %}
-                {% if athlete %}
+            {% if not authorized or request.args.get("profile") == "missing" %}
+                {% if request.args.get("profile") == "missing" %}
+                    <div class="alert alert-warning">
+                        Freezing Saddles needs permission to <em>View your complete Strava
+                        profile</em>, or it can't see which Strava clubs you have joined. Please
+                        click <em>Connect with Strava</em> below and leave that box ticked.
+                    </div>
+                {% elif athlete %}
                     <div>
                         Your Strava authorization has expired, so the first thing you need to do is
                         reauthorize Freezing Saddles to read your Strava rides by clicking
@@ -207,6 +213,12 @@
                             <li>
                                 It can sometimes take a few minutes for the club membership to
                                 propagate.
+                            </li>
+                            <li>
+                                If you have joined but Refresh doesn't find it, you may not have
+                                allowed Freezing Saddles to <em>View your complete Strava profile</em>.
+                                <a href="/register?step=login&profile=missing">Connect Strava again</a>
+                                and leave that box ticked.
                             </li>
                             <li>
                                 If things aren't working, use the top-right menu to log out and

@@ -461,18 +461,22 @@ def _refresh_team(athlete: Athlete) -> Team | None:
 @blueprint.route("/register")
 def register():
     step = request.args.get("step", "intro")
+    # Strava only shows its permissions again when forced to; otherwise a rider
+    # reconnecting keeps the ones they chose before.
+    reconnect = request.args.get("profile") == "missing"
+    approval_prompt = "force" if reconnect else "auto"
     c = Client()
     public_url = c.authorization_url(
         client_id=config.STRAVA_CLIENT_ID,
         redirect_uri=url_for(".authorization", _external=True),
-        approval_prompt="auto",
+        approval_prompt=approval_prompt,
         scope=["read", "activity:read", "profile:read_all"],
         state="register",
     )
     private_url = c.authorization_url(
         client_id=config.STRAVA_CLIENT_ID,
         redirect_uri=url_for(".authorization", _external=True),
-        approval_prompt="auto",
+        approval_prompt=approval_prompt,
         scope=["read_all", "activity:read_all", "profile:read_all"],
         state="register",
     )
@@ -562,6 +566,7 @@ def authorization():
     team = None
     message = None
     state = None
+    profile_missing = False
     log.info(f"Authorization request host: {request.host}")
     if config.ENVIRONMENT == "localdev" and request.host.split(":")[0] in [
         "localhost",
@@ -609,6 +614,7 @@ def authorization():
         scope = request.args.get("scope")
         state = request.args.get("state")
         log.info(f"Auth code: {code}, scope: {scope}, state: {state}")
+        profile_missing = "profile:read_all" not in (scope or "").split(",")
 
         # Strava sends people here with a code. Anyone arriving without one has
         # opened the address by hand or followed a stale link, and has not
@@ -659,6 +665,10 @@ def authorization():
         log.info(f"Authorization message: {message}")
 
     if state == "register":
+        # Without it, Strava hides the clubs of anyone whose profile isn't
+        # public, so we can't find their team.
+        if profile_missing:
+            return redirect(url_for(".register", step="login", profile="missing"))
         return redirect(url_for(".register", step="club"))
 
     return render_template(
