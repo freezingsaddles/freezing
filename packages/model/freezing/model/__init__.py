@@ -38,6 +38,17 @@ def init_model(sqlalchemy_url: str, check_version: bool = True):
 
     alembic_script = ScriptDirectory.from_config(alembic_cfg)
 
+    # The apps and their workers all start at once, and MySQL cannot roll DDL
+    # back, so they migrate one at a time; the rest find it done.
+    with engine.connect() as lock:
+        lock.execute(sa.text("SELECT GET_LOCK('freezing-migrations', -1)"))
+        try:
+            _migrate(engine, alembic_cfg, alembic_script, check_version)
+        finally:
+            lock.execute(sa.text("SELECT RELEASE_LOCK('freezing-migrations')"))
+
+
+def _migrate(engine, alembic_cfg, alembic_script, check_version):
     if not sa.inspect(engine).get_table_names():
         log.info("Database is empty, creating it")
         command.upgrade(alembic_cfg, "head")
