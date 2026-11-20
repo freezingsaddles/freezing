@@ -35,13 +35,19 @@ up. The commands below assume you are in `packages/model`, where
 
 ## Altering the schema
 
-Alter `orm.py` to add your new tables or fields to the ORM. This will be used when initializing a database from scratch.
+Every database, new or old, is built by the migrations. An empty one starts
+from the baseline, [migrations/baseline.sql](freezing/model/migrations/baseline.sql):
+production's schema when the earlier migrations were squashed.
 
-Create a migration script:
+Alter `orm.py`, then write the migration that makes the same change to the
+database. With a database at head, Alembic can draft it from the difference:
 
-    uv run alembic revision -m "description of change"
+    uv run alembic revision --autogenerate -m "description of change"
 
-Edit the resulting migration script to upgrade and downgrade.
+Read and correct what it drafts; it cannot see views, renames or data.
+
+`uv run alembic check` reports any difference left between the database and
+`orm.py`. CI builds a database from empty and fails on any.
 
 Check your current version:
 
