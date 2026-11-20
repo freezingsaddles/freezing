@@ -6,6 +6,7 @@ import pytest
 from freezing.common.teams import (
     MultipleTeamsError,
     NoTeamsError,
+    fill_clubs,
     register_athlete_team,
 )
 from freezing.model.orm import Athlete, Team
@@ -141,3 +142,26 @@ def test_clubs_left_are_dropped(session):
     register_athlete_team(athlete(club(RED), club(OBSERVERS)), model, **TEAMS)
     register_athlete_team(athlete(club(RED)), model, **TEAMS)
     assert [t.id for t in model.clubs] == [RED]
+
+
+class _Client:
+    def __init__(self, clubs):
+        self.clubs = clubs
+        self.calls = 0
+
+    def get_athlete_clubs(self):
+        self.calls += 1
+        return iter(self.clubs)
+
+
+def test_fill_clubs_asks_for_the_list_when_the_record_has_none():
+    client = _Client([club(RED)])
+    strava_athlete = fill_clubs(client, athlete())
+    assert [c.id for c in strava_athlete.clubs] == [RED]
+
+
+def test_fill_clubs_leaves_listed_clubs_alone():
+    client = _Client([club(BLUE)])
+    strava_athlete = fill_clubs(client, athlete(club(RED)))
+    assert [c.id for c in strava_athlete.clubs] == [RED]
+    assert client.calls == 0

@@ -21,6 +21,7 @@ from sqlalchemy import text
 from stravalib import Client
 from stravalib.exc import Fault
 
+from freezing.common import teams
 from freezing.common.seasons import (
     JUNE_SOLSTICE,
     SEPTEMBER_EQUINOX,
@@ -631,18 +632,10 @@ def authorization():
                 "authorization_error.html", error="the code had already been used"
             )
         # Use the now-authenticated client to get the current athlete
-        strava_athlete = client.get_athlete()
+        strava_athlete = teams.fill_clubs(client, client.get_athlete())
         log.info("Strava athlete: {}", str(strava_athlete))
         athlete = data.register_athlete(strava_athlete, token_dict)
-        log.info(
-            "Received athlete auth [id: {}, name: {}] [at: {}, rt: {}, exp: {}]".format(
-                athlete.id,
-                athlete.name,
-                athlete.access_token,
-                athlete.refresh_token,
-                athlete.expires_at,
-            )
-        )
+        log.info(f"Received athlete auth [id: {athlete.id}, name: {athlete.name}]")
         try:
             team = data.register_athlete_team(
                 strava_athlete=strava_athlete,

@@ -26,6 +26,23 @@ class MultipleTeamsError(RuntimeError):
         self.teams = teams
 
 
+def fill_clubs(client, strava_athlete):
+    """
+    Ask Strava for the athlete's clubs when their athlete record lists none.
+
+    The athlete record has been seen listing no clubs for a member of ours;
+    the separate list of the athlete's clubs is asked for only then, so as not
+    to double the calls for everyone else.
+
+    :param client: A ``stravalib`` client authorized as the athlete.
+    :param strava_athlete: That client's ``get_athlete()``.
+    :return: ``strava_athlete``, its ``clubs`` filled in.
+    """
+    if not strava_athlete.clubs:
+        strava_athlete.clubs = list(client.get_athlete_clubs())
+    return strava_athlete
+
+
 def register_athlete_team(
     strava_athlete,
     athlete_model: Athlete,
