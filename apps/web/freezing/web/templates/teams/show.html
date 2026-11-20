@@ -60,7 +60,41 @@
     </div>
     <div class="mt-3 mt-lg-4 d-grid grid-gap-3 grid-gap-lg-4 grid-lg-2">
         <div>
-            <h5 class="ps-2">Team Members</h5>
+            <h5 class="ps-2">Team Statistics</h5>
+            <ul class="list-group">
+                <li class="list-group-item">
+                    Total Points:
+                    <span class="float-end">{{ stats.points|round|int|groupnum }}</span>
+                </li>
+                <li class="list-group-item">
+                    Ride Days: <span class="float-end">{{ stats.days|groupnum }}</span>
+                </li>
+                <li class="list-group-item">
+                    Miles:
+                    <span class="float-end">{{ stats.miles|round|int|groupnum }}</span>
+                </li>
+                <li class="list-group-item">
+                    Hours Below Freezing:
+                    <span class="float-end">{{ stats.sub_freezing_hours|groupnum }}</span>
+                </li>
+                <li class="list-group-item">
+                    Hours in the Rain:
+                    <span class="float-end">{{ stats.rain_hours|groupnum }}</span>
+                </li>
+                <li class="list-group-item">
+                    Hours in the Snow:
+                    <span class="float-end">{{ stats.snow_hours|groupnum }}</span>
+                </li>
+                <li class="list-group-item">
+                    Strava Achievements:
+                    <span class="float-end">
+                        🥇 {{ stats.pr_gold|groupnum }}
+                        🥈 {{ stats.pr_silver|groupnum }}
+                        🥉 {{ stats.pr_bronze|groupnum }}
+                    </span>
+                </li>
+            </ul>
+            <h5 class="ps-2 mt-3 mt-lg-4">Team Members</h5>
             <ul>
                 {% for member in members %}
                     <li>
