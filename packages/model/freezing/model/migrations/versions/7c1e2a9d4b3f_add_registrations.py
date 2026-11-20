@@ -28,7 +28,6 @@ def upgrade():
             sa.ForeignKey("athletes.id", ondelete="set null"),
             nullable=True,
         ),
-        sa.Column("previous_mileage", sa.String(255), nullable=True),
         sa.Column(
             "team_captain", sa.Boolean(), nullable=False, server_default=sa.false()
         ),

@@ -13,7 +13,6 @@ case class Submission(
       * for it is the database's question, not the email's.
       */
     stravaId: Option[Long],
-    previousMileage: Option[String],
     teamCaptain: Boolean,
 )
 
@@ -22,13 +21,12 @@ object Submission:
     * stripped before matching, and whitespace collapsed).
     */
   private object Label:
-    val firstName       = "First Name"
-    val lastName        = "Last Name"
-    val zipCode         = "Zip Code"
-    val email           = "E-mail"
-    val stravaId        = "Strava user ID"
-    val previousMileage = "Previous year's mileage"
-    val teamCaptain     = "Are you willing to be a Team Captain?"
+    val firstName   = "First Name"
+    val lastName    = "Last Name"
+    val zipCode     = "Zip Code"
+    val email       = "E-mail"
+    val stravaId    = "Strava user ID"
+    val teamCaptain = "Are you willing to be a Team Captain?"
 
   /** Reads the confirmation email's HTML: a two-column table of label and answer. Unknown rows are
     * ignored, so the form can grow questions without breaking this; the rows this needs must be
@@ -44,7 +42,6 @@ object Submission:
       zipCode   <- required(Label.zipCode)
       email     <- required(Label.email)
       strava    <- required(Label.stravaId)
-      mileage   <- required(Label.previousMileage)
       captain   <- required(Label.teamCaptain)
     yield Submission(
       firstName = firstName,
@@ -52,7 +49,6 @@ object Submission:
       zipCode = zipCode,
       email = email,
       stravaId = strava.filter(_.isDigit).toLongOption.filter(_ > 0),
-      previousMileage = Some(mileage).filter(_.nonEmpty),
       teamCaptain = captain.equalsIgnoreCase("yes"),
     )
     end for

@@ -145,7 +145,6 @@ class Registration(Base):
     athlete_id = Column(
         BigInteger, ForeignKey("athletes.id", ondelete="set null"), nullable=True
     )
-    previous_mileage = Column(String(255), nullable=True)
     team_captain = Column(Boolean, nullable=False, default=False, server_default="0")
 
     athlete: Mapped["Athlete | None"] = orm.relationship(

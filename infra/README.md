@@ -23,8 +23,8 @@ Two sbt builds, Scala 3:
    bucket and invokes the Lambda with the message id.
 3. The Lambda fetches the message, walks its MIME parts to the HTML one, and
    reads the two-column table of label and answer. Only these are kept:
-   first name, last name, zip code, e-mail, Strava user ID, previous year's
-   mileage, and the team captain answer (blank or `Yes`).
+   first name, last name, zip code, e-mail, Strava user ID, and the team
+   captain answer (blank or `Yes`).
 4. It writes a row whose primary key is the email's `Message-Id`, in the
    schema's habit of external keys over generated ones, so a redelivery or a
    retry replaces the row instead of duplicating it. `athlete_id` is set only

@@ -26,7 +26,6 @@ class RegistrationsTest extends munit.FunSuite:
             email varchar(255) not null,
             strava_id varchar(64),
             athlete_id bigint references athletes(id) on delete set null,
-            previous_mileage varchar(255),
             team_captain boolean not null default false
           )""".update.run()
     sql"insert into athletes (id, name) values (12345678, 'Ann Rider')".update.run()
@@ -36,7 +35,7 @@ class RegistrationsTest extends munit.FunSuite:
 
   private val when                = LocalDateTime.of(2026, 3, 27, 21, 28, 32)
   private val ann                 =
-    Submission("Ann", "Rider", "22201", "ann.rider@example.com", Some(12345678L), None, false)
+    Submission("Ann", "Rider", "22201", "ann.rider@example.com", Some(12345678L), false)
   private def rows()(using DbCon) =
     sql"select * from registrations order by message_id".query[Registration].run()
 

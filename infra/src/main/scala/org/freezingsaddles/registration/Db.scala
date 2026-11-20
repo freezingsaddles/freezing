@@ -59,7 +59,6 @@ case class Registration(
     stravaId: Option[String],
     /** Set only when an athletes row with that id existed when the email arrived. */
     athleteId: Option[Long],
-    previousMileage: Option[String],
     teamCaptain: Boolean,
 ) derives DbCodec
 
@@ -74,7 +73,6 @@ object Registration:
       email = form.email,
       stravaId = form.stravaId.map(_.toString),
       athleteId = form.stravaId,
-      previousMileage = form.previousMileage,
       teamCaptain = form.teamCaptain,
     )
 end Registration

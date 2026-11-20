@@ -13,7 +13,6 @@ class RegistrationTest extends munit.FunSuite:
     "Zip Code"                              -> "20001",
     "E-mail"                                -> "bo@example.com",
     "Strava user ID"                        -> "42",
-    "Previous year's mileage"               -> "1200",
     "Are you willing to be a Team Captain?" -> "Yes",
   )
 
@@ -24,7 +23,6 @@ class RegistrationTest extends munit.FunSuite:
     assertEquals(reg.zipCode, "22201")
     assertEquals(reg.email, "ann.rider@example.com")
     assertEquals(reg.stravaId, Some(12345678L))
-    assertEquals(reg.previousMileage, None)
     assertEquals(reg.teamCaptain, false)
 
   test("yes means captain, anything else does not"):
@@ -40,11 +38,9 @@ class RegistrationTest extends munit.FunSuite:
       Submission.parse(table((complete + ("Strava user ID" -> "strava.com/athletes/99")).toSeq*))
     assertEquals(url.toOption.get.stravaId, Some(99L))
 
-  test("mileage survives as typed"):
-    assertEquals(
-      Submission.parse(table(complete.toSeq*)).toOption.get.previousMileage,
-      Some("1200"),
-    )
+  test("an answer the form no longer asks for is ignored"):
+    val old = complete + ("Previous year's mileage" -> "1200")
+    assertEquals(Submission.parse(table(old.toSeq*)), Submission.parse(table(complete.toSeq*)))
 
   test("a mail without the form fields is not a registration"):
     assertEquals(Submission.parse("<p>Hello</p>"), Left("missing field: First Name"))
