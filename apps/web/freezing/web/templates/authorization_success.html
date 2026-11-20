@@ -1,6 +1,10 @@
 {% extends "base.html" %}
+{% from "blank_strava.html" import blank_warning %}
 {% block content %}
     <h1>Authorization Results</h1>
+    {% if blank %}
+        {{ blank_warning(athlete.firstname ~ " " ~ athlete.lastname, "/login?reconnect=true") }}
+    {% endif %}
     <p>
         <strong>Welcome, {{ athlete.firstname }}.</strong>
     </p>
