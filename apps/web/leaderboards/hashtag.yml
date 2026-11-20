@@ -83,6 +83,18 @@ tags:
       Remember the ubiquitous yellow caution sign “Baby of Board” signs of the 1980s?  Well, this year, snap a photo each time to see a unique design/style of one during a ride, share it on your Strava ride and hashtag your Strava ride title with <code>#BoB</code>.
     rank_by: rides
 
+  - tag: bridge
+    name: The Bridge Prize
+    description: |
+      Ride over a bridge, take a photo of the bridge, and tag the <em>photo</em> with <code>#bridge</code> on Strava.
+      Most bridges wins. Small pedestrian bridges count. No limit on bridges per ride, but you can't use the same bridge more than once during Freezing Saddles.
+      Honor system: the sponsor is too lazy to confirm no repeats.
+      Prize TBD. Something bridgey.
+    rank_by: photos
+    discord: 1573358721793531905
+    freezebot: true
+    sponsors: [516697]
+
   - tag: cabixxx
     name: Capital Bikeshare Rides
     description: |
