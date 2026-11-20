@@ -461,12 +461,27 @@ def _refresh_team(athlete: Athlete) -> Team | None:
         return None
     session["club_checked"] = now
     try:
-        return data.refresh_athlete_team(athlete)
-    except (MultipleTeamsError, NoTeamsError) as e:
-        log.info(f"Athlete {athlete.id} has no team yet: {e}")
+        strava_athlete = data.fetch_strava_athlete(athlete)
     except Exception:
         log.exception(f"Could not read athlete {athlete.id}'s clubs from Strava")
+        return None
+    _note_blank(strava_athlete)
+    try:
+        return data.register_athlete_team(strava_athlete, athlete)
+    except (MultipleTeamsError, NoTeamsError) as e:
+        log.info(f"Athlete {athlete.id} has no team yet: {e}")
     return None
+
+
+def _note_blank(strava_athlete) -> bool:
+    """Remember for the registration pages whether the Strava account looks blank."""
+    blank = teams.looks_blank(strava_athlete)
+    if blank:
+        log.info(f"Strava athlete {strava_athlete.id} looks blank")
+        session["blank_strava"] = strava_athlete.id
+    else:
+        session.pop("blank_strava", None)
+    return blank
 
 
 @blueprint.route("/register")
@@ -474,7 +489,7 @@ def register():
     step = request.args.get("step", "intro")
     # Strava only shows its permissions again when forced to; otherwise a rider
     # reconnecting keeps the ones they chose before.
-    reconnect = request.args.get("profile") == "missing"
+    reconnect = request.args.get("profile") in ("missing", "blank")
     approval_prompt = "force" if reconnect else "auto"
     c = Client()
     public_url = c.authorization_url(
@@ -541,6 +556,7 @@ def register():
         athlete=athlete,
         authorized=authorized,
         team=team,
+        blank_strava=athlete is not None and session.get("blank_strava") == athlete.id,
         tribal_groups=load_tribes() if step == "tribes" else [],
         tribes=query_tribes(athlete.id) if step == "tribes" and athlete else {},
         mean_team=config.MAIN_TEAM,
@@ -578,6 +594,7 @@ def authorization():
     message = None
     state = None
     profile_missing = False
+    blank = False
     log.info(f"Authorization request host: {request.host}")
     if config.ENVIRONMENT == "localdev" and request.host.split(":")[0] in [
         "localhost",
@@ -624,7 +641,7 @@ def authorization():
         code = request.args.get("code")
         scope = request.args.get("scope")
         state = request.args.get("state")
-        log.info(f"Auth code: {code}, scope: {scope}, state: {state}")
+        log.info(f"Authorization scope: {scope}, state: {state}")
         profile_missing = "profile:read_all" not in (scope or "").split(",")
 
         # Strava sends people here with a code. Anyone arriving without one has
@@ -650,7 +667,11 @@ def authorization():
             )
         # Use the now-authenticated client to get the current athlete
         strava_athlete = teams.fill_clubs(client, client.get_athlete())
-        log.info("Strava athlete: {}", str(strava_athlete))
+        log.info(
+            f"Strava athlete {strava_athlete.id} ({strava_athlete.firstname} "
+            f"{strava_athlete.lastname}), {len(strava_athlete.clubs or [])} clubs"
+        )
+        blank = _note_blank(strava_athlete)
         athlete = data.register_athlete(strava_athlete, token_dict)
         log.info(f"Received athlete auth [id: {athlete.id}, name: {athlete.name}]")
         try:
@@ -680,6 +701,8 @@ def authorization():
         # public, so we can't find their team.
         if profile_missing:
             return redirect(url_for(".register", step="login", profile="missing"))
+        if blank:
+            return redirect(url_for(".register", step="login", profile="blank"))
         return redirect(url_for(".register", step="club"))
 
     return render_template(

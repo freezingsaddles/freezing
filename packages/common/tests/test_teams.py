@@ -7,6 +7,7 @@ from freezing.common.teams import (
     MultipleTeamsError,
     NoTeamsError,
     fill_clubs,
+    looks_blank,
     register_athlete_team,
 )
 from freezing.model.orm import Athlete, Team
@@ -165,3 +166,11 @@ def test_fill_clubs_leaves_listed_clubs_alone():
     strava_athlete = fill_clubs(client, athlete(club(RED)))
     assert [c.id for c in strava_athlete.clubs] == [RED]
     assert client.calls == 0
+
+
+def test_looks_blank():
+    assert looks_blank(athlete())
+    assert not looks_blank(athlete(club(RED)))
+    followed = athlete()
+    followed.follower_count = 3
+    assert not looks_blank(followed)

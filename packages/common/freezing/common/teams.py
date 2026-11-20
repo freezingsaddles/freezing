@@ -43,6 +43,22 @@ def fill_clubs(client, strava_athlete):
     return strava_athlete
 
 
+def looks_blank(strava_athlete) -> bool:
+    """
+    Say whether the athlete has no clubs, gear, followers or friends at all.
+
+    Signing in to Strava with Google, Apple or Facebook can make a new, empty
+    account instead of using the one the rider rides with.
+    """
+    return not (
+        strava_athlete.clubs
+        or getattr(strava_athlete, "bikes", None)
+        or getattr(strava_athlete, "shoes", None)
+        or getattr(strava_athlete, "follower_count", None)
+        or getattr(strava_athlete, "friend_count", None)
+    )
+
+
 def register_athlete_team(
     strava_athlete,
     athlete_model: Athlete,
