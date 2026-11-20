@@ -95,6 +95,12 @@ def callback():
         )
         user.raise_for_status()
     except requests.RequestException as ex:
+        if _code_spent(ex) and _linked(session["athlete_id"]):
+            # The callback was loaded twice, say by a reload: the session lives
+            # in the cookie, so the state check passes again, and the first
+            # load already spent the code and linked the account.
+            log.info(f"Athlete {session['athlete_id']} repeated a Discord link")
+            return redirect(after)
         log.warning(f"Discord would not identify the user: {ex}")
         return render_template(
             "discord_error.html", error="Discord did not confirm the account"
@@ -120,6 +126,22 @@ def callback():
         _join_guild(discord_user_id, access_token)
 
     return redirect(after)
+
+
+def _code_spent(ex: requests.RequestException) -> bool:
+    """Say whether Discord refused the authorization code itself."""
+    response = ex.response
+    if response is None or response.status_code != 400:
+        return False
+    try:
+        return response.json().get("error") == "invalid_grant"
+    except ValueError:
+        return False
+
+
+def _linked(athlete_id: int) -> bool:
+    athlete = meta.scoped_session().get(Athlete, athlete_id)
+    return athlete is not None and athlete.discord_user_id is not None
 
 
 def _join_guild(discord_user_id, access_token):
