@@ -67,4 +67,5 @@ def refresh_athlete_team(athlete_model):
         # what follows fails.
         meta.scoped_session().commit()
         client.access_token = token["access_token"]
-    return register_athlete_team(client.get_athlete(), athlete_model)
+    strava_athlete = teams.fill_clubs(client, client.get_athlete())
+    return register_athlete_team(strava_athlete, athlete_model)
