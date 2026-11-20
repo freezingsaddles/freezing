@@ -362,15 +362,18 @@
                 <ul>
                     <li>
                         If you are just playing as a <em>Friend of BAFS</em>, and not
-                        participating in the main competition, then you're already done. You
-                        don't need to fill out the registration form and may
-                        <a href="/">return to the home page</a>.
+                        participating in the main competition, then please click the
+                        Friend of BAFS button below.
                     </li>
                 </ul>
             </li>
         </ul>
-        <a class="btn btn-primary mb-1"
-           href="{{ registration_site }}freezing-saddles-2027-registration/?stravanumber={{ athlete.id }}">Registration Form</a>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a class="btn btn-primary mb-1 btn-lg"
+               href="{{ registration_site }}freezing-saddles-2027-registration/?stravanumber={{ athlete.id }}">Registration Form</a>
+            <a class="btn btn-outline-secondary mb-1"
+               href="https://freezingsaddles.info/friends/">Friend of BAFS</a>
+        </div>
     {% endif %}
 {% elif step == "complete" %}
     <h3 class="mb-3">Registration Complete</h3>
