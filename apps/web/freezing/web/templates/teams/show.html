@@ -95,37 +95,39 @@
                 </li>
             </ul>
             <h5 class="ps-2 mt-3 mt-lg-4">Team Members</h5>
-            <ul>
+            <ul class="list-group">
                 {% for member in members %}
-                    <li>
+                    <li class="list-group-item">
                         <a href="/people/{{ member._mapping['athlete_id'] }}">{{ member._mapping['athlete_name'] }}</a>
-                        {{ member._mapping['total_score']|round|int|groupnum }} points
-                        ({{ member._mapping['days_ridden'] }} days,
-                        {{ member._mapping['total_distance']|round|int|groupnum }} miles)
+                        <span class="float-end">
+                            {{ member._mapping['total_score']|round|int|groupnum }} points
+                            ({{ member._mapping['days_ridden'] }} days,
+                            {{ member._mapping['total_distance']|round|int|groupnum }} miles)
+                        </span>
                     </li>
                 {% endfor %}
             </ul>
-            <h5 class="ps-2 mt-3 mt-lg-4">Ride Mosaic</h5>
-            <div>
-                <table class="table w-100 border-collapse">
-                    {% for day in range(0,7) %}
-                        <tr>
-                            {% for week in range(0,weeks) %}
-                                {% set date = week * 7 + day %}
-                                <td style="background-color: {{ mosaic[date] or 'transparent' }}"
-                                    {% if date < first_day or date > last_day %} class="border-none" {% endif %}>
-                                    &nbsp;
-                                </td>
-                            {% endfor %}
-                        </tr>
-                    {% endfor %}
-                </table>
-            </div>
         </div>
         <div>
             <h5 class="ps-2">Ride Map</h5>
-            <div class="square-map my-3" id="map"></div>
+            <div class="square-map" id="map"></div>
         </div>
+    </div>
+    <h5 class="ps-2 mt-3 mt-lg-4">Ride Mosaic</h5>
+    <div>
+        <table class="table w-100 border-collapse">
+            {% for day in range(0,7) %}
+                <tr>
+                    {% for week in range(0,weeks) %}
+                        {% set date = week * 7 + day %}
+                        <td style="background-color: {{ mosaic[date] or 'transparent' }}"
+                            {% if date < first_day or date > last_day %} class="border-none" {% endif %}>
+                            &nbsp;
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </table>
     </div>
 {% endblock %}
 {% block foot %}
