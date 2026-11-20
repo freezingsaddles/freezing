@@ -81,6 +81,8 @@ class Athlete(StravaEntity):
     expires_at = Column(BigInteger, nullable=False, default=0)
     # Null, not false, for everyone who registered before this was recorded.
     registered = Column(Boolean, nullable=True)
+    # Whether they registered as a Friend of BAFS; null if not recorded.
+    friend = Column(Boolean, nullable=True)
     discord_user_id = Column(BigInteger, nullable=True, unique=True)
     discord_username = Column(String(255), nullable=True)
 
