@@ -71,13 +71,26 @@ def unused_views() -> list[tuple[str, str]]:
     ]
 
 
+def has_column(table: str, column: str) -> bool:
+    return column in {c["name"] for c in sa.inspect(op.get_bind()).get_columns(table)}
+
+
+def has_key(table: str, name: str) -> bool:
+    keys = sa.inspect(op.get_bind()).get_foreign_keys(table)
+    return name in {k["name"] for k in keys}
+
+
+# MySQL cannot roll DDL back, so a run that stops part way leaves its work
+# done; each step checks for that, and running it again finishes the job.
 def upgrade():
     for name, _ in reversed(unused_views()):
-        op.execute(sa.text(f"DROP VIEW `{name}`"))
-    op.drop_column("rides", "trainer")
+        op.execute(sa.text(f"DROP VIEW IF EXISTS `{name}`"))
+    if has_column("rides", "trainer"):
+        op.drop_column("rides", "trainer")
 
     for name, table, *_ in ID_KEYS:
-        op.drop_constraint(name, table, type_="foreignkey")
+        if has_key(table, name):
+            op.drop_constraint(name, table, type_="foreignkey")
     for table, column, nullable in ID_COLUMNS:
         op.alter_column(
             table,
@@ -91,8 +104,11 @@ def upgrade():
             name, table, referent, [column], ["id"], ondelete=ondelete
         )
 
-    op.drop_constraint("ride_tracks_ibfk_1", "ride_tracks", type_="foreignkey")
+    if has_key("ride_tracks", "ride_tracks_ibfk_1"):
+        op.drop_constraint("ride_tracks_ibfk_1", "ride_tracks", type_="foreignkey")
     for name, table in RIDE_KEYS:
+        if has_key(table, name):
+            continue
         op.execute(sa.text(f"""
             DELETE t FROM `{table}` t LEFT JOIN rides r ON r.id = t.ride_id
             WHERE t.ride_id IS NOT NULL AND r.id IS NULL
