@@ -18,6 +18,7 @@ from sqlalchemy import (
     Time,
     orm,
 )
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from sqlalchemy.orm import DeclarativeBase, DynamicMapped, Mapped
 
 from . import meta, satypes
@@ -37,10 +38,10 @@ class StravaEntity(Base):
     __table_args__ = {
         "mysql_engine": "InnoDB",
         "mysql_charset": "utf8mb4",
-    }  # But we use MyISAM for the spatial table.
+    }
 
     id = Column(BigInteger, primary_key=True, autoincrement=False)
-    name = Column(String(1000), nullable=False)
+    name = Column(String(1024), nullable=False)
 
     # Callers pass id= by keyword, so the parameter keeps the builtin's name.
     def __init__(self, id=None, name=None, **kwargs):  # noqa: A002
@@ -77,7 +78,7 @@ class Athlete(StravaEntity):
     access_token = Column(String(255), nullable=True)
     profile_photo = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
-    expires_at = Column(BigInteger, default=0)
+    expires_at = Column(BigInteger, nullable=False, default=0)
     # Null, not false, for everyone who registered before this was recorded.
     registered = Column(Boolean, nullable=True)
     discord_user_id = Column(BigInteger, nullable=True, unique=True)
@@ -182,17 +183,20 @@ class Ride(StravaEntity):
     ride_type = Column(String(255), nullable=True)
 
 
-# Broken out into its own table due to MySQL (5.0/1.x, anyway) not allowing NULL values in geometry columns.
 class RideGeo(Base):
     __tablename__ = "ride_geo"
     __table_args__ = {
         "mysql_engine": "InnoDB",
         "mysql_charset": "utf8",
-    }  # MyISAM for spatial indexes
+    }
 
-    ride_id = Column(BigInteger, ForeignKey("rides.id"), primary_key=True)
-    start_geo = Column(Geometry("POINT"), nullable=False)
-    end_geo = Column(Geometry("POINT"), nullable=False)
+    ride_id = Column(
+        BigInteger, ForeignKey("rides.id", ondelete="cascade"), primary_key=True
+    )
+    # Strava can report either end without the other. MySQL indexes only
+    # NOT NULL geometry, and nothing searches by place.
+    start_geo = Column(Geometry("POINT", spatial_index=False), nullable=True)
+    end_geo = Column(Geometry("POINT", spatial_index=False), nullable=True)
 
     def __repr__(self):
         return "<{} ride_id={} start={}>".format(
@@ -200,16 +204,17 @@ class RideGeo(Base):
         )
 
 
-# Broken out into its own table due to MySQL (5.0/1.x, anyway) not allowing NULL values in geometry columns.
 class RideTrack(Base):
     __tablename__ = "ride_tracks"
     __table_args__ = {
-        "mysql_engine": "MyISAM",
-        "mysql_charset": "utf8mb4",
-    }  # MyISAM for spatial indexes
+        "mysql_engine": "InnoDB",
+        "mysql_charset": "utf8",
+    }
 
-    ride_id = Column(BigInteger, ForeignKey("rides.id"), primary_key=True)
-    gps_track = Column(Geometry("LINESTRING"), nullable=False)
+    ride_id = Column(
+        BigInteger, ForeignKey("rides.id", ondelete="cascade"), primary_key=True
+    )
+    gps_track = Column(Geometry("LINESTRING", spatial_index=False), nullable=False)
     elevation_stream = Column(satypes.JSONEncodedText, nullable=True)
     time_stream = Column(satypes.JSONEncodedText, nullable=True)
 
@@ -222,9 +227,14 @@ class RideEffort(Base):
     __table_args__ = {
         "mysql_engine": "InnoDB",
         "mysql_charset": "utf8mb4",
-    }  # MyISAM for spatial indexes
+    }
     id = Column(BigInteger, primary_key=True, autoincrement=False)
-    ride_id = Column(BigInteger, ForeignKey("rides.id", ondelete="cascade"), index=True)
+    ride_id = Column(
+        BigInteger,
+        ForeignKey("rides.id", ondelete="cascade"),
+        nullable=False,
+        index=True,
+    )
     segment_name = Column(String(255), nullable=False)
     segment_id = Column(BigInteger, nullable=False, index=True)
     elapsed_time = Column(Integer, nullable=False)
@@ -242,7 +252,7 @@ class RidePhoto(Base):
 
     id = Column(String(191), primary_key=True, autoincrement=False)
     ride_id = Column(BigInteger, ForeignKey("rides.id", ondelete="cascade"), index=True)
-    caption = Column(Text, nullable=True)
+    caption = Column(Text().with_variant(MEDIUMTEXT, "mysql"), nullable=True)
 
     img_t = Column(String(255), nullable=True)
     img_l = Column(String(255), nullable=True)
@@ -272,7 +282,9 @@ class RidePhoto(Base):
 
 class RideWeather(Base):
     __tablename__ = "ride_weather"
-    ride_id = Column(BigInteger, ForeignKey("rides.id"), primary_key=True)
+    ride_id = Column(
+        BigInteger, ForeignKey("rides.id", ondelete="cascade"), primary_key=True
+    )
 
     ride_temp_start = Column(Float, nullable=True)
     ride_temp_end = Column(Float, nullable=True)
