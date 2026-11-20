@@ -4,6 +4,7 @@ Created on Feb 10, 2013.
 @author: hans
 """
 
+import time
 from datetime import datetime, timedelta
 from re import findall, fullmatch, sub
 
@@ -433,6 +434,29 @@ def join():
     )
 
 
+def _refresh_team(athlete: Athlete) -> Team | None:
+    """
+    Ask Strava for the athlete's clubs rather than wait for its notice of joining.
+
+    The notice is sometimes lost. Leaves things as they were if Strava can't
+    say, and asks at most every few seconds, since the page refreshes itself
+    whenever its tab is shown.
+    """
+    if config.ENVIRONMENT == "localdev":
+        return None
+    now = time.time()
+    if now - session.get("club_checked", 0) < 10:
+        return None
+    session["club_checked"] = now
+    try:
+        return data.refresh_athlete_team(athlete)
+    except (MultipleTeamsError, NoTeamsError) as e:
+        log.info(f"Athlete {athlete.id} has no team yet: {e}")
+    except Exception:
+        log.exception(f"Could not read athlete {athlete.id}'s clubs from Strava")
+    return None
+
+
 @blueprint.route("/register")
 def register():
     step = request.args.get("step", "intro")
@@ -475,6 +499,9 @@ def register():
     authorized = athlete is not None and athlete.refresh_token is not None
     if athlete and not authorized and step not in ("intro", "login"):
         return redirect(url_for(".register", step="login"))
+
+    if step == "club" and "refresh" in request.args and athlete and not team:
+        team = _refresh_team(athlete)
 
     # Both forms live on the Wordpress site, which redirects back to this step;
     # the friends' form adds friend=true. The Next button for riders already
