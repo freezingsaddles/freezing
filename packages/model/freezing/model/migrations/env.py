@@ -19,8 +19,12 @@ if config.config_file_name:
 # for 'autogenerate' support
 target_metadata = orm.Base.metadata
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired with config.get_main_option(name).
+# Tables in the database that other applications own.
+FOREIGN_TABLES = {"freezebot_posts"}
+
+
+def include_object(obj, name, type_, reflected, compare_to):
+    return not (type_ == "table" and name in FOREIGN_TABLES)
 
 
 def run_migrations_offline():
@@ -38,7 +42,12 @@ def run_migrations_offline():
     url = config.get_main_option("sqlalchemy.url")
     if not url:
         url = config.SQLALCHEMY_URL
-    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        include_object=include_object,
+        literal_binds=True,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
@@ -51,17 +60,12 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    if environ["SQLALCHEMY_URL"]:
-        print(
-            "run_migrations_online: using SQLALCHEMY_URL environment variable for connection"
-        )
-        connectable = create_engine(environ["SQLALCHEMY_URL"], poolclass=pool.NullPool)
-    elif meta.engine:
-        # This is the path taken when migrating from freezing-web
-        print("run_migrations_online: using meta.engine to get connection")
+    if meta.engine:
+        # init_model's engine, when it brings the database up to date.
         connectable = meta.engine
+    elif environ.get("SQLALCHEMY_URL"):
+        connectable = create_engine(environ["SQLALCHEMY_URL"], poolclass=pool.NullPool)
     else:
-        print("run_migrations_online: use engine_from_config for connection")
         connectable = engine_from_config(
             config.get_section(config.config_ini_section),
             prefix="sqlalchemy.",
@@ -69,7 +73,11 @@ def run_migrations_online():
         )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_object=include_object,
+        )
 
         with context.begin_transaction():
             context.run_migrations()

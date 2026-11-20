@@ -88,10 +88,10 @@ docker compose stop freezing-freezebot
   * ride_weather
   * teams
 
-  `tribes` is not in the list because it has a foreign key on `athletes` with
-  `on delete cascade`, so it goes when they do. That is also why the script
-  deletes from `athletes` rather than truncating it: a truncate would leave the
-  tribes behind.
+  `tribes` and `athlete_clubs` are not in the list because they have foreign
+  keys on `athletes` with `on delete cascade`, so they go when they do. That is
+  also why the script deletes from `athletes` rather than truncating it: a
+  truncate would leave them behind.
 * Insert a new record into the `teams` table matching the MAIN_TEAM id:
 
     insert into teams (id, name, leaderboard_exclude) values (567288, 'Freezing Saddles 2020', 1);
@@ -108,6 +108,7 @@ sudo /opt/compose/bin/clear-cache-directories.sh
 
 * Once the teams are announced (for the original Freezing Saddles competition, typically at the Happy Hour in early January):
   * Add the team IDs for the competition teams and any observer teams (ringer teams) into the production `.env` file
+  * Add each observer team's ID to `OBSERVER_TEAMS`, and add `url: /pointless/club/<id>` to `leaderboards/pointless.yml` to link its leaderboard from the header
   * Restart the services:
 
     cd /opt/compose && docker compose up -d

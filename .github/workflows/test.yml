@@ -36,3 +36,46 @@ jobs:
       - name: nq tests
         working-directory: apps/nq
         run: uv run --no-sync pytest
+
+  migrations:
+    name: Migrations match the model
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: freezing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -ptest"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    env:
+      SQLALCHEMY_URL: >-
+        mysql+pymysql://root:test@127.0.0.1:3306/freezing?charset=utf8mb4&binary_prefix=true
+    defaults:
+      run:
+        working-directory: packages/model
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - name: Install workspace
+        run: |
+          pip install uv==0.12.15
+          uv sync --frozen --all-packages --all-extras
+      - name: Build the database from empty
+        run: uv run --no-sync alembic upgrade head
+      - name: Compare it with the model
+        run: uv run --no-sync alembic check
+      - name: Undo and redo the last migration
+        run: |
+          uv run --no-sync alembic downgrade -1
+          uv run --no-sync alembic upgrade head
+          uv run --no-sync alembic check

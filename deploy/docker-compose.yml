@@ -250,23 +250,3 @@ services:
       options:
         awslogs-group: logspout
         awslogs-stream: freezing-freezebot
-
-  wordpress:
-    image: wordpress:5.8.2
-    container_name: wordpress
-    volumes:
-      - ./wordpress:/var/www/html
-    restart: unless-stopped
-    environment:
-      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
-      LETSENCRYPT_HOST: ${FREEZING_REGISTER_FQDN}
-      VIRTUAL_HOST: ${FREEZING_REGISTER_FQDN}
-      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
-      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
-      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
-      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
-    logging:
-      driver: awslogs
-      options:
-        awslogs-group: logspout
-        awslogs-stream: wordpress

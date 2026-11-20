@@ -15,12 +15,12 @@ from time import sleep
 from urllib.parse import urlparse
 
 import yaml
-from flask import Flask, g, session
+from flask import Flask, g, session, url_for
 from marshmallow import fields
 
 from freezing.model import init_model, meta
 from freezing.model.msg import BaseMessage, BaseSchema
-from freezing.model.orm import Athlete
+from freezing.model.orm import Athlete, Team
 from freezing.web.autolog import log
 from freezing.web.utils.genericboard import load_board
 from freezing.web.utils.hashboard import load_hashboard
@@ -195,6 +195,12 @@ def _load_pointless():
             if seg:
                 prize.name = prize.name or seg.name
                 prize.discord = prize.discord or seg.discord
+        elif prize.url and prize.url.startswith("/pointless/club/"):
+            club = meta.scoped_session().get(
+                Team, int(prize.url.removeprefix("/pointless/club/"))
+            )
+            if club:
+                prize.name = prize.name or club.name
         elif prize.url and prize.url.startswith("/pointless/generic/"):
             board_name = prize.url.removeprefix("/pointless/generic/")
             try:
@@ -213,6 +219,14 @@ def _load_pointless():
 def inject_config():
     return {
         "competition_title": config.COMPETITION_TITLE,
+        # Link previews need an absolute url, and the proxy in front of
+        # gunicorn does not say the request came in over https.
+        "og_image": url_for(
+            "static",
+            filename="img/logo-blue.png",
+            _external=True,
+            _scheme="http" if config.ENVIRONMENT == "localdev" else "https",
+        ),
         "environment": config.ENVIRONMENT,
         "registration_site": config.REGISTRATION_SITE,
         "discord_invitation": config.DISCORD_INVITATION,

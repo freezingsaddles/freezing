@@ -18,10 +18,10 @@ dev = [
     "autoflake==2.4.0",
     "bandit[sarif]==1.9.4",
     "black==26.10.1",
-    "djlint==1.50.1",
+    "djlint==1.51.0",
     "fawltydeps==0.20.0",
     "flake8==7.5.0",
-    "flake8-bugbear==26.11.9",
+    "flake8-bugbear==26.11.16",
     "flake8-builtins==3.2.0",
     "flake8-comprehensions==3.17.0",
     "flake8-docstrings==1.7.0",
@@ -34,7 +34,7 @@ dev = [
     "isort==9.0.2",
     "mypy==2.4.1",
     "pre-commit==4.7.0",
-    "pymarkdownlnt==0.9.41",
+    "pymarkdownlnt==0.9.42",
     "pytest==9.2.0",
     "pytest-mock==3.17.0",
 ]
@@ -55,10 +55,6 @@ files = [
     "apps/sync/freezing",
     "apps/nq/freezing",
 ]
-# The ORM is declarative_base() with Column attributes, which mypy reads only
-# with SQLAlchemy's plugin (deprecated in 2.0 in favour of Mapped[] annotations,
-# still shipped).
-plugins = ["sqlalchemy.ext.mypy.plugin"]
 # Libraries without type information are Any rather than errors.
 ignore_missing_imports = true
 

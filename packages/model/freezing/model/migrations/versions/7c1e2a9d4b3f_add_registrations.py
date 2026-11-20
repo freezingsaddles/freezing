@@ -1,17 +1,15 @@
+"""Add registrations.
+
+Revision ID: 7c1e2a9d4b3f
+Revises: 75d6da077a30
+Create Date: 2026-09-17
+"""
+
 import sqlalchemy as sa
 from alembic import op
 
-"""add registrations
-
-Revision ID: 7c1e2a9d4b3f
-Revises: 7c2e9b4f1a06
-Create Date: 2026-09-17 03:10:00.000000
-
-"""
-
-# revision identifiers, used by Alembic.
 revision = "7c1e2a9d4b3f"
-down_revision = "7c2e9b4f1a06"
+down_revision = "75d6da077a30"
 
 
 def upgrade():

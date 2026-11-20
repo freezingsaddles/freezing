@@ -56,14 +56,22 @@ def save_rules(kind: str, name: str, markdown: str, athlete_id: int):
 def rules_context(
     kind: str, name: str, sponsors: list[int] | None, athlete_id: int | None
 ) -> dict:
-    """Return the template variables for a prize's Rules tab, shown only if sponsored."""
+    """
+    Return the template variables for a prize's Rules tab.
+
+    The tab is shown for a sponsored prize once it has rules, and before then
+    only to those who can write them.
+    """
     if not sponsors:
         return {"rules_kind": None}
     markdown = load_rules(kind, name)
+    editable = can_edit(athlete_id, sponsors)
+    if not markdown and not editable:
+        return {"rules_kind": None}
     return {
         "rules_kind": kind,
         "rules_name": name,
         "rules_markdown": markdown or "",
         "rules_html": render_rules(markdown),
-        "rules_editable": can_edit(athlete_id, sponsors),
+        "rules_editable": editable,
     }

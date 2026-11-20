@@ -41,7 +41,7 @@ class AthleteSync(BaseSync):
                 self.logger.info(f"Updating athlete: {athlete}")
                 try:
                     client = StravaClientForAthlete(athlete)
-                    strava_athlete = client.get_athlete()
+                    strava_athlete = teams.fill_clubs(client, client.get_athlete())
                     self.register_athlete(strava_athlete, athlete.access_token)
                     if not self.all_done():
                         self.register_athlete_team(strava_athlete, athlete)

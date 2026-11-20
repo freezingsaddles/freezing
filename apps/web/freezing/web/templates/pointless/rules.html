@@ -1,6 +1,6 @@
 {# Imported with context: the variables come from utils.rules.rules_context. #}
 {% macro link(href="#rules") %}
-    {% if rules_kind %}
+    {% if rules_html %}
         See full rules <a href="{{ href }}" class="rules-link">below</a>.
     {% endif %}
 {% endmacro %}

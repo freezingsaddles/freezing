@@ -1,4 +1,26 @@
 {% extends "base.html" %}
+{% macro blank_warning(athlete) %}
+    <div class="alert alert-danger">
+        <strong>Is this the Strava account you ride with?</strong>
+        The account you connected{% if athlete %}, <em>{{ athlete.name }}</em>,{% endif %}
+        has no clubs, bikes, followers or friends. Signing in to Strava with Google, Apple
+        or Facebook can create a new, blank Strava account instead of using your own.
+        <ul class="mb-0 mt-2">
+            <li>
+                If you have another Strava account, go to
+                <a href="https://www.strava.com"
+                   target="_blank"
+                   rel="noreferrer">strava.com</a>,
+                log out, log in to the account you ride with, then come back and
+                <a href="/register?step=login&profile=blank">connect Strava again</a>.
+            </li>
+            <li>
+                If this really is your Strava account,
+                <a href="/register?step=club">carry on</a>.
+            </li>
+        </ul>
+    </div>
+{% endmacro %}
 {% block title %}
     {{ "Register for " + competition_title }}
 {% endblock %}
@@ -11,10 +33,10 @@
         </div>
     {% endif %}
     <div class="card register mb-3 my-lg-4 p-3 p-md-4 px-lg-5">
-        {% if g.finished and false %}
+        {% if g.finished %}
             <h3 class="mb-3">Registration Closed</h3>
             <p>Registration is closed for the {{ end_date.year }} competition.</p>
-        {% elif not registration_open and false %}
+        {% elif not registration_open %}
             <h3 class="mb-3">Registration Not Yet Open</h3>
             <p>Registration has not yet opened for the {{ end_date.year }} competition.</p>
         {% elif step == "intro" %}
@@ -85,8 +107,16 @@
             <h3 class="mb-3">
                 <strong>Step 1.</strong> <span>Connect Strava and Login</span>
             </h3>
-            {% if not authorized %}
-                {% if athlete %}
+            {% if not authorized or request.args.get("profile") in ("missing", "blank") %}
+                {% if request.args.get("profile") == "blank" %}
+                    {{ blank_warning(athlete) }}
+                {% elif request.args.get("profile") == "missing" %}
+                    <div class="alert alert-warning">
+                        Freezing Saddles needs permission to <em>View your complete Strava
+                        profile</em>, or it can't see which Strava clubs you have joined. Please
+                        click <em>Connect with Strava</em> below and leave that box ticked.
+                    </div>
+                {% elif athlete %}
                     <div>
                         Your Strava authorization has expired, so the first thing you need to do is
                         reauthorize Freezing Saddles to read your Strava rides by clicking
@@ -180,6 +210,9 @@
                         <a class="btn btn-primary mb-1"
                            href="/register?step={{ 'discord' if discord_linking else 'tribes' }}">Next</a>
                 {% else %}
+                    {% if blank_strava %}
+                        {{ blank_warning(athlete) }}
+                    {% endif %}
                     <ul>
                         <li>
                             The next step is to join the Freezing Saddles {{ end_date.year }} Strava
@@ -209,6 +242,15 @@
                                 propagate.
                             </li>
                             <li>
+                                If you have joined but Refresh doesn't find it, check that you
+                                connected the same Strava account you joined with: signing in to
+                                Strava with Google or Apple can make a second, empty account.
+                                Or you may not have allowed Freezing Saddles to <em>View your
+                                complete Strava profile</em>. Either way,
+                                <a href="/register?step=login&profile=missing">connect Strava again</a>,
+                                with the right account and that box ticked.
+                            </li>
+                            <li>
                                 If things aren't working, use the top-right menu to log out and
                                 <a href="/register">try registering again</a>, or
                                 <a rel="noreferrer"
@@ -223,7 +265,7 @@
         {% elif step == "discord" %}
             <h3 class="mb-3">
                 <strong>Step 3.</strong> <span>Link Discord</span>
-                <small class="text-muted">(optional)</small>
+                <small class="text-muted">(recommended)</small>
             </h3>
             {% if athlete.discord_username %}
                 <ul>
@@ -263,7 +305,9 @@
                         </li>
                         <li>
                             If you don't use Discord, or would rather not link it, just skip this
-                            step. You can always link it later from the Discord menu.
+                            step. However, you will probably miss out on announcements and may not
+                            be able to participate in some games. You can always link it later from
+                            the Discord menu.
                         </li>
                     </ul>
                     <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -360,20 +404,44 @@
                 <ul>
                     <li>
                         If you are just playing as a <em>Friend of BAFS</em>, and not
-                        participating in the main competition, then you're already done. You
-                        don't need to fill out the registration form and may
-                        <a href="/">return to the home page</a>.
+                        participating in the main competition, then please click the
+                        Friend of BAFS button below.
                     </li>
                 </ul>
             </li>
         </ul>
-        <a class="btn btn-primary mb-1"
-           href="{{ registration_site }}freezing-saddles-2027-registration/?stravanumber={{ athlete.id }}">Registration Form</a>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a class="btn btn-primary mb-1 btn-lg"
+               href="{{ registration_site }}freezing-saddles-2027-registration/?stravanumber={{ athlete.id }}">Registration Form</a>
+            <a class="btn btn-outline-secondary mb-1"
+               href="https://freezingsaddles.info/friends/">Friend of BAFS</a>
+        </div>
     {% endif %}
 {% elif step == "complete" %}
     <h3 class="mb-3">Registration Complete</h3>
     <ul>
-        <li>Congratulations! Your registration is complete.</li>
+        <li>
+            Congratulations! Your registration is complete.
+            <ul>
+                <li>
+                    {% if "friend" in request.args %}
+                        Please check your inbox or spam folder to confirm your email address.
+                        You will not be on the mailing list unless you click on the link to confirm.
+                        If you don't receive the email, please
+                        <a rel="noreferrer"
+                           target="_blank"
+                           href="{{ registration_site }}contact-form/">contact us</a>.
+                    {% else %}
+                        Expect to receive a registration confirmation email and then later a second
+                        email asking you to confirm your email subscription.
+                        If you don't receive the email, please
+                        <a rel="noreferrer"
+                           target="_blank"
+                           href="{{ registration_site }}contact-form/">contact us</a>.
+                    {% endif %}
+                </li>
+            </ul>
+        </li>
         <li>
             You may now return to the home page and await the start of the
             competition.
@@ -404,7 +472,7 @@
             </ul>
         </li>
     </ul>
-    <a class="btn btn-primary mb-1" href="/">Done</a>
+    <a class="btn btn-primary btn-lg me-auto mb-1 px-5" href="/">Done</a>
 {% endif %}
 </div>
 {% endblock %}

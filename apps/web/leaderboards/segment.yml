@@ -3,7 +3,7 @@ segments:
   - segment: 37893544
     segment_name: Hains Point gate-to-gate (REVERSE)
     name: Hains Point Salmon Award
-    discord: 1443609035344449566
+    # discord: 1443609035344449566
     description: |
       <ul>
       <li>The winner of this Pointless Prize shall be the BAFS rider who completes the most counter-flow laps of Hains Point.</li>

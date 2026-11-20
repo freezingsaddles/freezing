@@ -145,10 +145,15 @@
              class="card mb-3 my-lg-4 bg-light p-3 px-lg-4 text-center">
             <h4>{{ end_date.year }} Registration is Now Open!</h4>
             {% if registered %}
-                <div class="alert alert-info mt-3">
+                <div class="alert alert-info mt-3 fw-bold">
                     Congratulations! You are registered for this year's competition.
                 </div>
             {% else %}
+                {% if g.logged_in %}
+                    <div class="alert alert-warning mt-3 fw-bold">
+                        Uh oh! You are not yet registered for this year's competition.
+                    </div>
+                {% endif %}
                 <a class="btn btn-primary register-btn mx-auto mt-3 mb-3"
                    href="/register">
                     <div>Register Now</div>
@@ -190,8 +195,10 @@
     {% if not bafs_is_live %}
         <div class="mb-4 mb-lg-5 alert alert-info">
             The shiny new Freezing Saddles competition for the upcoming winter hasn't
-            started yet. So far, <strong>{{ contestant_count }}</strong>
-            {{ "contestant has" if contestant_count == 1 else "contestants have" }} registered.
+            started yet. So far, <strong>{{ registered_count }}</strong>
+            contestant{{ registered_count|ess }} and <strong>{{ friend_count }}</strong>
+            friend{{ friend_count|ess }} have
+            registered.
             In the meantime, there are still bike rides going on, so go for a ride.
         </div>
     {% else %}

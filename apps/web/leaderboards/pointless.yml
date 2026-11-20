@@ -1,7 +1,7 @@
 ---
 categories:
-  #- id: active
-  #  name: Active Pointless Prizes
+  - id: active
+    name: Active Pointless Prizes
   - id: kids
     name: Children are our Future
   - id: unsponsored
@@ -16,7 +16,9 @@ prizes:
   - url: /pointless/hashtag/beerneuring
     category: unsponsored
   - url: /pointless/hashtag/bingo
-    category: unsponsored
+    category: active
+  - url: /pointless/hashtag/bridge
+    category: active
   - url: /pointless/hashtag/bikepacking
     category: hidden
   - url: /pointless/hashtag/biathlon
@@ -42,7 +44,7 @@ prizes:
   - url: /pointless/hashtag/adulting
     category: unsponsored
   - name: Extra Mile
-    discord: 1449623779167698954
+    # discord: 1449623779167698954
     category: unsupsponsored
   - url: /pointless/hashtag/420
     category: hidden

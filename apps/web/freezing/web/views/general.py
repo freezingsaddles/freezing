@@ -4,6 +4,7 @@ Created on Feb 10, 2013.
 @author: hans
 """
 
+import time
 from datetime import datetime, timedelta
 from re import findall, fullmatch, sub
 
@@ -20,6 +21,7 @@ from sqlalchemy import text
 from stravalib import Client
 from stravalib.exc import Fault
 
+from freezing.common import teams
 from freezing.common.seasons import (
     JUNE_SOLSTICE,
     SEPTEMBER_EQUINOX,
@@ -106,6 +108,15 @@ def index():
 
     indiv_count_res = meta.scoped_session().execute(q).one()
     contestant_count = indiv_count_res._mapping["num_contestants"]
+
+    q = text("""
+             select
+               coalesce(sum(not coalesce(friend, false)), 0) as contestants,
+               coalesce(sum(coalesce(friend, false)), 0) as friends
+             from athletes
+             where registered
+             """)
+    registered = meta.scoped_session().execute(q).one()._mapping
 
     q = text("""
             select count(*) as num_rides, coalesce(sum(R.moving_time),0) as moving_time,
@@ -229,6 +240,8 @@ def index():
         next_winter_ends=last_full_day_of_winter(now_tz.year + 1, config.TIMEZONE),
         team_count=len(config.COMPETITION_TEAMS),
         contestant_count=contestant_count,
+        registered_count=int(registered["contestants"]),
+        friend_count=int(registered["friends"]),
         total_rides=total_rides,
         total_hours=total_hours,
         total_miles=total_miles,
@@ -433,21 +446,63 @@ def join():
     )
 
 
+def _refresh_team(athlete: Athlete) -> Team | None:
+    """
+    Ask Strava for the athlete's clubs rather than wait for its notice of joining.
+
+    The notice is sometimes lost. Leaves things as they were if Strava can't
+    say, and asks at most every few seconds, since the page refreshes itself
+    whenever its tab is shown.
+    """
+    if config.ENVIRONMENT == "localdev":
+        return None
+    now = time.time()
+    if now - session.get("club_checked", 0) < 10:
+        return None
+    session["club_checked"] = now
+    try:
+        strava_athlete = data.fetch_strava_athlete(athlete)
+    except Exception:
+        log.exception(f"Could not read athlete {athlete.id}'s clubs from Strava")
+        return None
+    _note_blank(strava_athlete)
+    try:
+        return data.register_athlete_team(strava_athlete, athlete)
+    except (MultipleTeamsError, NoTeamsError) as e:
+        log.info(f"Athlete {athlete.id} has no team yet: {e}")
+    return None
+
+
+def _note_blank(strava_athlete) -> bool:
+    """Remember for the registration pages whether the Strava account looks blank."""
+    blank = teams.looks_blank(strava_athlete)
+    if blank:
+        log.info(f"Strava athlete {strava_athlete.id} looks blank")
+        session["blank_strava"] = strava_athlete.id
+    else:
+        session.pop("blank_strava", None)
+    return blank
+
+
 @blueprint.route("/register")
 def register():
     step = request.args.get("step", "intro")
+    # Strava only shows its permissions again when forced to; otherwise a rider
+    # reconnecting keeps the ones they chose before.
+    reconnect = request.args.get("profile") in ("missing", "blank")
+    approval_prompt = "force" if reconnect else "auto"
     c = Client()
     public_url = c.authorization_url(
         client_id=config.STRAVA_CLIENT_ID,
         redirect_uri=url_for(".authorization", _external=True),
-        approval_prompt="auto",
+        approval_prompt=approval_prompt,
         scope=["read", "activity:read", "profile:read_all"],
         state="register",
     )
     private_url = c.authorization_url(
         client_id=config.STRAVA_CLIENT_ID,
         redirect_uri=url_for(".authorization", _external=True),
-        approval_prompt="auto",
+        approval_prompt=approval_prompt,
         scope=["read_all", "activity:read_all", "profile:read_all"],
         state="register",
     )
@@ -476,10 +531,23 @@ def register():
     if athlete and not authorized and step not in ("intro", "login"):
         return redirect(url_for(".register", step="login"))
 
-    # The form lives on the Wordpress site, which redirects back to this step.
+    if step == "club" and "refresh" in request.args and athlete and not team:
+        team = _refresh_team(athlete)
+
+    # Both forms live on the Wordpress site, which redirects back to this step;
+    # the friends' form adds friend=true. The Next button for riders already
+    # registered comes here without it, so only a new registration says
+    # they're not a friend.
+    friend = request.args.get("friend") == "true"
     if step == "complete" and athlete and not athlete.registered:
-        log.info(f"Athlete {athlete.id} ({athlete.name}) completed registration")
+        log.info(
+            f"Athlete {athlete.id} ({athlete.name}) completed registration"
+            f"{' as a friend' if friend else ''}"
+        )
         athlete.registered = True
+        athlete.friend = friend
+    elif step == "complete" and athlete and friend:
+        athlete.friend = True
 
     now_tz = datetime.now(config.START_DATE.tzinfo)
     return render_template(
@@ -488,6 +556,7 @@ def register():
         athlete=athlete,
         authorized=authorized,
         team=team,
+        blank_strava=athlete is not None and session.get("blank_strava") == athlete.id,
         tribal_groups=load_tribes() if step == "tribes" else [],
         tribes=query_tribes(athlete.id) if step == "tribes" and athlete else {},
         mean_team=config.MAIN_TEAM,
@@ -524,6 +593,8 @@ def authorization():
     team = None
     message = None
     state = None
+    profile_missing = False
+    blank = False
     log.info(f"Authorization request host: {request.host}")
     if config.ENVIRONMENT == "localdev" and request.host.split(":")[0] in [
         "localhost",
@@ -570,7 +641,8 @@ def authorization():
         code = request.args.get("code")
         scope = request.args.get("scope")
         state = request.args.get("state")
-        log.info(f"Auth code: {code}, scope: {scope}, state: {state}")
+        log.info(f"Authorization scope: {scope}, state: {state}")
+        profile_missing = "profile:read_all" not in (scope or "").split(",")
 
         # Strava sends people here with a code. Anyone arriving without one has
         # opened the address by hand or followed a stale link, and has not
@@ -594,18 +666,14 @@ def authorization():
                 "authorization_error.html", error="the code had already been used"
             )
         # Use the now-authenticated client to get the current athlete
-        strava_athlete = client.get_athlete()
-        log.info("Strava athlete: {}", str(strava_athlete))
-        athlete = data.register_athlete(strava_athlete, token_dict)
+        strava_athlete = teams.fill_clubs(client, client.get_athlete())
         log.info(
-            "Received athlete auth [id: {}, name: {}] [at: {}, rt: {}, exp: {}]".format(
-                athlete.id,
-                athlete.name,
-                athlete.access_token,
-                athlete.refresh_token,
-                athlete.expires_at,
-            )
+            f"Strava athlete {strava_athlete.id} ({strava_athlete.firstname} "
+            f"{strava_athlete.lastname}), {len(strava_athlete.clubs or [])} clubs"
         )
+        blank = _note_blank(strava_athlete)
+        athlete = data.register_athlete(strava_athlete, token_dict)
+        log.info(f"Received athlete auth [id: {athlete.id}, name: {athlete.name}]")
         try:
             team = data.register_athlete_team(
                 strava_athlete=strava_athlete,
@@ -629,6 +697,12 @@ def authorization():
         log.info(f"Authorization message: {message}")
 
     if state == "register":
+        # Without it, Strava hides the clubs of anyone whose profile isn't
+        # public, so we can't find their team.
+        if profile_missing:
+            return redirect(url_for(".register", step="login", profile="missing"))
+        if blank:
+            return redirect(url_for(".register", step="login", profile="blank"))
         return redirect(url_for(".register", step="club"))
 
     return render_template(
