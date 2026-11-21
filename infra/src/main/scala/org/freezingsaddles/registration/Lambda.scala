@@ -75,6 +75,41 @@ object Handler:
     */
   def handle(aws: Aws, bucket: String, key: String, db: DataSource): Either[String, String] =
     val email = Email.parse(aws.readObject(bucket, key))
+    val csvs  = email.attachments.filter(_.filename.toLowerCase.endsWith(".csv"))
+    if csvs.nonEmpty then backfill(csvs, db)
+    else registration(email, key, db)
+  end handle
+
+  /** Every row of each attached submissions export. A file that isn't one fails the invocation,
+    * since whoever mailed it meant something by it; a row that can't be read is only noted.
+    */
+  private def backfill(csvs: List[Attachment], db: DataSource): Either[String, String] =
+    val results = csvs.map: csv =>
+      Backfill.parse(csv.bytes) match
+        case Left(reason)           => Left(s"${csv.filename}: $reason")
+        case Right((rows, skipped)) =>
+          val outcomes = transact(db):
+            rows.flatMap(r => Registration(r.key, r.registeredAt, r.form)).map(Registrations.record)
+          val counts   = Outcome.values
+            .map(o => s"${o.label} ${outcomes.count(_ == o)}")
+            .mkString(", ")
+          Right(
+            s"${csv.filename}: $counts" +
+              (if skipped.isEmpty then "" else s", skipped ${skipped.mkString("; ")}")
+          )
+    val errors  = results.collect:
+      case Left(e) => e
+    if errors.nonEmpty then Left(errors.mkString("; "))
+    else
+      Right(
+        results
+          .collect:
+            case Right(r) => r
+          .mkString("; ")
+      )
+  end backfill
+
+  private def registration(email: Email, key: String, db: DataSource): Either[String, String] =
     email.html match
       case None       => Right(s"ignored: no HTML part in ${email.subject.trim}")
       case Some(html) =>
@@ -83,13 +118,15 @@ object Handler:
           case Right(form)  =>
             val messageId = if email.messageId.nonEmpty then email.messageId else key
             val sent      = LocalDateTime.ofInstant(email.sent.getOrElse(Instant.now()), ZoneOffset.UTC)
-            val fresh     = transact(db)(Registrations.record(Registration(messageId, sent, form)))
-            Right(
-              s"${if fresh then "recorded" else "refreshed"} ${form.firstName} ${form.lastName}" +
-                s" <${form.email}> strava=${form.stravaId.getOrElse("-")}"
-            )
+            val who       = s"${form.firstName} ${form.lastName} <${form.email}>"
+            Registration(messageId, sent, form) match
+              // A human can find it in the bucket and ask them for their Strava id.
+              case None      => Right(s"not recorded: no Strava id from $who")
+              case Some(reg) =>
+                val outcome = transact(db)(Registrations.record(reg))
+                Right(s"${outcome.label} $who strava=${reg.athleteId}")
     end match
-  end handle
+  end registration
 end Handler
 
 /** Parses a saved .eml and prints what would be stored; no AWS, no database. */
@@ -98,7 +135,18 @@ end Handler
   println(
     s"From: ${email.from}\nSubject: ${email.subject}\nMessage-Id: ${email.messageId}\nSent: ${email.sent}"
   )
-  email.html.map(Submission.parse) match
-    case None            => println("no HTML part")
-    case Some(Left(err)) => println(s"not a registration: $err")
-    case Some(Right(r))  => println(r)
+  email.attachments.filter(_.filename.toLowerCase.endsWith(".csv")) match
+    case Nil  =>
+      email.html.map(Submission.parse) match
+        case None            => println("no HTML part")
+        case Some(Left(err)) => println(s"not a registration: $err")
+        case Some(Right(r))  => println(r)
+    case csvs =>
+      csvs.foreach: csv =>
+        Backfill.parse(csv.bytes) match
+          case Left(err)              => println(s"${csv.filename}: not a submissions export: $err")
+          case Right((rows, skipped)) =>
+            println(s"${csv.filename}: ${rows.size} rows")
+            skipped.foreach(println)
+  end match
+end preview

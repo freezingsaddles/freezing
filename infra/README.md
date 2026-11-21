@@ -25,13 +25,27 @@ Two sbt builds, Scala 3:
    reads the two-column table of label and answer. Only these are kept:
    first name, last name, zip code, e-mail, Strava user ID, and the team
    captain answer (blank or `Yes`).
-4. It writes a row whose primary key is the email's `Message-Id`, in the
-   schema's habit of external keys over generated ones, so a redelivery or a
-   retry replaces the row instead of duplicating it. `athlete_id` is set only
-   when an `athletes` row with that Strava id already exists; the raw value is
-   kept in `strava_id` either way.
+4. It keeps one row per athlete, keyed on the Strava id they typed: their
+   latest submission, with `source` saying which email it came from.
+   WordPress keeps the history. A submission older than the row is ignored,
+   and one with the same answers changes nothing, so a redelivery or a retry
+   is harmless. The form comes after connecting Strava, so an id with no
+   `athletes` row is a typo, and is logged instead of stored.
 
-Anything that is not a registration confirmation is logged and ignored. A
+## Backfilling from an export
+
+Registrations that arrived while no email reached the receiver can be mailed
+in as the form's submissions export: attach the CSV that WordPress exports
+to a message to the same address. Each row goes through the same rules as an
+email, with `form-submission:<#>` as its source and its date read in the
+site's Eastern time, so mailing the same export again changes nothing. The
+log line counts the rows recorded, updated, unchanged, older and with an
+unknown athlete, and names the rows it couldn't read. To check an export
+first, save the message as `.eml` and run `sbt "runMain
+org.freezingsaddles.registration.preview <file>"`.
+
+Anything that is not a registration confirmation is logged and ignored, but a
+CSV attachment that is not an export fails, since whoever sent it meant it. A
 message the Lambda cannot store fails the invocation so Lambda retries; the
 S3 copy is kept for a year regardless, which is what makes a parser fix
 replayable.

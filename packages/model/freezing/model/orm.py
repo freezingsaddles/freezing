@@ -120,11 +120,11 @@ athlete_clubs = Table(
 
 
 class Registration(Base):
-    """One submission of the WordPress registration form, as recorded from its confirmation email.
+    """Each athlete's latest submission of the WordPress registration form.
 
-    Written by the registration receiver in infra/ (a Lambda behind SES), never by the Python
-    apps. The athlete link is only set when the athletes row already existed at the time the email
-    arrived; the raw Strava id the person typed is kept in strava_id regardless.
+    Written by the registration receiver in infra/ (a Lambda behind SES), from the form's
+    confirmation emails and from submission exports mailed to it, never by the Python apps.
+    WordPress keeps the history of submissions.
     """
 
     __tablename__ = "registrations"
@@ -133,22 +133,25 @@ class Registration(Base):
         "mysql_charset": "utf8mb4",
     }
 
-    # The email's Message-Id, in the schema's habit of external keys over generated ones; the
-    # receiver upserts on it so a redelivered email is the same row again.
-    message_id = Column(String(255), primary_key=True)
+    # The Strava athlete id they typed. The form comes after connecting Strava, so a real one is
+    # always in athletes; the receiver drops the rest as typos.
+    athlete_id = Column(
+        BigInteger,
+        ForeignKey("athletes.id", ondelete="CASCADE"),
+        primary_key=True,
+        autoincrement=False,
+    )
+    # The confirmation email's Message-Id, or the export's submission number.
+    source = Column(String(255), nullable=False)
     registered_at = Column(DateTime, nullable=False)
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
     zip_code = Column(String(32), nullable=False)
     email = Column(String(255), nullable=False, index=True)
-    strava_id = Column(String(64), nullable=True)
-    athlete_id = Column(
-        BigInteger, ForeignKey("athletes.id", ondelete="set null"), nullable=True
-    )
     team_captain = Column(Boolean, nullable=False, default=False, server_default="0")
 
-    athlete: Mapped["Athlete | None"] = orm.relationship(
-        "Athlete", backref=orm.backref("registrations", lazy="dynamic")
+    athlete: Mapped["Athlete"] = orm.relationship(
+        "Athlete", backref=orm.backref("registration", uselist=False)
     )
 
 

@@ -16,7 +16,10 @@ case class Email(
     sent: Option[Instant],
     html: Option[String],
     text: Option[String],
+    attachments: List[Attachment] = Nil,
 )
+
+case class Attachment(filename: String, bytes: Array[Byte])
 
 object Email:
   private val session = Session.getInstance(Properties())
@@ -26,8 +29,8 @@ object Email:
     * collects the first text/html and text/plain leaves wherever they sit.
     */
   def parse(raw: Array[Byte]): Email =
-    val msg   = MimeMessage(session, ByteArrayInputStream(raw))
-    val parts = leaves(msg)
+    val msg               = MimeMessage(session, ByteArrayInputStream(raw))
+    val (attached, parts) = leaves(msg).partitionMap(identity)
     Email(
       messageId = Option(msg.getMessageID).map(_.trim).getOrElse(""),
       from = header(msg, "From"),
@@ -38,7 +41,9 @@ object Email:
         case (mime, body) if mime.startsWith("text/html") => body
       ,
       text = parts.collectFirst:
-        case (mime, body) if mime.startsWith("text/plain") => body,
+        case (mime, body) if mime.startsWith("text/plain") => body
+      ,
+      attachments = attached,
     )
   end parse
 
@@ -47,11 +52,17 @@ object Email:
   private def header(msg: MimeMessage, name: String): String =
     Option(msg.getHeader(name, ", ")).getOrElse("")
 
-  /** Depth-first list of (content type, decoded text) for every non-multipart part. */
-  private def leaves(part: Part): List[(String, String)] =
+  /** Depth-first list of every non-multipart part: a named file as an attachment, its raw bytes
+    * whatever type the sender's mail program gave it, and anything else as (content type, decoded
+    * text).
+    */
+  private def leaves(part: Part): List[Either[Attachment, (String, String)]] =
     val mime = Option(part.getContentType).getOrElse("").toLowerCase
-    part.getContent match
-      case mp: Multipart => (0 until mp.getCount).toList.flatMap(i => leaves(mp.getBodyPart(i)))
-      case s: String     => List(mime -> s)
-      case _             => Nil
+    Option(part.getFileName).filterNot(_ => mime.startsWith("multipart/")) match
+      case Some(name) => List(Left(Attachment(name, part.getInputStream.readAllBytes())))
+      case None       =>
+        part.getContent match
+          case mp: Multipart => (0 until mp.getCount).toList.flatMap(i => leaves(mp.getBodyPart(i)))
+          case s: String     => List(Right(mime -> s))
+          case _             => Nil
 end Email

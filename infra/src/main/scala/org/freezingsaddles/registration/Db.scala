@@ -43,59 +43,75 @@ end DbConfig
 given DbCodec[LocalDateTime] =
   DbCodec[java.sql.Timestamp].biMap(_.toLocalDateTime, java.sql.Timestamp.valueOf)
 
-/** A `registrations` row. The email's Message-Id is the key, in the schema's habit of external
-  * identifiers over generated ones; a redelivered email is the same row again.
+/** A `registrations` row: each athlete's latest submission of the form. WordPress keeps the
+  * history; this keeps what the competition needs now.
   */
 @SqlName("registrations")
 @Table(MySqlDbType, SqlNameMapper.CamelToSnakeCase)
 case class Registration(
-    @Id messageId: String,
-    registeredAt: LocalDateTime, // UTC, as the email's Date header
+    /** The Strava athlete id they typed, which must be an athlete's: the form comes after
+      * connecting Strava.
+      */
+    @Id athleteId: Long,
+    /** Where it came from: the confirmation email's Message-Id, or the export's submission. */
+    source: String,
+    registeredAt: LocalDateTime, // UTC
     firstName: String,
     lastName: String,
     zipCode: String,
     email: String,
-    /** What they typed as their Strava user id, kept whether or not it matched an athlete. */
-    stravaId: Option[String],
-    /** Set only when an athletes row with that id existed when the email arrived. */
-    athleteId: Option[Long],
     teamCaptain: Boolean,
 ) derives DbCodec
 
 object Registration:
-  def apply(messageId: String, registeredAt: LocalDateTime, form: Submission): Registration =
-    Registration(
-      messageId = messageId,
-      registeredAt = registeredAt,
-      firstName = form.firstName,
-      lastName = form.lastName,
-      zipCode = form.zipCode,
-      email = form.email,
-      stravaId = form.stravaId.map(_.toString),
-      athleteId = form.stravaId,
-      teamCaptain = form.teamCaptain,
-    )
+  /** None when they typed no Strava id, which leaves nothing to key the row on. */
+  def apply(source: String, registeredAt: LocalDateTime, form: Submission): Option[Registration] =
+    form.stravaId.map: id =>
+      Registration(
+        athleteId = id,
+        source = source,
+        registeredAt = registeredAt,
+        firstName = form.firstName,
+        lastName = form.lastName,
+        zipCode = form.zipCode,
+        email = form.email,
+        teamCaptain = form.teamCaptain,
+      )
 end Registration
 
-/** The one column of `athletes` this needs: whether a Strava id is known to us yet. */
+/** The one column of `athletes` this needs: whether a Strava id is known to us. */
 @SqlName("athletes")
 @Table(MySqlDbType)
 case class Athlete(@Id id: Long) derives DbCodec
 
+enum Outcome:
+  case Recorded, Updated, Unchanged, Older, UnknownAthlete
+
+  def label: String = this match
+    case UnknownAthlete => "unknown athlete"
+    case other          => other.toString.toLowerCase
+
 object Registrations:
-  private val repo     = Repo[Registration, Registration, String]
+  private val repo     = Repo[Registration, Registration, Long]
   private val athletes = ImmutableRepo[Athlete, Long]
 
-  /** Inserts, or replaces the row an earlier delivery of the same email left. The athlete link
-    * survives only if the athletes table has the id; a typo or an athlete who has not authorised
-    * yet leaves it null, and `stravaId` keeps what was typed.
-    *
-    * @return
-    *   true for a new row, false for a refreshed one
+  /** Keeps the athlete's latest submission. One that says what the row already says changes
+    * nothing, wherever it came from, so a submission both emailed and exported is one row, and an
+    * export mailed in twice changes nothing the second time. An id no athlete has is a typo.
     */
-  def record(reg: Registration)(using DbTx): Boolean =
-    val linked = reg.copy(athleteId = reg.athleteId.filter(athletes.existsById))
-    val fresh  = !repo.existsById(linked.messageId)
-    if fresh then repo.insert(linked) else repo.update(linked)
-    fresh
+  def record(reg: Registration)(using DbTx): Outcome =
+    if !athletes.existsById(reg.athleteId) then Outcome.UnknownAthlete
+    else record(reg, repo.findById(reg.athleteId))
+
+  private def record(reg: Registration, existing: Option[Registration])(using DbTx): Outcome =
+    existing match
+      case None                                                                               =>
+        repo.insert(reg)
+        Outcome.Recorded
+      case Some(row) if row.registeredAt.isAfter(reg.registeredAt)                            => Outcome.Older
+      case Some(row) if row.copy(source = reg.source, registeredAt = reg.registeredAt) == reg =>
+        Outcome.Unchanged
+      case Some(_)                                                                            =>
+        repo.update(reg)
+        Outcome.Updated
 end Registrations
