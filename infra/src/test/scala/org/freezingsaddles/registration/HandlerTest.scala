@@ -10,17 +10,27 @@ class HandlerTest extends munit.FunSuite:
     def readObject(bucket: String, key: String): Array[Byte] = bytes
     def readParameter(name: String): String                  = ???
 
+  private val secret = Some("open-sesame")
+
   test("a mail that is not a registration is ignored, not failed"):
-    val plain = "Subject: spam\r\nContent-Type: text/html\r\n\r\n<p>buy now</p>\r\n"
-    val r     = Handler.handle(aws(plain.getBytes), "b", "k", db)
-    assertEquals(r, Right("ignored: missing field: First Name (spam)"))
+    val plain = "Subject: spam open-sesame\r\nContent-Type: text/html\r\n\r\n<p>buy now</p>\r\n"
+    val r     = Handler.handle(aws(plain.getBytes), "b", "k", db, secret)
+    assertEquals(r, Right("ignored: missing field: First Name (spam open-sesame)"))
 
   test("a mail with no html part is ignored"):
-    val plain = "Subject: hello\r\nContent-Type: text/plain\r\n\r\nwords\r\n"
+    val plain = "Subject: hello open-sesame\r\nContent-Type: text/plain\r\n\r\nwords\r\n"
     assertEquals(
-      Handler.handle(aws(plain.getBytes), "b", "k", db),
-      Right("ignored: no HTML part in hello"),
+      Handler.handle(aws(plain.getBytes), "b", "k", db, secret),
+      Right("ignored: no HTML part in hello open-sesame"),
     )
+
+  test("a registration without the secret in its subject is not read"):
+    val from = "Freezing Saddles Registration <registration@freezingsaddles.info>"
+    for wrong <- List(None, secret) do
+      assertEquals(
+        Handler.handle(aws(raw), "b", "k", db, wrong),
+        Right(s"ignored: no secret in the subject, from $from"),
+      )
 
   test("the environment maps onto the connection settings"):
     val full =

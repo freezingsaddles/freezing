@@ -8,14 +8,14 @@ import javax.sql.DataSource
 import scala.jdk.CollectionConverters.*
 
 private object Env:
-  private def env(name: String): String   =
+  private def env(name: String): String  =
     sys.env.getOrElse(name, sys.error(s"missing environment variable $name"))
-  lazy val bucket: String                 = env("BUCKET")
-  lazy val prefix: String                 = sys.env.getOrElse("OBJECT_PREFIX", "")
-  lazy val backfillSecret: Option[String] = sys.env.get("BACKFILL_SECRET").filter(_.nonEmpty)
+  lazy val bucket: String                = env("BUCKET")
+  lazy val prefix: String                = sys.env.getOrElse("OBJECT_PREFIX", "")
+  lazy val subjectSecret: Option[String] = sys.env.get("SUBJECT_SECRET").filter(_.nonEmpty)
   // The password is read once per container, not per email, and never printed. It arrives
   // either directly (a private database with no route to SSM) or as the name of a SecureString.
-  lazy val db: DbConfig                   =
+  lazy val db: DbConfig                  =
     DbConfig.fromEnv(
       sys.env,
       sys.env
@@ -44,7 +44,7 @@ class Lambda extends RequestHandler[java.util.Map[String, Object], String]:
           Env.bucket,
           Env.prefix + id,
           Env.db.dataSource,
-          Env.backfillSecret,
+          Env.subjectSecret,
         )
       )
     results.foreach((id, r) => log.info(s"$id: ${r.fold(identity, identity)}"))
@@ -78,8 +78,9 @@ object Lambda:
 end Lambda
 
 object Handler:
-  /** One email from bucket to row. Left is a reason to fail the invocation; Right is a note for the
-    * log. An email that is not a registration confirmation at all is a Right: the mailbox receives
+  /** One email from bucket to rows. Left is a reason to fail the invocation; Right is a note for
+    * the log. Only mail with the secret in its subject is read, so none is read while no secret is
+    * set. An email that is not a registration confirmation at all is a Right: the mailbox receives
     * what anyone sends it, and there is nothing to retry.
     */
   def handle(
@@ -87,16 +88,15 @@ object Handler:
       bucket: String,
       key: String,
       db: DataSource,
-      backfillSecret: Option[String] = None,
+      subjectSecret: Option[String] = None,
   ): Either[String, String] =
     val email = Email.parse(aws.readObject(bucket, key))
     val csvs  = email.attachments.filter(_.filename.toLowerCase.endsWith(".csv"))
-    if csvs.isEmpty then registration(email, key, db)
-    // Anyone can mail the address, and an export writes many rows; the subject isn't logged, as it
-    // may hold a near miss of the secret.
-    else if !backfillSecret.exists(email.subject.contains) then
-      Right(s"ignored: an export without the backfill secret in its subject, from ${email.from}")
-    else backfill(csvs, db)
+    // Anyone can mail the address. The subject isn't logged, as it may hold a near miss.
+    if !subjectSecret.exists(email.subject.contains) then
+      Right(s"ignored: no secret in the subject, from ${email.from}")
+    else if csvs.nonEmpty then backfill(csvs, db)
+    else registration(email, key, db)
   end handle
 
   /** Every row of each attached submissions export. A file that isn't one fails the invocation,

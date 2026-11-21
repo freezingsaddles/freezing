@@ -21,11 +21,16 @@ Two sbt builds, Scala 3:
    registration website.
 2. An SES receipt rule for the recipient writes the raw message to an S3
    bucket and invokes the Lambda with the message id.
-3. The Lambda fetches the message, walks its MIME parts to the HTML one, and
+3. The Lambda ignores anything whose subject lacks the subject secret
+   (`INFRA_SUBJECT_SECRET`), since anyone can mail the address, and ignores
+   everything while none is set. The registrant's own confirmation must not
+   carry it, so the form needs a separate email action to this address whose
+   subject has the secret in it.
+4. It fetches the message, walks its MIME parts to the HTML one, and
    reads the two-column table of label and answer. Only these are kept:
    first name, last name, zip code, e-mail, Strava user ID, and the team
    captain answer (blank or `Yes`).
-4. It keeps one row per athlete, keyed on the Strava id they typed: their
+5. It keeps one row per athlete, keyed on the Strava id they typed: their
    latest submission, with `source` saying which email it came from.
    WordPress keeps the history. A submission older than the row is ignored,
    and one with the same answers changes nothing, so a redelivery or a retry
@@ -36,10 +41,8 @@ Two sbt builds, Scala 3:
 
 Registrations that arrived while no email reached the receiver can be mailed
 in as the form's submissions export: attach the CSV that WordPress exports
-to a message to the same address, with the backfill secret
-(`INFRA_BACKFILL_SECRET`) anywhere in its subject. Anyone can mail the
-address, so an export without it is ignored, as is every export while no
-secret is set. Each row goes through the same rules as an
+to a message to the same address, with the subject secret in its subject
+like any other mail. Each row goes through the same rules as an
 email, with `form-submission:<#>` as its source and its date read in the
 site's Eastern time, so mailing the same export again changes nothing. The
 log line counts the rows recorded, updated, unchanged, older and with an
@@ -90,7 +93,7 @@ one secret in the `production` environment:
 | `INFRA_DB_HOST`, `INFRA_DB_PORT`, `INFRA_DB_NAME`, `INFRA_DB_USER` | the RDS endpoint, `3306`, `freezing`, `freezing` |
 | `INFRA_VPC_ID`, `INFRA_DB_SECURITY_GROUP_ID` | `vpc-fb440f81` and the group on the RDS instance |
 | `INFRA_DB_PASSWORD` (secret, `production` environment) | the `freezing` user's password |
-| `INFRA_BACKFILL_SECRET` (secret, `production` environment) | a phrase the subject of a mailed-in export must contain |
+| `INFRA_SUBJECT_SECRET` (secret, `production` environment) | a phrase the subject of every mail must contain to be read |
 
 The password goes straight into the function's environment: encrypted at rest,
 visible only to people who can read the function's configuration, the same

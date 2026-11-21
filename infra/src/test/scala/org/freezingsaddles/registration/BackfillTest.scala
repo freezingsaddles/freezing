@@ -103,12 +103,12 @@ class BackfillHandlerTest extends munit.FunSuite:
 
   private val secret = Some("open-sesame")
 
-  test("an export without the secret in its subject is ignored"):
+  test("mail without the secret in its subject is ignored"):
     val raw = mail("nf-subs.csv", "text/csv", exported)
     for wrong <- List(None, Some("shibboleth")) do
       assertEquals(
         Handler.handle(aws(raw), "b", "k", ds, wrong),
-        Right("ignored: an export without the backfill secret in its subject, from "),
+        Right("ignored: no secret in the subject, from "),
       )
     assertEquals(TestDb.rows(ds), Vector.empty)
 

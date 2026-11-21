@@ -60,6 +60,6 @@ jobs:
             -c dbName="${{ vars.INFRA_DB_NAME }}" \
             -c dbUser="${{ vars.INFRA_DB_USER }}" \
             -c dbPassword="${{ secrets.INFRA_DB_PASSWORD }}" \
-            -c backfillSecret="${{ secrets.INFRA_BACKFILL_SECRET }}" \
+            -c subjectSecret="${{ secrets.INFRA_SUBJECT_SECRET }}" \
             -c vpcId="${{ vars.INFRA_VPC_ID }}" \
             -c dbSecurityGroupId="${{ vars.INFRA_DB_SECURITY_GROUP_ID }}"
