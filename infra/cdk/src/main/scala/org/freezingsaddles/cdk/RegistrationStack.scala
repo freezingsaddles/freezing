@@ -55,8 +55,8 @@ import software.constructs.Construct
   *   - recipient (default register@inbox.freezingsaddles.org): the address to receive on. Its
   *     domain becomes an SES identity with DKIM records and the MX record in the zone.
   *   - dbHost, dbUser (required), dbPort (default 3306), dbName (default freezing): the MySQL
-  *     connection, for a user that can insert into `registrations` and select from `athletes`.
-  *     Plain environment variables, like the config file the Python apps read.
+  *     connection, for a user that can select, insert and update `registrations` and select
+  *     `athletes`. Plain environment variables, like the config file the Python apps read.
   *   - dbPassword or dbPasswordParam: that user's password, one of two ways. dbPassword puts it
   *     straight into the function's environment: encrypted at rest, readable by anyone who can read
   *     the function's configuration, the same trust as the .env file the Python apps use on the
@@ -64,6 +64,8 @@ import software.constructs.Construct
   *     given) names an SSM SecureString the function reads at runtime; create it by hand, since
   *     CloudFormation cannot. Inside a VPC that read needs an SSM interface endpoint, which is
   *     billed hourly, so a private database wants dbPassword.
+  *   - subjectSecret (optional): a phrase the subject of every mail must contain to be read,
+  *     confirmation or export. Without it, nothing is. In the environment, like dbPassword.
   *   - vpcId, dbSecurityGroupId (optional, together): run the function inside the database's VPC.
   *     The stack makes the function its own security group and adds an ingress rule for it to the
   *     database's group on the database port, adds a free S3 gateway endpoint so the function can
@@ -191,7 +193,8 @@ class RegistrationStack(scope: Construct, id: String, props: StackProps)
             "DB_PORT"       -> dbPort,
             "DB_NAME"       -> dbName,
             "DB_USER"       -> dbUser,
-          ) ++ dbPassword.map("DB_PASSWORD" -> _)
+          ) ++ context("subjectSecret").map("SUBJECT_SECRET" -> _)
+            ++ dbPassword.map("DB_PASSWORD" -> _)
             ++ dbPasswordParam.map("DB_PASSWORD_PARAM" -> _))*
         )
       )

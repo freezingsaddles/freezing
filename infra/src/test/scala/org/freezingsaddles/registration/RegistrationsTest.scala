@@ -4,82 +4,100 @@ import com.augustnagro.magnum.*
 import java.time.LocalDateTime
 import org.h2.jdbcx.JdbcDataSource
 
-/** The repository against an in-process H2 in MySQL mode: the same DDL as the alembic migration, so
-  * the case-class mapping and the upsert are exercised rather than assumed.
-  */
-class RegistrationsTest extends munit.FunSuite:
-  private val ds =
+/** An in-process H2 in MySQL mode, with the table as the migrations leave it. */
+object TestDb:
+  def apply(name: String): JdbcDataSource =
     val d = JdbcDataSource()
     d.setURL(
-      "jdbc:h2:mem:registrations;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1"
+      s"jdbc:h2:mem:$name;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1"
     )
+    transact(d):
+      sql"""create table if not exists athletes (id bigint primary key)""".update.run()
+      sql"""merge into athletes key (id) values (12345678), (87654321)""".update.run()
+      sql"""create table if not exists registrations (
+              athlete_id bigint primary key references athletes(id) on delete cascade,
+              source varchar(255) not null,
+              registered_at datetime not null,
+              first_name varchar(255) not null,
+              last_name varchar(255) not null,
+              zip_code varchar(32) not null,
+              email varchar(255) not null,
+              team_captain boolean not null default false
+            )""".update.run()
     d
+  end apply
 
-  override def beforeAll(): Unit = transact(ds):
-    sql"""create table athletes (id bigint primary key, name varchar(1000) not null)""".update.run()
-    sql"""create table registrations (
-            message_id varchar(255) primary key,
-            registered_at datetime not null,
-            first_name varchar(255) not null,
-            last_name varchar(255) not null,
-            zip_code varchar(32) not null,
-            email varchar(255) not null,
-            strava_id varchar(64),
-            athlete_id bigint references athletes(id) on delete set null,
-            team_captain boolean not null default false
-          )""".update.run()
-    sql"insert into athletes (id, name) values (12345678, 'Ann Rider')".update.run()
+  def rows(ds: JdbcDataSource): Vector[Registration] = transact(ds):
+    sql"select * from registrations order by athlete_id".query[Registration].run()
 
-  override def beforeEach(context: BeforeEach): Unit =
-    transact(ds)(sql"delete from registrations".update.run())
+  def clear(ds: JdbcDataSource): Unit = transact(ds)(sql"delete from registrations".update.run())
+end TestDb
 
-  private val when                = LocalDateTime.of(2026, 3, 27, 21, 28, 32)
-  private val ann                 =
+/** The repository against H2, so the case-class mapping and the upsert are exercised rather than
+  * assumed.
+  */
+class RegistrationsTest extends munit.FunSuite:
+  private val ds = TestDb("registrations")
+
+  override def beforeEach(context: BeforeEach): Unit = TestDb.clear(ds)
+
+  private val when = LocalDateTime.of(2026, 3, 27, 21, 28, 32)
+  private val ann  =
     Submission("Ann", "Rider", "22201", "ann.rider@example.com", Some(12345678L), false)
-  private def rows()(using DbCon) =
-    sql"select * from registrations order by message_id".query[Registration].run()
 
-  test("a known strava id links the athlete; the typed value is kept either way"):
-    val fresh = transact(ds)(Registrations.record(Registration("<m1>", when, ann)))
-    assertEquals(fresh, true)
-    val row   = transact(ds)(rows()).head
-    assertEquals(row.athleteId, Some(12345678L))
-    assertEquals(row.stravaId, Some("12345678"))
+  private def record(source: String, at: LocalDateTime, form: Submission) =
+    transact(ds)(Registrations.record(Registration(source, at, form).get))
+
+  test("a submission is keyed on the strava id they typed"):
+    assertEquals(record("<m1>", when, ann), Outcome.Recorded)
     assertEquals(
-      (row.firstName, row.lastName, row.zipCode, row.email),
-      ("Ann", "Rider", "22201", "ann.rider@example.com"),
-    )
-    assertEquals(row.registeredAt, when)
-    assertEquals(row.teamCaptain, false)
-
-  test("an unknown strava id leaves the link null"):
-    transact(ds)(Registrations.record(Registration("<m2>", when, ann.copy(stravaId = Some(999L)))))
-    val row = transact(ds)(rows()).head
-    assertEquals(row.athleteId, None)
-    assertEquals(row.stravaId, Some("999"))
-
-  test("no strava id at all"):
-    transact(ds)(Registrations.record(Registration("<m3>", when, ann.copy(stravaId = None))))
-    val row = transact(ds)(rows()).head
-    assertEquals((row.athleteId, row.stravaId), (None, None))
-
-  test("the same message again replaces the row instead of adding one"):
-    val first  = transact(ds)(Registrations.record(Registration("<m4>", when, ann)))
-    val second = transact(ds):
-      Registrations.record(
-        Registration("<m4>", when.plusMinutes(5), ann.copy(zipCode = "22202", teamCaptain = true))
-      )
-    assertEquals((first, second), (true, false))
-    val all    = transact(ds)(rows())
-    assertEquals(all.size, 1)
-    assertEquals(
-      (all.head.zipCode, all.head.teamCaptain, all.head.registeredAt),
-      ("22202", true, when.plusMinutes(5)),
+      TestDb.rows(ds),
+      Vector(
+        Registration(
+          12345678L,
+          "<m1>",
+          when,
+          "Ann",
+          "Rider",
+          "22201",
+          "ann.rider@example.com",
+          false,
+        )
+      ),
     )
 
-  test("different messages are different rows"):
-    transact(ds):
-      Registrations.record(Registration("<a>", when, ann))
-      Registrations.record(Registration("<b>", when, ann.copy(firstName = "Bo")))
-    assertEquals(transact(ds)(rows()).map(_.firstName).toList, List("Ann", "Bo"))
+  test("without a strava id there is no row to make"):
+    assertEquals(Registration("<m2>", when, ann.copy(stravaId = None)), None)
+
+  test("a later submission replaces the athlete's row"):
+    record("<m3>", when, ann)
+    val later = ann.copy(zipCode = "22202", teamCaptain = true)
+    assertEquals(record("<m4>", when.plusDays(1), later), Outcome.Updated)
+    val row   = TestDb.rows(ds).loneElement
+    assertEquals((row.source, row.zipCode, row.teamCaptain), ("<m4>", "22202", true))
+
+  test("an earlier submission arriving late is ignored"):
+    record("<m5>", when, ann)
+    assertEquals(record("<m6>", when.minusDays(1), ann.copy(zipCode = "1")), Outcome.Older)
+    assertEquals(TestDb.rows(ds).loneElement.zipCode, "22201")
+
+  test("the same answers again change nothing, whatever their source"):
+    record("<m7>", when, ann)
+    assertEquals(record("form-submission:7", when.plusMinutes(1), ann), Outcome.Unchanged)
+    val row = TestDb.rows(ds).loneElement
+    assertEquals((row.source, row.registeredAt), ("<m7>", when))
+
+  test("an id no athlete has is a typo, and not recorded"):
+    assertEquals(record("<m8>", when, ann.copy(stravaId = Some(1234567L))), Outcome.UnknownAthlete)
+    assertEquals(TestDb.rows(ds), Vector.empty)
+
+  test("different athletes are different rows"):
+    record("<a>", when, ann)
+    record("<b>", when, ann.copy(firstName = "Bo", stravaId = Some(87654321L)))
+    assertEquals(TestDb.rows(ds).map(_.firstName), Vector("Ann", "Bo"))
+
+  extension [A](v: Vector[A])
+    private def loneElement: A =
+      assertEquals(v.size, 1)
+      v.head
 end RegistrationsTest

@@ -48,11 +48,14 @@ object Submission:
       lastName = lastName,
       zipCode = zipCode,
       email = email,
-      stravaId = strava.filter(_.isDigit).toLongOption.filter(_ > 0),
+      stravaId = stravaId(strava),
       teamCaptain = captain.equalsIgnoreCase("yes"),
     )
     end for
   end parse
+
+  /** The digits of what they typed, if there were any. */
+  def stravaId(typed: String): Option[Long] = typed.filter(_.isDigit).toLongOption.filter(_ > 0)
 
   /** Every label/answer pair in the email's tables, with labels normalised. */
   def fields(html: String): Map[String, String] =
