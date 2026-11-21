@@ -1,0 +1,39 @@
+---
+name: Infra Trust Policy
+
+# Moves the deploy role's trust from main to the production environment, which
+# is the subject Infra Deploy presents. It runs as the role under its old trust,
+# so it can only succeed once: delete this file after it has.
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - '.github/workflows/infra-trust-policy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency: infra-deploy
+
+jobs:
+  trust:
+    name: update the deploy role's trust policy
+    if: github.ref == 'refs/heads/main'
+    # No environment: the role still trusts the main branch's subject.
+    permissions:
+      id-token: write # mint the OIDC token traded for the AWS role
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: arn:aws:iam::299196842131:role/AssumeCDKRole
+          role-session-name: freezing-infra-trust-policy # names the run in CloudTrail
+          aws-region: us-east-1
+      - name: Trust the production environment
+        run: |
+          aws iam update-assume-role-policy --role-name AssumeCDKRole --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Federated":"arn:aws:iam::299196842131:oidc-provider/token.actions.githubusercontent.com"},"Action":"sts:AssumeRoleWithWebIdentity","Condition":{"StringEquals":{"token.actions.githubusercontent.com:aud":"sts.amazonaws.com","token.actions.githubusercontent.com:sub":"repo:freezingsaddles@35430981/freezing@1373805993:environment:production"}}}]}'
+      - name: Show the policy now in force
+        continue-on-error: true # the role may not be allowed to read itself
+        run: aws iam get-role --role-name AssumeCDKRole --query Role.AssumeRolePolicyDocument
