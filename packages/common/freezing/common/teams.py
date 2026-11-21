@@ -8,6 +8,7 @@ https://github.com/freezingsaddles/freezing-web/issues/66.
 import logging
 from collections.abc import Iterable
 
+from freezing.common import athletes
 from freezing.model import meta
 from freezing.model.orm import Athlete, Team
 
@@ -93,6 +94,31 @@ def register_athlete_team(
     :raise MultipleTeamsError: if the athlete is in more than one real team.
     :raise NoTeamsError: if no configured team matches.
     """
+    was_in_a_club = athletes.in_a_club(athlete_model)
+    try:
+        return _choose_team(
+            strava_athlete,
+            athlete_model,
+            competition_teams=competition_teams,
+            observer_teams=observer_teams,
+            main_team=main_team,
+            logger=logger,
+        )
+    finally:
+        athletes.shorten_on_joining(
+            strava_athlete, athlete_model, was_in_a_club, logger=logger
+        )
+
+
+def _choose_team(
+    strava_athlete,
+    athlete_model: Athlete,
+    *,
+    competition_teams: Iterable[int],
+    observer_teams: Iterable[int],
+    main_team: int | None,
+    logger: logging.Logger,
+) -> Team:
     observer_teams = set(observer_teams)
     configured = set(competition_teams) | observer_teams
     logger.info("Checking %r against %r", strava_athlete.clubs, configured)

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from freezing.common.athletes import full_name, register_athlete
+from freezing.common.athletes import full_name, register_athlete, shorten_on_joining
 from freezing.model.orm import Athlete
 
 TOKENS = {"access_token": "at", "refresh_token": "rt", "expires_at": 1800000000}
@@ -21,7 +21,7 @@ def session():
     """Return a session with no existing athlete and no display name collisions."""
     session = MagicMock()
     session.get.return_value = None
-    session.query.return_value.filter.return_value.filter.return_value.count.return_value = (
+    session.query.return_value.filter.return_value.filter.return_value.filter.return_value.count.return_value = (
         0
     )
     with patch("freezing.common.athletes.meta.scoped_session", return_value=session):
@@ -30,7 +30,9 @@ def session():
 
 def collides(session, times=1):
     """Make the next `times` display-name lookups report a conflict."""
-    counter = session.query.return_value.filter.return_value.filter.return_value.count
+    counter = (
+        session.query.return_value.filter.return_value.filter.return_value.filter.return_value.count
+    )
     counter.side_effect = [1] * times + [0] * 10
 
 
@@ -43,13 +45,54 @@ def test_new_athlete_is_added(session):
     session.add.assert_called_once_with(athlete)
 
 
+def in_a_club(**fields):
+    return Athlete(id=5, team_id=10, **fields)
+
+
 def test_display_name_abbreviates_the_surname(session):
+    session.get.return_value = in_a_club()
     assert register_athlete(strava(), **TOKENS).display_name == "Ann R"
 
 
 def test_display_name_falls_back_when_it_collides(session):
+    session.get.return_value = in_a_club()
     collides(session)
     assert register_athlete(strava(), **TOKENS).display_name == "Ann Rider"
+
+
+def test_an_athlete_in_no_club_keeps_the_full_name(session):
+    assert register_athlete(strava(), **TOKENS).display_name == "Ann Rider"
+
+
+def test_joining_a_club_shortens_the_name(session):
+    athlete = Athlete(id=5, name="Ann Rider", display_name="Ann Rider", team_id=10)
+    shorten_on_joining(strava(), athlete, was_in_a_club=False)
+    assert athlete.display_name == "Ann R"
+
+
+def test_joining_still_falls_back_when_it_collides(session):
+    collides(session)
+    athlete = Athlete(id=5, name="Ann Rider", display_name="Ann Rider", team_id=10)
+    shorten_on_joining(strava(), athlete, was_in_a_club=False)
+    assert athlete.display_name == "Ann Rider"
+
+
+def test_a_member_already_keeps_their_name(session):
+    athlete = Athlete(id=5, name="Ann Rider", display_name="Ann Rider", team_id=10)
+    shorten_on_joining(strava(), athlete, was_in_a_club=True)
+    assert athlete.display_name == "Ann Rider"
+
+
+def test_joining_leaves_a_name_set_by_hand(session):
+    athlete = Athlete(id=5, name="Ann Rider", display_name="Annie", team_id=10)
+    shorten_on_joining(strava(), athlete, was_in_a_club=False)
+    assert athlete.display_name == "Annie"
+
+
+def test_still_in_no_club_keeps_the_full_name(session):
+    athlete = Athlete(id=5, name="Ann Rider", display_name="Ann Rider")
+    shorten_on_joining(strava(), athlete, was_in_a_club=False)
+    assert athlete.display_name == "Ann Rider"
 
 
 def test_missing_surname(session):
@@ -73,12 +116,12 @@ def test_a_set_display_name_survives(session):
 
 
 def test_a_missing_display_name_is_filled_in(session):
-    session.get.return_value = Athlete(id=5, name="Ann Rider", display_name=None)
+    session.get.return_value = in_a_club(name="Ann Rider", display_name=None)
     assert register_athlete(strava(), **TOKENS).display_name == "Ann R"
 
 
 def test_rename_recomputes_the_display_name(session):
-    session.get.return_value = Athlete(id=5, name="Ann Rider", display_name="Ann R")
+    session.get.return_value = in_a_club(name="Ann Rider", display_name="Ann R")
     athlete = register_athlete(strava(lastname="Cyclist"), **TOKENS)
     assert (athlete.name, athlete.display_name) == ("Ann Cyclist", "Ann C")
 
@@ -97,6 +140,7 @@ def test_a_new_athlete_is_not_reported_as_renamed(session, caplog):
 
 
 def test_disambiguation_failure_falls_back_to_the_full_name(session, caplog):
+    session.get.return_value = in_a_club()
     session.query.side_effect = RuntimeError("database gone")
     with caplog.at_level(logging.ERROR, logger="freezing.common.athletes"):
         athlete = register_athlete(strava(), **TOKENS)
