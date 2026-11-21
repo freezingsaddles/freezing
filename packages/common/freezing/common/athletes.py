@@ -24,16 +24,30 @@ def full_name(strava_athlete) -> str:
     return " ".join(part.strip() for part in parts if part and part.strip())
 
 
+def in_a_club(athlete_model: Athlete) -> bool:
+    """Say whether the athlete is in one of the season's clubs, and so on show."""
+    return (
+        athlete_model.team is not None
+        or athlete_model.team_id is not None
+        or bool(athlete_model.clubs)
+    )
+
+
 def display_name(
     strava_athlete, athlete_model: Athlete, *, logger: logging.Logger
 ) -> str:
     """
     Return the leaderboard name: a first name and a last initial.
 
-    Falls back to the full name when there is no surname to abbreviate, or when
-    the abbreviated form is already another athlete's display name.
+    Falls back to the full name when there is no surname to abbreviate, when
+    the abbreviated form is already the display name of another athlete in a
+    club, or until this one is in a club. Riders who connect a second, empty
+    Strava account by mistake leave it in no club, and it shouldn't take the
+    short name from the account they ride with.
     """
     name = full_name(strava_athlete)
+    if not in_a_club(athlete_model):
+        return name
     first = (strava_athlete.firstname or "").strip()
     last = (strava_athlete.lastname or "").strip()
     if not first or not last:
@@ -45,6 +59,7 @@ def display_name(
         .query(Athlete)
         .filter(Athlete.id != athlete_model.id)
         .filter(Athlete.display_name == abbreviated)
+        .filter(Athlete.team_id.isnot(None) | Athlete.clubs.any())
         .count()
     )
     if taken:
@@ -68,7 +83,8 @@ def register_athlete(
     owns the transaction.
 
     The display name is (re)computed for an athlete who has none, and for one
-    Strava has since renamed. An athlete who has kept their name keeps the
+    Strava has since renamed; :func:`shorten_on_joining` shortens it once they
+    are in a club. An athlete who has kept their name keeps the
     display name they have, which may have been set by hand.
 
     :param strava_athlete: The athlete returned by ``stravalib``'s
@@ -111,3 +127,19 @@ def register_athlete(
 
     session.add(athlete_model)
     return athlete_model
+
+
+def shorten_on_joining(
+    strava_athlete, athlete_model: Athlete, was_in_a_club: bool, *, logger=log
+) -> None:
+    """Give an athlete who has just joined a club the short display name they waited for."""
+    if was_in_a_club or not in_a_club(athlete_model):
+        return
+    if athlete_model.display_name != full_name(strava_athlete):
+        return
+    try:
+        athlete_model.display_name = display_name(
+            strava_athlete, athlete_model, logger=logger
+        )
+    except Exception:
+        logger.exception("Athlete name disambiguation error for %s", strava_athlete.id)

@@ -185,3 +185,19 @@ def test_looks_blank_allows_a_few_followers(followers, friends, blank):
     a.follower_count = followers
     a.friend_count = friends
     assert looks_blank(a) is blank
+
+
+def test_joining_shortens_the_display_name(session):
+    session.query.return_value.filter.return_value.filter.return_value.filter.return_value.count.return_value = (
+        0
+    )
+    model = Athlete(id=5, name="Ann Rider", display_name="Ann Rider")
+    register_athlete_team(athlete(club(RED)), model, **TEAMS)
+    assert model.display_name == "Ann R"
+
+
+def test_no_club_keeps_the_full_name(session):
+    model = Athlete(id=5, name="Ann Rider", display_name="Ann Rider")
+    with pytest.raises(NoTeamsError):
+        register_athlete_team(athlete(), model, **TEAMS)
+    assert model.display_name == "Ann Rider"
