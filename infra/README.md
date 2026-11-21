@@ -36,7 +36,10 @@ Two sbt builds, Scala 3:
 
 Registrations that arrived while no email reached the receiver can be mailed
 in as the form's submissions export: attach the CSV that WordPress exports
-to a message to the same address. Each row goes through the same rules as an
+to a message to the same address, with the backfill secret
+(`INFRA_BACKFILL_SECRET`) anywhere in its subject. Anyone can mail the
+address, so an export without it is ignored, as is every export while no
+secret is set. Each row goes through the same rules as an
 email, with `form-submission:<#>` as its source and its date read in the
 site's Eastern time, so mailing the same export again changes nothing. The
 log line counts the rows recorded, updated, unchanged, older and with an
@@ -87,6 +90,7 @@ one secret in the `production` environment:
 | `INFRA_DB_HOST`, `INFRA_DB_PORT`, `INFRA_DB_NAME`, `INFRA_DB_USER` | the RDS endpoint, `3306`, `freezing`, `freezing` |
 | `INFRA_VPC_ID`, `INFRA_DB_SECURITY_GROUP_ID` | `vpc-fb440f81` and the group on the RDS instance |
 | `INFRA_DB_PASSWORD` (secret, `production` environment) | the `freezing` user's password |
+| `INFRA_BACKFILL_SECRET` (secret, `production` environment) | a phrase the subject of a mailed-in export must contain |
 
 The password goes straight into the function's environment: encrypted at rest,
 visible only to people who can read the function's configuration, the same

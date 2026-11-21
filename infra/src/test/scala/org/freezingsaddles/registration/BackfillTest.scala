@@ -78,7 +78,7 @@ class BackfillHandlerTest extends munit.FunSuite:
 
   private def mail(filename: String, contentType: String, body: String): Array[Byte] =
     val encoded = Base64.getMimeEncoder.encodeToString(body.getBytes(UTF_8))
-    s"""Subject: registrations so far
+    s"""Subject: registrations so far open-sesame
        |Message-Id: <backfill@example.com>
        |MIME-Version: 1.0
        |Content-Type: multipart/mixed; boundary="b"
@@ -101,17 +101,28 @@ class BackfillHandlerTest extends munit.FunSuite:
     def readObject(bucket: String, key: String): Array[Byte] = bytes
     def readParameter(name: String): String                  = ???
 
+  private val secret = Some("open-sesame")
+
+  test("an export without the secret in its subject is ignored"):
+    val raw = mail("nf-subs.csv", "text/csv", exported)
+    for wrong <- List(None, Some("shibboleth")) do
+      assertEquals(
+        Handler.handle(aws(raw), "b", "k", ds, wrong),
+        Right("ignored: an export without the backfill secret in its subject, from "),
+      )
+    assertEquals(TestDb.rows(ds), Vector.empty)
+
   private val skips = "skipped row 3: no Strava id; row 4: unreadable date sometime"
 
   test("each athlete keeps their latest row, and mailing it again changes nothing"):
     // Spreadsheet programs attach CSV under all sorts of types.
     val raw = mail("nf-subs.csv", "application/vnd.ms-excel", exported)
     assertEquals(
-      Handler.handle(aws(raw), "b", "k", ds),
+      Handler.handle(aws(raw), "b", "k", ds, secret),
       Right(s"nf-subs.csv: recorded 2, updated 1, unchanged 0, older 0, unknown athlete 1, $skips"),
     )
     assertEquals(
-      Handler.handle(aws(raw), "b", "k", ds),
+      Handler.handle(aws(raw), "b", "k", ds, secret),
       Right(s"nf-subs.csv: recorded 0, updated 0, unchanged 2, older 1, unknown athlete 1, $skips"),
     )
     assertEquals(
@@ -128,12 +139,12 @@ class BackfillHandlerTest extends munit.FunSuite:
     com.augustnagro.magnum.transact(ds)(Registrations.record(emailed.get))
     val only6   = exported.linesIterator.take(3).mkString("\n")
     assertEquals(
-      Handler.handle(aws(mail("nf-subs.csv", "text/csv", only6)), "b", "k", ds),
+      Handler.handle(aws(mail("nf-subs.csv", "text/csv", only6)), "b", "k", ds, secret),
       Right("nf-subs.csv: recorded 0, updated 0, unchanged 0, older 1, unknown athlete 0"),
     )
     assertEquals(TestDb.rows(ds).map(_.source), Vector("<emailed@example.com>"))
 
   test("an attachment that isn't an export fails the invocation"):
     val raw = mail("contacts.csv", "text/csv", "name,address\nAnn,here\n")
-    assertEquals(Handler.handle(aws(raw), "b", "k", ds), Left("contacts.csv: no # column"))
+    assertEquals(Handler.handle(aws(raw), "b", "k", ds, secret), Left("contacts.csv: no # column"))
 end BackfillHandlerTest

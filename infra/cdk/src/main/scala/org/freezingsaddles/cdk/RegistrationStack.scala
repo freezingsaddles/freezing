@@ -64,6 +64,8 @@ import software.constructs.Construct
   *     given) names an SSM SecureString the function reads at runtime; create it by hand, since
   *     CloudFormation cannot. Inside a VPC that read needs an SSM interface endpoint, which is
   *     billed hourly, so a private database wants dbPassword.
+  *   - backfillSecret (optional): a phrase the subject of a mailed-in submissions export must
+  *     contain. Without it, exports are refused. In the environment, like dbPassword.
   *   - vpcId, dbSecurityGroupId (optional, together): run the function inside the database's VPC.
   *     The stack makes the function its own security group and adds an ingress rule for it to the
   *     database's group on the database port, adds a free S3 gateway endpoint so the function can
@@ -191,7 +193,8 @@ class RegistrationStack(scope: Construct, id: String, props: StackProps)
             "DB_PORT"       -> dbPort,
             "DB_NAME"       -> dbName,
             "DB_USER"       -> dbUser,
-          ) ++ dbPassword.map("DB_PASSWORD" -> _)
+          ) ++ context("backfillSecret").map("BACKFILL_SECRET" -> _)
+            ++ dbPassword.map("DB_PASSWORD" -> _)
             ++ dbPasswordParam.map("DB_PASSWORD_PARAM" -> _))*
         )
       )
