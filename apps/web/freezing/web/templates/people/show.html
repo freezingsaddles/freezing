@@ -95,56 +95,33 @@
     <div class="mt-3 mt-lg-4 d-grid grid-gap-3 grid-gap-lg-4 grid-lg-2">
         <div>
             <h5 class="ps-2">Ride Statistics</h5>
+            {% set stats = data.stats %}
             <ul class="list-group">
+                {% if stats.place %}
+                    <li class="list-group-item">
+                        Rank: <span class="float-end">{{ stats.place }}<sup>{{ stats.place|ord }}</sup> of {{ stats.ranked|groupnum }}</span>
+                    </li>
+                {% endif %}
                 <li class="list-group-item">
-                    Total Rides: <span class="float-end">{{ data.totalrides }}</span>
+                    Points: <span class="float-end">{{ (stats.points or 0)|round|int|groupnum }}</span>
                 </li>
                 <li class="list-group-item">
-                    Total Mileage:
-                    <span class="float-end">{{ data.totaldist | round(2) }}</span>
+                    Ride Days: <span class="float-end">{{ stats.days or 0 }} of {{ data.season_days }}</span>
+                </li>
+                <li class="list-group-item">
+                    Rides: <span class="float-end">{{ stats.rides|groupnum }}</span>
+                </li>
+                <li class="list-group-item">
+                    Miles: <span class="float-end">{{ stats.miles|round|int|groupnum }}</span>
+                </li>
+                <li class="list-group-item">
+                    Hours: <span class="float-end">{{ (stats.seconds / 3600)|round|int|groupnum }}</span>
                 </li>
                 <li class="list-group-item">
                     Average Ride:
                     <span class="float-end">
-                        {% if data.totalrides > 0 %}
-                            {{ (data.totaldist / data.totalrides) |
-                                round(2) }}
-                        {% else %}
-                            –
-                        {% endif %}
-                    </span>
-                </li>
-                <li class="list-group-item">
-                    Rides This Week: <span class="float-end">{{ data.weekrides }}</span>
-                </li>
-                <li class="list-group-item">
-                    Mileage This Week:
-                    <span class="float-end">{{ data.weektotal | round(2) }}</span>
-                </li>
-                <li class="list-group-item">
-                    Average Ride This Week:
-                    <span class="float-end">
-                        {% if data.weekrides > 0 %}
-                            {{ (data.weektotal / data.weekrides) |
-                                round(2) }}
-                        {% else %}
-                            –
-                        {% endif %}
-                    </span>
-                </li>
-                <li class="list-group-item">
-                    Rides Today: <span class="float-end">{{ data.todayrides }}</span>
-                </li>
-                <li class="list-group-item">
-                    Mileage Today:
-                    <span class="float-end">{{ data.todaydist | round(2) }}</span>
-                </li>
-                <li class="list-group-item">
-                    Average Ride Today:
-                    <span class="float-end">
-                        {% if data.todayrides > 0 %}
-                            {{ (data.todaydist / data.todayrides) |
-                                round(2) }}
+                        {% if stats.rides %}
+                            {{ (stats.miles / stats.rides)|round(1) }} miles
                         {% else %}
                             –
                         {% endif %}

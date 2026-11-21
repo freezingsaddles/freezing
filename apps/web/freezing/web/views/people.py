@@ -26,43 +26,17 @@ def get_today() -> datetime:
 
 @blueprint.route("/")
 def people_list_users():
-    users_list = (
-        meta.scoped_session()
-        .query(Athlete)
-        .filter(Athlete.team.has(leaderboard_exclude=0))
-        .order_by(Athlete.display_name)
-    )
-    today = get_today()
-    week_start = today.date() - timedelta(days=(today.weekday()) % 7)
-    week_end = week_start + timedelta(days=6)
-    users = []
-    for u in users_list:
-        weekly_dist = 0
-        weekly_rides = 0
-        total_rides = 0  # noqa: SIM113 -- tallied alongside the other per-ride sums
-        total_dist = 0
-        for r in u.rides:
-            total_rides += 1
-            total_dist += r.distance
-            ride_date = r.local_start_date.date()
-            if week_start <= ride_date <= week_end:
-                weekly_dist += r.distance
-                weekly_rides += 1
-        users.append(
-            {
-                "name": u.display_name,
-                "id": u.id,
-                "weekrides": weekly_rides,
-                "weektotal": weekly_dist,
-                "totaldist": total_dist,
-                "totalrides": total_rides,
-            }
-        )
+    q = text("""
+             select A.id, A.display_name, A.team_id, T.name as team_name,
+             count(R.id) as rides, coalesce(sum(R.distance), 0) as miles
+             from lbd_athletes A
+             join teams T on T.id = A.team_id
+             left join rides R on R.athlete_id = A.id
+             group by A.id, A.display_name, A.team_id, T.name
+             order by lower(A.display_name)
+             """)
     return render_template(
-        "people/list.html",
-        users=users,
-        weekstart=week_start,
-        weekend=week_end,
+        "people/list.html", users=meta.scoped_session().execute(q).fetchall()
     )
 
 
@@ -81,25 +55,24 @@ def people_show_person(user_id):
         our_user.profile_photo = None
 
     our_team = meta.scoped_session().query(Team).filter_by(id=our_user.team_id).first()
-    today = get_today()
-    week_start = today.date() - timedelta(days=(today.weekday()) % 7)
-    week_end = week_start + timedelta(days=6)
-    today_dist = 0
-    today_rides = 0
-    weekly_dist = 0
-    weekly_rides = 0
-    total_rides = 0  # noqa: SIM113 -- tallied alongside the other per-ride sums
-    total_dist = 0
-    for r in our_user.rides:
-        total_rides += 1
-        total_dist += r.distance
-        ride_date = r.local_start_date.date()
-        if week_start <= ride_date <= week_end:
-            weekly_dist += r.distance
-            weekly_rides += 1
-        if ride_date == today.date():
-            today_dist += r.distance
-            today_rides += 1
+    stats = meta.scoped_session().execute(text("""
+                with scores as (
+                  select athlete_id, sum(points) as points, count(*) as days
+                  from daily_scores group by athlete_id
+                ), ranked as (
+                  select S.athlete_id, rank() over (order by S.points desc) as place
+                  from scores S join lbd_athletes A on A.id = S.athlete_id
+                )
+                select
+                  (select place from ranked where athlete_id = :id) as place,
+                  (select count(*) from ranked) as ranked,
+                  (select points from scores where athlete_id = :id) as points,
+                  (select days from scores where athlete_id = :id) as days,
+                  count(R.id) as rides,
+                  coalesce(sum(R.distance), 0) as miles,
+                  coalesce(sum(R.moving_time), 0) as seconds
+                from rides R where R.athlete_id = :id
+                """).bindparams(id=user_id)).one()._mapping
 
     q = text("""
            with daily_rides as (
@@ -149,14 +122,16 @@ def people_show_person(user_id):
             "other_teams": other_teams,
             "observer_teams": config.OBSERVER_TEAMS,
             "team": our_team,
-            "todaydist": today_dist,
-            "todayrides": today_rides,
-            "totaldist": total_dist,
-            "totalrides": total_rides,
+            "stats": stats,
+            "season_days": max(
+                0,
+                (
+                    min(get_today(), config.END_DATE).date() - config.START_DATE.date()
+                ).days
+                + 1,
+            ),
             "tribal_groups": tribal_groups,
             "user": our_user,
-            "weekrides": weekly_rides,
-            "weektotal": weekly_dist,
             "mosaic": mosaic,
             "weeks": weeks,
             "first_day": (config.START_DATE - start).days,
