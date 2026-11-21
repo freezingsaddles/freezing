@@ -27,3 +27,22 @@
         </ul>
     </div>
 {% endmacro %}
+{#
+    Still not in the club after a refresh, from an account that doesn't look blank:
+    it may still be one the rider made by mistake and used once or twice.
+#}
+{% macro account_check(athlete_id, name, reconnect_url) %}
+    <div class="alert alert-warning">
+        <strong>Still not in the club?</strong>
+        Check that the Strava account you connected is the one you joined the club with:
+        open <a href="https://www.strava.com/athletes/{{ athlete_id }}"
+                target="_blank"
+                rel="noreferrer">{{ name or "your connected account" }} on Strava</a>
+        and make sure it has your rides, followers and clubs. If it isn't the account you ride with,
+        go to <a href="https://www.strava.com"
+                 target="_blank"
+                 rel="noreferrer">strava.com</a>,
+        log out, log in to the right account, then come back and
+        <a href="{{ reconnect_url }}">connect Strava again</a>.
+    </div>
+{% endmacro %}
