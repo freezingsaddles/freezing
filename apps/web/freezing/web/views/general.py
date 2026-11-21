@@ -492,7 +492,7 @@ def register():
     step = request.args.get("step", "intro")
     # Strava only shows its permissions again when forced to; otherwise a rider
     # reconnecting keeps the ones they chose before.
-    reconnect = request.args.get("profile") in ("missing", "blank")
+    reconnect = request.args.get("profile") in ("missing", "blank", "account")
     approval_prompt = "force" if reconnect else "auto"
     c = Client()
     public_url = c.authorization_url(

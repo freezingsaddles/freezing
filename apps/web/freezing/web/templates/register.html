@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "blank_strava.html" import blank_warning %}
+{% from "blank_strava.html" import blank_warning, account_check %}
 {% block title %}
     {{ "Register for " + competition_title }}
 {% endblock %}
@@ -86,9 +86,18 @@
             <h3 class="mb-3">
                 <strong>Step 1.</strong> <span>Connect Strava and Login</span>
             </h3>
-            {% if not authorized or request.args.get("profile") in ("missing", "blank") %}
+            {% if not authorized or request.args.get("profile") in ("missing", "blank", "account") %}
                 {% if request.args.get("profile") == "blank" %}
                     {{ blank_warning(athlete.name if athlete else None, "/register?step=login&profile=blank", "/register?step=club") }}
+                {% elif request.args.get("profile") == "account" %}
+                    <div class="alert alert-warning">
+                        Strava connects whichever account you are logged in to. Go to
+                        <a href="https://www.strava.com"
+                           target="_blank"
+                           rel="noreferrer">strava.com</a>,
+                        log out, and log in to the account you ride with before you click
+                        <em>Connect with Strava</em> below.
+                    </div>
                 {% elif request.args.get("profile") == "missing" %}
                     <div class="alert alert-warning">
                         Freezing Saddles needs permission to <em>View your complete Strava
@@ -191,6 +200,8 @@
                 {% else %}
                     {% if blank_strava %}
                         {{ blank_warning(athlete.name if athlete else None, "/register?step=login&profile=blank", "/register?step=club") }}
+                    {% elif athlete and "refresh" in request.args %}
+                        {{ account_check(athlete.id, athlete.name, "/register?step=login&profile=account") }}
                     {% endif %}
                     <ul>
                         <li>
