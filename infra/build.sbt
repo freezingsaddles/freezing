@@ -23,7 +23,7 @@ lazy val registration = (project in file("."))
     ),
     libraryDependencies ++= Seq(
       "ch.qos.logback"    % "logback-classic"        % "1.6.3",
-      "com.amazonaws"     % "aws-lambda-java-core"   % "1.2.3",
+      "com.amazonaws"     % "aws-lambda-java-core"   % "1.4.1",
       "com.amazonaws"     % "aws-lambda-java-events" % "3.16.1",
       "com.lihaoyi"      %% "upickle"                % "4.1.0",
       "com.augustnagro"  %% "magnum"                 % "1.3.1",
