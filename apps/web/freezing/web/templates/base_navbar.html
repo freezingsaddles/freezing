@@ -459,7 +459,7 @@
                                     Linking also adds you to the server if you haven't joined it yet.
                                 {% endif %}
                                 <div class="my-2">
-                                    {% with discord_next="" %}
+                                    {% with discord_next="register" if request.endpoint == "general.register" else "" %}
                                         {% include "discord_link.html" %}
                                     {% endwith %}
                                 </div>
