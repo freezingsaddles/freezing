@@ -12,7 +12,7 @@ object TestDb:
       s"jdbc:h2:mem:$name;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1"
     )
     transact(d):
-      sql"""create table if not exists athletes (id bigint primary key, friend boolean)""".update
+      sql"""create table if not exists athletes (id bigint primary key, registered boolean, friend boolean)""".update
         .run()
       sql"""merge into athletes (id) key (id) values (12345678), (87654321)""".update.run()
       sql"""create table if not exists registrations (
@@ -33,7 +33,13 @@ object TestDb:
 
   def clear(ds: JdbcDataSource): Unit = transact(ds):
     sql"delete from registrations".update.run()
-    sql"update athletes set friend = null".update.run()
+    sql"update athletes set registered = null, friend = null".update.run()
+
+  def flags(ds: JdbcDataSource, id: Long): (Option[Boolean], Option[Boolean]) = transact(ds):
+    sql"select registered, friend from athletes where id = $id"
+      .query[(Option[Boolean], Option[Boolean])]
+      .run()
+      .head
 
   def friends(ds: JdbcDataSource): Vector[Long] = transact(ds):
     sql"select id from athletes where friend order by id".query[Long].run()
@@ -103,7 +109,7 @@ class RegistrationsTest extends munit.FunSuite:
     assertEquals((outcome, friend), (Outcome.Recorded, true))
     assertEquals(TestDb.friends(ds), Vector(12345678L))
 
-  test("playing, no answer, or an older submission leaves them as they were"):
+  test("playing, no answer, or an older submission don't make them a friend"):
     val reg = Registration("<f2>", when, ann).get
     transact(ds):
       assertEquals(Registrations.record(reg, Some(true))._2, false)
@@ -111,6 +117,26 @@ class RegistrationsTest extends munit.FunSuite:
       val older = Registration("<f3>", when.minusDays(1), ann).get
       assertEquals(Registrations.record(older, Some(false)), (Outcome.Older, false))
     assertEquals(TestDb.friends(ds), Vector.empty)
+
+  private def submit(source: String, at: LocalDateTime, playing: Option[Boolean]) =
+    transact(ds)(Registrations.record(Registration(source, at, ann).get, playing))
+
+  test("a submission says they registered, and as what"):
+    submit("<r1>", when, Some(true))
+    assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(false)))
+
+  test("the latest submission replaces what was recorded before"):
+    transact(ds)(sql"update athletes set registered = false, friend = true".update.run())
+    submit("<r2>", when, None)
+    assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(false)))
+    submit("<r3>", when.plusDays(1), Some(false))
+    assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(true)))
+
+  test("an older submission says they registered, but not as what"):
+    submit("<r4>", when, Some(false))
+    transact(ds)(sql"update athletes set registered = null".update.run())
+    assertEquals(submit("<r5>", when.minusDays(1), Some(true)), (Outcome.Older, false))
+    assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(true)))
 
   test("different athletes are different rows"):
     record("<a>", when, ann)

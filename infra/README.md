@@ -38,9 +38,10 @@ Two sbt builds, Scala 3:
    and one with the same answers changes nothing, so a redelivery or a retry
    is harmless. The form comes after connecting Strava, so an id with no
    `athletes` row is a typo, and is logged instead of stored.
-6. When the athlete's latest submission answers "Gonna play?" with anything
-   but yes, they are marked a friend (`athletes.friend`). Nothing here clears
-   it; friends have a form of their own.
+6. It sets the athlete's registration from it, replacing what the web app
+   recorded from the form's redirect: any submission, even an older one,
+   sets `athletes.registered`; the latest sets `athletes.friend`, true when
+   they answered "Gonna play?" with anything but yes, false otherwise.
 
 ## Backfilling from an export
 
