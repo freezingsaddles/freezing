@@ -35,7 +35,7 @@ jobs:
           cache: sbt
       - uses: sbt/setup-sbt@7e114eae4f32ec3f93c851c2793376a77f384409 # v1.5.15
       # Before the build: a credentials problem should cost seconds, not a jar.
-      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ vars.INFRA_DEPLOY_ROLE_ARN }}
           role-session-name: freezing-infra-deploy # names the run in CloudTrail
