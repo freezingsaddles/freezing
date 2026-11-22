@@ -4,18 +4,13 @@ import jakarta.mail.{Multipart, Part, Session}
 import jakarta.mail.internet.MimeMessage
 import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets.UTF_8
-import java.time.Instant
 import java.util.Properties
 
 /** The parts of a raw RFC 822 message this service cares about. */
 case class Email(
     messageId: String,
     from: String,
-    to: List[String],
     subject: String,
-    sent: Option[Instant],
-    html: Option[String],
-    text: Option[String],
     attachments: List[Attachment] = Nil,
 )
 
@@ -24,45 +19,28 @@ case class Attachment(filename: String, bytes: Array[Byte])
 object Email:
   private val session = Session.getInstance(Properties())
 
-  /** Parses the bytes SES wrote to S3. The registration mail is nested three multiparts deep (mixed
-    * / alternative / related) with an empty text part and the real content as HTML, so the walk
-    * collects the first text/html and text/plain leaves wherever they sit.
-    */
+  /** Parses the bytes SES wrote to S3. */
   def parse(raw: Array[Byte]): Email =
-    val msg               = MimeMessage(session, ByteArrayInputStream(raw))
-    val (attached, parts) = leaves(msg).partitionMap(identity)
+    val msg = MimeMessage(session, ByteArrayInputStream(raw))
     Email(
       messageId = Option(msg.getMessageID).map(_.trim).getOrElse(""),
-      from = header(msg, "From"),
-      to = Option(msg.getHeader("To", ",")).map(_.split(",").map(_.trim).toList).getOrElse(Nil),
+      from = Option(msg.getHeader("From", ", ")).getOrElse(""),
       subject = Option(msg.getSubject).getOrElse(""),
-      sent = Option(msg.getSentDate).map(_.toInstant),
-      html = parts.collectFirst:
-        case (mime, body) if mime.startsWith("text/html") => body
-      ,
-      text = parts.collectFirst:
-        case (mime, body) if mime.startsWith("text/plain") => body
-      ,
-      attachments = attached,
+      attachments = attachments(msg),
     )
-  end parse
 
   def parse(raw: String): Email = parse(raw.getBytes(UTF_8))
 
-  private def header(msg: MimeMessage, name: String): String =
-    Option(msg.getHeader(name, ", ")).getOrElse("")
-
-  /** Depth-first list of every non-multipart part: a named file as an attachment, its raw bytes
-    * whatever type the sender's mail program gave it, and anything else as (content type, decoded
-    * text).
+  /** Every named file, depth first however deep the multiparts nest, as its raw bytes whatever type
+    * the sender's mail program gave it.
     */
-  private def leaves(part: Part): List[Either[Attachment, (String, String)]] =
-    val mime = Option(part.getContentType).getOrElse("").toLowerCase
-    Option(part.getFileName).filterNot(_ => mime.startsWith("multipart/")) match
-      case Some(name) => List(Left(Attachment(name, part.getInputStream.readAllBytes())))
-      case None       =>
+  private def attachments(part: Part): List[Attachment] =
+    Option(part.getFileName) match
+      case Some(name) if !part.isMimeType("multipart/*") =>
+        List(Attachment(name, part.getInputStream.readAllBytes()))
+      case _                                             =>
         part.getContent match
-          case mp: Multipart => (0 until mp.getCount).toList.flatMap(i => leaves(mp.getBodyPart(i)))
-          case s: String     => List(Right(mime -> s))
+          case mp: Multipart =>
+            (0 until mp.getCount).toList.flatMap(i => attachments(mp.getBodyPart(i)))
           case _             => Nil
 end Email

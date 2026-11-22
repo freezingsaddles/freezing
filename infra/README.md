@@ -1,9 +1,9 @@
 # Registration receiver
 
-Registration for Freezing Saddles ends on a WordPress site whose form emails a
-confirmation to the registrant and to `register@inbox.freezingsaddles.org`.
-This receives that copy through Amazon SES, reads the form's answers out of the
-HTML and records them in the `registrations` table of the main database, so
+Registration for Freezing Saddles ends on a WordPress site whose form emails
+each submission to `register@inbox.freezingsaddles.org` with the answers
+attached as CSV. This receives that email through Amazon SES, reads the CSV
+and records it in the `registrations` table of the main database, so
 the people running the competition can see who registered without reading a
 mailbox.
 
@@ -26,12 +26,14 @@ Two sbt builds, Scala 3:
    everything while none is set. The registrant's own confirmation must not
    carry it, so the form needs a separate email action to this address whose
    subject has the secret in it.
-4. It fetches the message, walks its MIME parts to the HTML one, and
-   reads the two-column table of label and answer. Only these are kept:
-   first name, last name, zip code, e-mail, Strava user ID, and the team
-   captain answer (blank or `Yes`).
+4. It fetches the message and reads every `.csv` attachment, whatever MIME
+   type the sender gave it, by its header row. Only these are kept: date
+   submitted (the site's Eastern time), first name, last name, zip code,
+   e-mail, Strava user ID, the team captain answer, and "Gonna play?". The
+   email body isn't read: it doesn't carry the Strava id.
 5. It keeps one row per athlete, keyed on the Strava id they typed: their
-   latest submission, with `source` saying which email it came from.
+   latest submission, with `source` saying where it came from: the email's
+   `Message-Id`, or `form-submission:<#>` for an export's row.
    WordPress keeps the history. A submission older than the row is ignored,
    and one with the same answers changes nothing, so a redelivery or a retry
    is harmless. The form comes after connecting Strava, so an id with no
@@ -45,16 +47,15 @@ Two sbt builds, Scala 3:
 Registrations that arrived while no email reached the receiver can be mailed
 in as the form's submissions export: attach the CSV that WordPress exports
 to a message to the same address, with the subject secret in its subject
-like any other mail. Each row goes through the same rules as an
-email, with `form-submission:<#>` as its source and its date read in the
-site's Eastern time, so mailing the same export again changes nothing. The
+like any other mail. It is read the same way, many rows to a file, and
+mailing the same export again changes nothing. The
 log line counts the rows recorded, updated, unchanged, older and with an
 unknown athlete, and names the rows it couldn't read. To check an export
 first, save the message as `.eml` and run `sbt "runMain
 org.freezingsaddles.registration.preview <file>"`.
 
-Anything that is not a registration confirmation is logged and ignored, but a
-CSV attachment that is not an export fails, since whoever sent it meant it. A
+Mail with no CSV attached is logged and ignored, but a CSV that isn't the
+form's fails, since whoever sent it meant it. A
 message the Lambda cannot store fails the invocation so Lambda retries; the
 S3 copy is kept for a year regardless, which is what makes a parser fix
 replayable.

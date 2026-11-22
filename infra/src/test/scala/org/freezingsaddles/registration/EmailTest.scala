@@ -1,26 +1,52 @@
 package org.freezingsaddles.registration
 
-import java.time.Instant
+import java.nio.charset.StandardCharsets.UTF_8
 
 class EmailTest extends munit.FunSuite:
-  private val raw = getClass.getResourceAsStream("/registration.eml").readAllBytes()
+  // The form's notification nests its attachment beside an alternative of text and HTML.
+  private val raw =
+    """Message-Id: <n1@example.com>
+      |From: Freezing Saddles Registration <registration@freezingsaddles.info>
+      |Subject: New registration open-sesame
+      |MIME-Version: 1.0
+      |Content-Type: multipart/mixed; boundary="outer"
+      |
+      |--outer
+      |Content-Type: multipart/alternative; boundary="inner"
+      |
+      |--inner
+      |Content-Type: text/plain
+      |
+      |
+      |--inner
+      |Content-Type: text/html
+      |
+      |<table><tr><td>First Name:</td><td>Ann</td></tr></table>
+      |--inner--
+      |--outer
+      |Content-Type: text/csv; name="sub.csv"
+      |Content-Disposition: attachment; filename="sub.csv"
+      |
+      |a,b
+      |--outer--
+      |""".stripMargin.replace("\n", "\r\n")
 
-  test("finds the html part three multiparts down"):
+  test("reads the headers the handler needs"):
     val email = Email.parse(raw)
-    assert(email.html.exists(_.contains("<td>First Name:</td>")))
-    assertEquals(email.text.map(_.trim), Some(""))
-
-  test("reads the headers the row needs"):
-    val email = Email.parse(raw)
-    assertEquals(email.messageId, "<E1w6EjI-FnQW0hPkGrF-Xb9I@message-id.smtpcorp.com>")
-    assertEquals(email.subject, "Your registration for Freezing Saddles 2026")
-    assertEquals(email.to, List("admin@register.freezingsaddles.org"))
-    assertEquals(email.sent, Some(Instant.parse("2026-03-27T21:28:32Z")))
+    assertEquals(email.messageId, "<n1@example.com>")
+    assertEquals(email.subject, "New registration open-sesame")
     assert(email.from.contains("registration@freezingsaddles.info"))
 
-  test("a message with no html part is still parsed"):
-    val plain = "Subject: hi\r\nContent-Type: text/plain\r\n\r\njust words\r\n"
-    val email = Email.parse(plain)
-    assertEquals(email.html, None)
-    assertEquals(email.text.map(_.trim), Some("just words"))
+  test("finds the attachment and only the attachment"):
+    val email = Email.parse(raw)
+    assertEquals(
+      email.attachments.map(a => (a.filename, String(a.bytes, UTF_8).trim)),
+      List("sub.csv" -> "a,b"),
+    )
+
+  test("a message with no attachment has none"):
+    assertEquals(
+      Email.parse("Subject: hi\r\nContent-Type: text/plain\r\n\r\nwords\r\n").attachments,
+      Nil,
+    )
 end EmailTest

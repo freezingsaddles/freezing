@@ -3,7 +3,6 @@ package org.freezingsaddles.registration
 import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
 import org.slf4j.MDC
 import com.augustnagro.magnum.transact
-import java.time.{Instant, LocalDateTime, ZoneOffset}
 import javax.sql.DataSource
 import scala.jdk.CollectionConverters.*
 
@@ -78,10 +77,11 @@ object Lambda:
 end Lambda
 
 object Handler:
-  /** One email from bucket to rows. Left is a reason to fail the invocation; Right is a note for
-    * the log. Only mail with the secret in its subject is read, so none is read while no secret is
-    * set. An email that is not a registration confirmation at all is a Right: the mailbox receives
-    * what anyone sends it, and there is nothing to retry.
+  /** One email from bucket to rows: each submission's notification carries it as a CSV attachment,
+    * and an export of many can be mailed in the same way. Left is a reason to fail the invocation;
+    * Right is a note for the log. Only mail with the secret in its subject is read, so none is read
+    * while no secret is set. Mail with no CSV is a Right: the mailbox receives what anyone sends
+    * it, and there is nothing to retry.
     */
   def handle(
       aws: Aws,
@@ -95,16 +95,20 @@ object Handler:
     // Anyone can mail the address. The subject isn't logged, as it may hold a near miss.
     if !subjectSecret.exists(email.subject.contains) then
       Right(s"ignored: no secret in the subject, from ${email.from}")
-    else if csvs.nonEmpty then backfill(csvs, db)
-    else registration(email, key, db)
+    else if csvs.isEmpty then Right(s"ignored: no CSV attached, from ${email.from}")
+    else record(csvs, if email.messageId.nonEmpty then email.messageId else key, db)
   end handle
 
-  /** Every row of each attached submissions export. A file that isn't one fails the invocation,
-    * since whoever mailed it meant something by it; a row that can't be read is only noted.
+  /** Every row of each attached CSV. A file that isn't the form's fails the invocation, since
+    * whoever sent it meant something by it; a row that can't be read is only noted.
     */
-  private def backfill(csvs: List[Attachment], db: DataSource): Either[String, String] =
+  private def record(
+      csvs: List[Attachment],
+      source: String,
+      db: DataSource,
+  ): Either[String, String] =
     val results = csvs.map: csv =>
-      Backfill.parse(csv.bytes) match
+      FormCsv.parse(csv.bytes, source) match
         case Left(reason)           => Left(s"${csv.filename}: $reason")
         case Right((rows, skipped)) =>
           val results = transact(db):
@@ -128,50 +132,23 @@ object Handler:
             case Right(r) => r
           .mkString("; ")
       )
-  end backfill
-
-  private def registration(email: Email, key: String, db: DataSource): Either[String, String] =
-    email.html match
-      case None       => Right(s"ignored: no HTML part in ${email.subject.trim}")
-      case Some(html) =>
-        Submission.parse(html) match
-          case Left(reason) => Right(s"ignored: $reason (${email.subject.trim})")
-          case Right(form)  =>
-            val messageId = if email.messageId.nonEmpty then email.messageId else key
-            val sent      = LocalDateTime.ofInstant(email.sent.getOrElse(Instant.now()), ZoneOffset.UTC)
-            val who       = s"${form.firstName} ${form.lastName} <${form.email}>"
-            Registration(messageId, sent, form) match
-              // A human can find it in the bucket and ask them for their Strava id.
-              case None      => Right(s"not recorded: no Strava id from $who")
-              case Some(reg) =>
-                val (outcome, friend) = transact(db)(Registrations.record(reg, form.playing))
-                Right(
-                  s"${outcome.label} $who strava=${reg.athleteId}${
-                      if friend then " as a friend" else ""
-                    }"
-                )
-    end match
-  end registration
+  end record
 end Handler
 
 /** Parses a saved .eml and prints what would be stored; no AWS, no database. */
 @main def preview(path: String): Unit =
   val email = Email.parse(java.nio.file.Files.readAllBytes(java.nio.file.Path.of(path)))
   println(
-    s"From: ${email.from}\nSubject: ${email.subject}\nMessage-Id: ${email.messageId}\nSent: ${email.sent}"
+    s"From: ${email.from}\nSubject: ${email.subject}\nMessage-Id: ${email.messageId}"
   )
   email.attachments.filter(_.filename.toLowerCase.endsWith(".csv")) match
-    case Nil  =>
-      email.html.map(Submission.parse) match
-        case None            => println("no HTML part")
-        case Some(Left(err)) => println(s"not a registration: $err")
-        case Some(Right(r))  => println(r)
+    case Nil  => println("no CSV attached")
     case csvs =>
       csvs.foreach: csv =>
-        Backfill.parse(csv.bytes) match
-          case Left(err)              => println(s"${csv.filename}: not a submissions export: $err")
+        FormCsv.parse(csv.bytes, email.messageId) match
+          case Left(err)              => println(s"${csv.filename}: not the form's submissions: $err")
           case Right((rows, skipped)) =>
-            println(s"${csv.filename}: ${rows.size} rows")
+            rows.foreach(println)
             skipped.foreach(println)
   end match
 end preview
