@@ -55,8 +55,9 @@ import software.constructs.Construct
   *   - recipient (default register@inbox.freezingsaddles.org): the address to receive on. Its
   *     domain becomes an SES identity with DKIM records and the MX record in the zone.
   *   - dbHost, dbUser (required), dbPort (default 3306), dbName (default freezing): the MySQL
-  *     connection, for a user that can select, insert and update `registrations` and select
-  *     `athletes`. Plain environment variables, like the config file the Python apps read.
+  *     connection, for a user that can select, insert and update `registrations`, select `athletes`
+  *     and update its `friend` column. Plain environment variables, like the config file the Python
+  *     apps read.
   *   - dbPassword or dbPasswordParam: that user's password, one of two ways. dbPassword puts it
   *     straight into the function's environment: encrypted at rest, readable by anyone who can read
   *     the function's configuration, the same trust as the .env file the Python apps use on the
