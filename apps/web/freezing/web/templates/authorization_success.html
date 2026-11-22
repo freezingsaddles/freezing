@@ -5,6 +5,13 @@
     {% if blank %}
         {{ blank_warning(athlete.firstname ~ " " ~ athlete.lastname, "/login?reconnect=true") }}
     {% endif %}
+    {% if not_registered %}
+        <div class="alert alert-warning">
+            <strong>You are Not Registered.</strong>
+            Logging in does not automatically register you for Freezing Saddles.
+            If you want to register, go <a href="/register">here</a>.
+        </div>
+    {% endif %}
     <p>
         <strong>Welcome, {{ athlete.firstname }}.</strong>
     </p>
