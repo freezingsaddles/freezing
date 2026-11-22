@@ -98,31 +98,31 @@ object Registrations:
   /** Keeps the athlete's latest submission. One that says what the row already says changes
     * nothing, wherever it came from, so a submission both emailed and exported is one row, and an
     * export mailed in twice changes nothing the second time. An id no athlete has is a typo.
-    *
-    * Any submission, even an older one, says the athlete registered: where nothing has recorded
-    * their registered and friend yet, they become true and false.
     */
   def record(reg: Registration)(using DbTx): Outcome =
     if !athletes.existsById(reg.athleteId) then Outcome.UnknownAthlete
-    else
-      val outcome = record(reg, repo.findById(reg.athleteId))
-      sql"""update athletes
-            set registered = coalesce(registered, true), friend = coalesce(friend, false)
-            where id = ${reg.athleteId}""".update.run()
-      outcome
+    else record(reg, repo.findById(reg.athleteId))
 
-  /** Records the submission and, if it is the athlete's latest and says they won't play, marks them
-    * a friend. Nothing here unmarks one: friends register through a form of their own.
+  /** Records the submission and sets the athlete's registration from it: any submission, even an
+    * older one, says they registered; their latest says whether they are a friend, replacing what
+    * the web app or an earlier submission said. They are a friend when they answered that they
+    * won't play.
     *
     * @return
-    *   the outcome, and whether they were marked a friend
+    *   the outcome, and whether they are a friend
     */
   def record(reg: Registration, playing: Option[Boolean])(using DbTx): (Outcome, Boolean) =
     val outcome = record(reg)
-    val latest  = Set(Outcome.Recorded, Outcome.Updated, Outcome.Unchanged)(outcome)
-    val friend  = latest && playing.contains(false)
-    if friend then sql"update athletes set friend = true where id = ${reg.athleteId}".update.run()
-    (outcome, friend)
+    val friend  = playing.contains(false)
+    outcome match
+      case Outcome.UnknownAthlete => (outcome, false)
+      case Outcome.Older          =>
+        sql"update athletes set registered = true where id = ${reg.athleteId}".update.run()
+        (outcome, false)
+      case _                      =>
+        sql"""update athletes set registered = true, friend = $friend
+              where id = ${reg.athleteId}""".update.run()
+        (outcome, friend)
   end record
 
   private def record(reg: Registration, existing: Option[Registration])(using DbTx): Outcome =

@@ -109,7 +109,7 @@ class RegistrationsTest extends munit.FunSuite:
     assertEquals((outcome, friend), (Outcome.Recorded, true))
     assertEquals(TestDb.friends(ds), Vector(12345678L))
 
-  test("playing, no answer, or an older submission leaves them as they were"):
+  test("playing, no answer, or an older submission don't make them a friend"):
     val reg = Registration("<f2>", when, ann).get
     transact(ds):
       assertEquals(Registrations.record(reg, Some(true))._2, false)
@@ -118,20 +118,25 @@ class RegistrationsTest extends munit.FunSuite:
       assertEquals(Registrations.record(older, Some(false)), (Outcome.Older, false))
     assertEquals(TestDb.friends(ds), Vector.empty)
 
-  test("a submission fills in registered and friend where nothing has said"):
-    record("<r1>", when, ann)
+  private def submit(source: String, at: LocalDateTime, playing: Option[Boolean]) =
+    transact(ds)(Registrations.record(Registration(source, at, ann).get, playing))
+
+  test("a submission says they registered, and as what"):
+    submit("<r1>", when, Some(true))
     assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(false)))
 
-  test("what the web app recorded stands"):
+  test("the latest submission replaces what was recorded before"):
     transact(ds)(sql"update athletes set registered = false, friend = true".update.run())
-    record("<r2>", when, ann)
-    assertEquals(TestDb.flags(ds, 12345678L), (Some(false), Some(true)))
-
-  test("an older submission still says they registered"):
-    record("<r3>", when, ann)
-    transact(ds)(sql"update athletes set registered = null, friend = null".update.run())
-    assertEquals(record("<r4>", when.minusDays(1), ann), Outcome.Older)
+    submit("<r2>", when, None)
     assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(false)))
+    submit("<r3>", when.plusDays(1), Some(false))
+    assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(true)))
+
+  test("an older submission says they registered, but not as what"):
+    submit("<r4>", when, Some(false))
+    transact(ds)(sql"update athletes set registered = null".update.run())
+    assertEquals(submit("<r5>", when.minusDays(1), Some(true)), (Outcome.Older, false))
+    assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(true)))
 
   test("different athletes are different rows"):
     record("<a>", when, ann)
