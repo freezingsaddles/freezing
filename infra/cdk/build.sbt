@@ -1,4 +1,4 @@
-lazy val cdkVersion        = "2.264.0"
+lazy val cdkVersion        = "2.278.0"
 lazy val constructsVersion = "10.8.1"
 
 lazy val cdk = project
