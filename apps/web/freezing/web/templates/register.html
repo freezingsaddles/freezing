@@ -86,6 +86,14 @@
             <h3 class="mb-3">
                 <strong>Step 1.</strong> <span>Connect Strava and Login</span>
             </h3>
+            <div class="alert alert-info">
+                If you do not reach the step that tells you your registration is
+                complete (<strong>step 5</strong>), you will not be signed up for
+                the competition. If you wander by mistake, just head back to the
+                <a href="/">homepage</a>, click <em>Register Now</em> and finish your registration.
+                <strong>If the site does not state that you're registered, you're not registered.</strong>
+                Friends don't let friends misregister for Freezing Saddles.
+            </div>
             {% if not authorized or request.args.get("profile") in ("missing", "blank", "account") %}
                 {% if request.args.get("profile") == "blank" %}
                     {{ blank_warning(athlete.name if athlete else None, "/register?step=login&profile=blank", "/register?step=club") }}
