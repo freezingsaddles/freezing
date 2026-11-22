@@ -107,11 +107,13 @@ object Handler:
       Backfill.parse(csv.bytes) match
         case Left(reason)           => Left(s"${csv.filename}: $reason")
         case Right((rows, skipped)) =>
-          val outcomes = transact(db):
-            rows.flatMap(r => Registration(r.key, r.registeredAt, r.form)).map(Registrations.record)
-          val counts   = Outcome.values
-            .map(o => s"${o.label} ${outcomes.count(_ == o)}")
-            .mkString(", ")
+          val results = transact(db):
+            rows.flatMap: r =>
+              Registration(r.key, r.registeredAt, r.form).map(
+                Registrations.record(_, r.form.playing)
+              )
+          val counts  = (Outcome.values.map(o => s"${o.label} ${results.count(_._1 == o)}") :+
+            s"friends ${results.count(_._2)}").mkString(", ")
           Right(
             s"${csv.filename}: $counts" +
               (if skipped.isEmpty then "" else s", skipped ${skipped.mkString("; ")}")
@@ -142,8 +144,12 @@ object Handler:
               // A human can find it in the bucket and ask them for their Strava id.
               case None      => Right(s"not recorded: no Strava id from $who")
               case Some(reg) =>
-                val outcome = transact(db)(Registrations.record(reg))
-                Right(s"${outcome.label} $who strava=${reg.athleteId}")
+                val (outcome, friend) = transact(db)(Registrations.record(reg, form.playing))
+                Right(
+                  s"${outcome.label} $who strava=${reg.athleteId}${
+                      if friend then " as a friend" else ""
+                    }"
+                )
     end match
   end registration
 end Handler

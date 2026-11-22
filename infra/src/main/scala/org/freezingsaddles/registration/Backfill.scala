@@ -55,7 +55,9 @@ object Backfill:
           strava  <- column("strava user id")
           captain <- captainColumn
         yield
-          val read = lines.zipWithIndex
+          val playing = columns.collectFirst:
+            case (name, i) if name.contains("gonna play") => i
+          val read    = lines.zipWithIndex
             .filterNot((cells, _) => cells.forall(_.isBlank))
             .map: (cells, i) =>
               def at(c: Int) = cells.lift(c).getOrElse("").trim
@@ -77,14 +79,23 @@ object Backfill:
                     email = at(email),
                     stravaId = Some(id),
                     teamCaptain = at(captain).equalsIgnoreCase("yes"),
+                    playing = playing.flatMap(c => Submission.playing(at(c))),
                   ),
                 )
               // Line numbers count the header as line 1, as a spreadsheet would show them.
               row.left.map(reason => s"row ${i + 2}: $reason")
+          // Oldest first, so an athlete's latest submission is the one that stays. Dates are only
+          // to the minute; submission numbers count up.
           (
-            read.collect:
-              case Right(r) => r
-            ,
+            read
+              .collect:
+                case Right(r) => r
+              .sortBy(r =>
+                (
+                  r.registeredAt.toEpochSecond(ZoneOffset.UTC),
+                  r.key.stripPrefix(key("")).toLongOption,
+                )
+              ),
             read.collect:
               case Left(e) => e,
           )
