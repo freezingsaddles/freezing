@@ -145,8 +145,15 @@
              class="card mb-3 my-lg-4 bg-light p-3 px-lg-4 text-center">
             <h4>{{ end_date.year }} Registration is Now Open!</h4>
             {% if registered %}
-                <div class="alert alert-info mt-3 fw-bold">
-                    Congratulations! You are registered for this year's competition.
+                <div class="alert alert-info mt-3">
+                    <div class="fw-bold">Congratulations! You are registered for this year's competition.</div>
+                    <div class="mt-2">
+                        You are registered as a <em>{{ registered_as }}</em>. To change your registration please
+                        <a href="{{ registration_site }}contact-form/"
+                           class="hover-underline"
+                           target="_blank"
+                           rel="noreferrer">contact us</a>.
+                    </div>
                 </div>
             {% else %}
                 {% if g.logged_in %}
