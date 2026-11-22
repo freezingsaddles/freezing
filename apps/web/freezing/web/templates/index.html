@@ -16,6 +16,12 @@
     aspect-ratio: .75;
   }
 
+  #zipmap {
+    border-radius: var(--bs-border-radius);
+    border: 1px solid #ced4da;
+    min-height: 20rem;
+  }
+
   .alert .btn-close {
     position: absolute;
     right: .5rem;
@@ -61,7 +67,7 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    #map {
+    #map, #zipmap {
       border-color: #495057;
     }
 
@@ -119,6 +125,7 @@
     <!-- https://github.com/elmarquis/Leaflet.GestureHandling -->
     <link rel="stylesheet" href="/css/leaflet-gesture-handling.min.css" />
     <script src="/js/leaflet-gesture-handling.min.js"></script>
+    <script src="/js/leaflet-heat.js"></script>
     <script src="/js/ride-map.js"></script>
 {% endblock %}
 {% block content %}
@@ -140,89 +147,96 @@
             </div>
         </div>
     </div>
-    {% if show_registration %}
-        <div id="sect-reg"
-             class="card mb-3 my-lg-4 bg-light p-3 px-lg-4 text-center">
-            <h4>{{ end_date.year }} Registration is Now Open!</h4>
-            {% if registered %}
-                <div class="alert alert-info mt-3">
-                    <div class="fw-bold">Congratulations! You are registered for this year's competition.</div>
-                    <div class="mt-2">
-                        You are registered as a <em>{{ registered_as }}</em>. To change your registration please
-                        <a href="{{ registration_site }}contact-form/"
-                           class="hover-underline"
-                           target="_blank"
-                           rel="noreferrer">contact us</a>.
-                    </div>
+    <div class="{{ 'd-grid grid-xl-2 grid-gap-3 grid-gap-lg-4 mb-4 mb-lg-5' if zip_points }}">
+        <div>
+            {% if show_registration %}
+                <div id="sect-reg"
+                     class="card mb-3 {{ 'mt-lg-0 mb-lg-4' if zip_points else 'my-lg-4' }} bg-light p-3 px-lg-4 text-center">
+                    <h4>{{ end_date.year }} Registration is Now Open!</h4>
+                    {% if registered %}
+                        <div class="alert alert-info mt-3">
+                            <div class="fw-bold">Congratulations! You are registered for this year's competition.</div>
+                            <div class="mt-2">
+                                You are registered as a <em>{{ registered_as }}</em>. To change your registration please
+                                <a href="{{ registration_site }}contact-form/"
+                                   class="hover-underline"
+                                   target="_blank"
+                                   rel="noreferrer">contact us</a>.
+                            </div>
+                        </div>
+                    {% else %}
+                        {% if g.logged_in %}
+                            <div class="alert alert-warning mt-3 fw-bold">
+                                Uh oh! You are not yet registered for this year's competition.
+                            </div>
+                        {% endif %}
+                        <a class="btn btn-primary register-btn mx-auto mt-3 mb-3"
+                           href="/register">
+                            <div>Register Now</div>
+                        </a>
+                        <div class="text-muted mt-2">
+                            You have until December 24<sup>th</sup> to register for this year's competition!
+                        </div>
+                    {% endif %}
+                </div>
+            {% elif winter_is_coming %}
+                <div class="card mb-3 {{ 'mt-lg-0 mb-lg-4' if zip_points else 'my-lg-4' }} bg-light p-3 px-lg-4 text-center">
+                    <p class="register-btn" style="color: #05a4e4">Winter is Coming</p>
+                    <p>
+                        Freezing Saddles is a game organized by cyclists in the general DC area.
+                        It is a friendly competition in which participants are randomly assigned to teams
+                        and compete for points by riding their bikes all winter, in the cold, in the dark and in the snow.
+                    </p>
+                    <p>The winners win and, well, so does everyone else.</p>
+                    <p class="mb-0">
+                        Registration opens around Thanksgiving;
+                        the competition starts on January 1<sup>st</sup> and ends on the last full day of astronomical winter –
+                        {{ next_winter_ends.strftime("%B") }} {{ next_winter_ends.day }}<sup>{{ next_winter_ends.day|ord }}</sup> next year.
+                    </p>
+                </div>
+            {% elif bafs_is_over and not spring_is_over %}
+                <div class="mb-3 mb-lg-4 py-2 alert alert-success text-center position-relative"
+                     style="z-index: 1001">
+                    Winter is over. The game is done. The reindeer have been put out to pasture. Time to clean your bike, wax your chain,
+                    and go for a ride.
+                    <span class="sprout">🌱</span>
+                </div>
+            {% endif %}
+            {% if g.logged_in and yourself.unauthorized and not bafs_is_over %}
+                <div class="mb-3 mb-lg-4 py-2 alert alert-warning text-center">
+                    <strong>Your Strava authorization has expired and we can't read your rides!</strong>
+                    Please log out and then log back in again to reauthorize Strava.
+                </div>
+            {% endif %}
+            {% if not bafs_is_live %}
+                <div class="mb-4 mb-lg-5 alert alert-info">
+                    The shiny new Freezing Saddles competition for the upcoming winter hasn't
+                    started yet. So far, <strong>{{ registered_count }}</strong>
+                    contestant{{ registered_count|ess }} and <strong>{{ friend_count }}</strong>
+                    friend{{ friend_count|ess }} have
+                    registered.
+                    In the meantime, there are still bike rides going on, so go for a ride.
                 </div>
             {% else %}
-                {% if g.logged_in %}
-                    <div class="alert alert-warning mt-3 fw-bold">
-                        Uh oh! You are not yet registered for this year's competition.
-                    </div>
+                {% if yourself.missed_today %}
+                    {% if yourself.missed_yesterday %}
+                        <div class="mb-3 mb-lg-4 py-2 alert alert-danger text-center">
+                            <strong>You didn't ride yesterday!</strong> If you can, it's important to ride every
+                            day. Even just <a style="color: inherit"
+                                              href="/leaderboard/indiv_sleaze">one mile</a> will help your team!
+                        </div>
+                    {% elif yourself.hour >= 12 %}
+                        <div class="mb-3 mb-lg-4 py-2 alert alert-info text-center">
+                            <strong>You haven't ridden yet today!</strong> It's a beautiful {{ "day" if 20 > yourself.hour else "night" }} to go for a ride.
+                        </div>
+                    {% endif %}
                 {% endif %}
-                <a class="btn btn-primary register-btn mx-auto mt-3 mb-3"
-                   href="/register">
-                    <div>Register Now</div>
-                </a>
-                <div class="text-muted mt-2">
-                    You have until December 24<sup>th</sup> to register for this year's competition!
-                </div>
             {% endif %}
         </div>
-    {% elif winter_is_coming %}
-        <div class="card mb-3 my-lg-4 bg-light p-3 px-lg-4 text-center">
-            <p class="register-btn" style="color: #05a4e4">Winter is Coming</p>
-            <p>
-                Freezing Saddles is a game organized by cyclists in the general DC area.
-                It is a friendly competition in which participants are randomly assigned to teams
-                and compete for points by riding their bikes all winter, in the cold, in the dark and in the snow.
-            </p>
-            <p>The winners win and, well, so does everyone else.</p>
-            <p class="mb-0">
-                Registration opens around Thanksgiving;
-                the competition starts on January 1<sup>st</sup> and ends on the last full day of astronomical winter –
-                {{ next_winter_ends.strftime("%B") }} {{ next_winter_ends.day }}<sup>{{ next_winter_ends.day|ord }}</sup> next year.
-            </p>
-        </div>
-    {% elif bafs_is_over and not spring_is_over %}
-        <div class="mb-3 mb-lg-4 py-2 alert alert-success text-center position-relative"
-             style="z-index: 1001">
-            Winter is over. The game is done. The reindeer have been put out to pasture. Time to clean your bike, wax your chain,
-            and go for a ride.
-            <span class="sprout">🌱</span>
-        </div>
-    {% endif %}
-    {% if g.logged_in and yourself.unauthorized and not bafs_is_over %}
-        <div class="mb-3 mb-lg-4 py-2 alert alert-warning text-center">
-            <strong>Your Strava authorization has expired and we can't read your rides!</strong>
-            Please log out and then log back in again to reauthorize Strava.
-        </div>
-    {% endif %}
-    {% if not bafs_is_live %}
-        <div class="mb-4 mb-lg-5 alert alert-info">
-            The shiny new Freezing Saddles competition for the upcoming winter hasn't
-            started yet. So far, <strong>{{ registered_count }}</strong>
-            contestant{{ registered_count|ess }} and <strong>{{ friend_count }}</strong>
-            friend{{ friend_count|ess }} have
-            registered.
-            In the meantime, there are still bike rides going on, so go for a ride.
-        </div>
-    {% else %}
-        {% if yourself.missed_today %}
-            {% if yourself.missed_yesterday %}
-                <div class="mb-3 mb-lg-4 py-2 alert alert-danger text-center">
-                    <strong>You didn't ride yesterday!</strong> If you can, it's important to ride every
-                    day. Even just <a style="color: inherit"
-                                      href="/leaderboard/indiv_sleaze">one mile</a> will help your team!
-                </div>
-            {% elif yourself.hour >= 12 %}
-                <div class="mb-3 mb-lg-4 py-2 alert alert-info text-center">
-                    <strong>You haven't ridden yet today!</strong> It's a beautiful {{ "day" if 20 > yourself.hour else "night" }} to go for a ride.
-                </div>
-            {% endif %}
+        {% if zip_points %}
+            <div id="zipmap"></div>
         {% endif %}
-    {% endif %}
+    </div>
     {% if not bafs_is_live %}
         <iframe id="cal"
                 title="Freezing Saddles calendar"
@@ -454,6 +468,9 @@
 {% block foot %}
     <script>
   $(() => {
+    {% if zip_points %}
+        create_zip_map('zipmap', {{ zip_points|tojson }});
+    {% endif %}
     if ($('#map').length) {
         // Someone who has asked their machine to stop things moving gets the
         // map the way it has always been: the most recent rides, sitting still.

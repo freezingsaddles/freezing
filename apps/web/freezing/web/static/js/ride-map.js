@@ -15,13 +15,29 @@ const track_colors = [
   'rgb(212, 44, 252)', 'rgb(234, 10, 218)', 'rgb(252, 0, 179)', 'rgb(255, 0, 136)', 'rgb(255, 0, 87)',
 ];
 
-function create_ride_map(id, url, ride_color = null, recenter = false) {
-  const map = L.map(id, {gestureHandling: true, maxZoom: 20}).setView([38.9072, -77.0369], 9);
+function add_basemap(map) {
   const style = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark-matter-gl-style" : "positron-gl-style";
-  const basemap = L.maplibreGL({
+  L.maplibreGL({
     style: 'https://basemaps.cartocdn.com/gl/' + style + '/style.json?key=cb1_25fo_1_2f0e687e9c1f7729ab0666b9',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
   }).addTo(map);
+}
+
+// Where riders live, as [lat, lon, riders] at zip code centres: a haze, not
+// pins, and never close enough to look like a street.
+function create_zip_map(id, points) {
+  const map = L.map(id, {gestureHandling: true, minZoom: 6, maxZoom: 11}).setView([38.9072, -77.0369], 9);
+  add_basemap(map);
+  map.attributionControl.addAttribution('Zip codes &copy; <a href="https://www.geonames.org/">GeoNames</a>');
+  const most = Math.max(...points.map(p => p[2]));
+  // Full strength at every zoom: the layer otherwise fades points out below its maxZoom.
+  L.heatLayer(points, {radius: 30, blur: 25, max: most, minOpacity: .3, maxZoom: map.getMinZoom()}).addTo(map);
+  return map;
+}
+
+function create_ride_map(id, url, ride_color = null, recenter = false) {
+  const map = L.map(id, {gestureHandling: true, maxZoom: 20}).setView([38.9072, -77.0369], 9);
+  add_basemap(map);
   fetch(url).then(r => r.json()).then(data => {
     if (recenter) {
       let minlat = 90, maxlat = -90, minlon = 180, maxlon = -180;
@@ -70,11 +86,7 @@ const DIMMEST = 0, BRIGHTEST = .6;
 
 function animate_ride_map(id, manifest_url) {
   const map = L.map(id, {gestureHandling: true, maxZoom: 20}).setView([38.9072, -77.0369], 9);
-  const style = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark-matter-gl-style" : "positron-gl-style";
-  L.maplibreGL({
-    style: 'https://basemaps.cartocdn.com/gl/' + style + '/style.json?key=cb1_25fo_1_2f0e687e9c1f7729ab0666b9',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  }).addTo(map);
+  add_basemap(map);
 
   const stream = [];            // every track of every page loaded so far
   const waiting = new Map();    // page -> its tracks, when it came out of turn
