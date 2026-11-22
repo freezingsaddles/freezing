@@ -220,8 +220,9 @@ tags:
     name: LOL Funny
     description: |
       Ride 1+ miles and post a photo of something you find that is laugh-out-loud funny to YOU.
-      Post the photo to your ride in Strava with <code>#LOLfunny</code>.
-      If it's not obvious, add a description to the photo of what about it struck you as funny.
+      Post the photo to your ride in Strava with <code>#lolfunny</code>. You must put this tag
+      in the description of the <em>photo</em>, not the ride.
+      If it's not obvious, tell us what struck you as funny in the description too.
       Winners will make the sponsor and a committee of our peers laugh out loud with you. Winners receive amazing prizes!
       Allow the sponsor to follow you on Strava.
     discord: 1574054238198173797
