@@ -28,11 +28,12 @@ def get_today() -> datetime:
 def people_list_users():
     q = text("""
              select A.id, A.display_name, A.team_id, T.name as team_name,
+             A.registered, A.friend,
              count(R.id) as rides, coalesce(sum(R.distance), 0) as miles
-             from lbd_athletes A
-             join teams T on T.id = A.team_id
+             from athletes A
+             join teams T on T.id = A.team_id and not T.leaderboard_exclude
              left join rides R on R.athlete_id = A.id
-             group by A.id, A.display_name, A.team_id, T.name
+             group by A.id, A.display_name, A.team_id, T.name, A.registered, A.friend
              order by lower(A.display_name)
              """)
     return render_template(

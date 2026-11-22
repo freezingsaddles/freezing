@@ -13,6 +13,11 @@
                 <td>
                     <a href="/people/{{ u._mapping['id'] }}"
                        class="hover-underline">{{ u._mapping['display_name'] }}</a>
+                    {% if not u._mapping["registered"] %}
+                        <span class="badge text-bg-warning ms-1">Not Registered</span>
+                    {% elif u._mapping["friend"] %}
+                        <span class="badge text-bg-info ms-1">Friend</span>
+                    {% endif %}
                 </td>
                 <td>
                     <a href="/teams/{{ u._mapping['team_id'] }}"
