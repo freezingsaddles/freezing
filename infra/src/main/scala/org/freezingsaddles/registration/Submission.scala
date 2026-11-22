@@ -14,6 +14,8 @@ case class Submission(
       */
     stravaId: Option[Long],
     teamCaptain: Boolean,
+    /** Their answer to "Gonna play?", None when they gave none. */
+    playing: Option[Boolean] = None,
 )
 
 object Submission:
@@ -27,6 +29,7 @@ object Submission:
     val email       = "E-mail"
     val stravaId    = "Strava user ID"
     val teamCaptain = "Are you willing to be a Team Captain?"
+    val playing     = "Are you really gonna play?"
 
   /** Reads the confirmation email's HTML: a two-column table of label and answer. Unknown rows are
     * ignored, so the form can grow questions without breaking this; the rows this needs must be
@@ -50,9 +53,17 @@ object Submission:
       email = email,
       stravaId = stravaId(strava),
       teamCaptain = captain.equalsIgnoreCase("yes"),
+      playing = answers.get(Label.playing).flatMap(playing),
     )
     end for
   end parse
+
+  /** The email prints the answer's label, "Yes."; the export has the option's value instead, a slug
+    * of the label as it once was. Any other answer is from someone joining as a friend.
+    */
+  def playing(answer: String): Option[Boolean] =
+    val a = answer.trim.toLowerCase
+    Option.when(a.nonEmpty)(a.stripSuffix(".") == "yes" || a.startsWith("if-i-sign-up-i-will-play"))
 
   /** The digits of what they typed, if there were any. */
   def stravaId(typed: String): Option[Long] = typed.filter(_.isDigit).toLongOption.filter(_ > 0)

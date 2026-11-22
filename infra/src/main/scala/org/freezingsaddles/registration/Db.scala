@@ -103,6 +103,19 @@ object Registrations:
     if !athletes.existsById(reg.athleteId) then Outcome.UnknownAthlete
     else record(reg, repo.findById(reg.athleteId))
 
+  /** Records the submission, and if it is the athlete's latest and says they won't play, marks them
+    * a friend. Nothing here unmarks one: friends register through a form of their own.
+    *
+    * @return
+    *   the outcome, and whether they were marked a friend
+    */
+  def record(reg: Registration, playing: Option[Boolean])(using DbTx): (Outcome, Boolean) =
+    val outcome = record(reg)
+    val latest  = Set(Outcome.Recorded, Outcome.Updated, Outcome.Unchanged)(outcome)
+    val friend  = latest && playing.contains(false)
+    if friend then sql"update athletes set friend = true where id = ${reg.athleteId}".update.run()
+    (outcome, friend)
+
   private def record(reg: Registration, existing: Option[Registration])(using DbTx): Outcome =
     existing match
       case None                                                                               =>
