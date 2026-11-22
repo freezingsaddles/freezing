@@ -18,9 +18,9 @@ concurrency: infra-deploy
 jobs:
   deploy:
     name: cdk deploy
-    # The role's trust policy names this repository and the main ref, so a run
-    # from anywhere else could not assume it in any case; the environment adds
-    # the branch restriction on the secret.
+    # The role trusts this repository's production environment, which only
+    # main may deploy to, so a run from anywhere else could neither assume the
+    # role nor read the database password.
     environment: production
     permissions:
       id-token: write # mint the OIDC token traded for the AWS role

@@ -20,19 +20,21 @@ object BackfillTest:
   val header   =
     "\"#\",\"Date Submitted\",\"Started in the right place?\",\"First Name\",\"Last Name\"," +
       "\"Zip Code\",\"E-mail\",\"Opt in to e-mails?\",\"Strava user ID\"," +
-      "\"Willing to be a team captain?\",\"More details on what you are volunteering to do\""
+      "\"Willing to be a team captain?\",\"More details on what you are volunteering to do\"," +
+      "\"Gonna play?\""
   val exported =
     s"""\uFEFF$header
        |"6","November 19, 2026 11:34 am","","Ann","Rider","22201","ann@example.com","Checked","12345678","Yes","Bring
-       |cocoa, and cups"
+       |cocoa, and cups","if-i-sign-up-i-will-play-not-even-snowmageddon-could-keep-me-from-playing"
        |"7","June 1, 2026 1:05 PM","","Bea","Cyclist","20001","bea@example.com","","","",""
        |"8","sometime","","Cy","Spoke","20002","cy@example.com","","3","",""
-       |"9","November 20, 2026 8:00 am","","Ann","Rider","22202","ann@example.com","","12345678","Yes",""
-       |"10","June 2, 2026 9:00 am","","Dee","Pedal","20003","dee@example.com","","athletes/87654321","",""
-       |"11","June 3, 2026 9:00 am","","Eve","Typo","20004","eve@example.com","","876543","",""
+       |"9","November 20, 2026 8:00 am","","Ann","Rider","22202","ann@example.com","","12345678","Yes","","Yes."
+       |"10","June 2, 2026 9:00 am","","Dee","Pedal","20003","dee@example.com","","athletes/87654321","","","Just here for the hot chocolate"
+       |"11","June 3, 2026 9:00 am","","Eve","Typo","20004","eve@example.com","","876543","","","Yes."
        |""".stripMargin
 
-  val ann = Submission("Ann", "Rider", "22201", "ann@example.com", Some(12345678L), true)
+  val ann =
+    Submission("Ann", "Rider", "22201", "ann@example.com", Some(12345678L), true, Some(true))
 end BackfillTest
 
 class BackfillTest extends munit.FunSuite:
@@ -42,22 +44,31 @@ class BackfillTest extends munit.FunSuite:
     val Right((rows, skipped)) = Backfill.parse(exported.getBytes(UTF_8)): @unchecked
     assertEquals(
       rows,
+      // Oldest first, whatever the file's order.
       List(
+        BackfillRow(
+          "form-submission:10",
+          LocalDateTime.of(2026, 6, 2, 13, 0), // EDT, UTC-4
+          Submission(
+            "Dee",
+            "Pedal",
+            "20003",
+            "dee@example.com",
+            Some(87654321L),
+            false,
+            Some(false),
+          ),
+        ),
+        BackfillRow(
+          "form-submission:11",
+          LocalDateTime.of(2026, 6, 3, 13, 0),
+          Submission("Eve", "Typo", "20004", "eve@example.com", Some(876543L), false, Some(true)),
+        ),
         BackfillRow("form-submission:6", LocalDateTime.of(2026, 11, 19, 16, 34), ann), // EST, UTC-5
         BackfillRow(
           "form-submission:9",
           LocalDateTime.of(2026, 11, 20, 13, 0),
           ann.copy(zipCode = "22202"),
-        ),
-        BackfillRow(
-          "form-submission:10",
-          LocalDateTime.of(2026, 6, 2, 13, 0), // EDT, UTC-4
-          Submission("Dee", "Pedal", "20003", "dee@example.com", Some(87654321L), false),
-        ),
-        BackfillRow(
-          "form-submission:11",
-          LocalDateTime.of(2026, 6, 3, 13, 0),
-          Submission("Eve", "Typo", "20004", "eve@example.com", Some(876543L), false),
         ),
       ),
     )
@@ -119,11 +130,15 @@ class BackfillHandlerTest extends munit.FunSuite:
     val raw = mail("nf-subs.csv", "application/vnd.ms-excel", exported)
     assertEquals(
       Handler.handle(aws(raw), "b", "k", ds, secret),
-      Right(s"nf-subs.csv: recorded 2, updated 1, unchanged 0, older 0, unknown athlete 1, $skips"),
+      Right(
+        s"nf-subs.csv: recorded 2, updated 1, unchanged 0, older 0, unknown athlete 1, friends 1, $skips"
+      ),
     )
     assertEquals(
       Handler.handle(aws(raw), "b", "k", ds, secret),
-      Right(s"nf-subs.csv: recorded 0, updated 0, unchanged 2, older 1, unknown athlete 1, $skips"),
+      Right(
+        s"nf-subs.csv: recorded 0, updated 0, unchanged 2, older 1, unknown athlete 1, friends 1, $skips"
+      ),
     )
     assertEquals(
       TestDb.rows(ds).map(r => (r.athleteId, r.source, r.zipCode)),
@@ -140,7 +155,9 @@ class BackfillHandlerTest extends munit.FunSuite:
     val only6   = exported.linesIterator.take(3).mkString("\n")
     assertEquals(
       Handler.handle(aws(mail("nf-subs.csv", "text/csv", only6)), "b", "k", ds, secret),
-      Right("nf-subs.csv: recorded 0, updated 0, unchanged 0, older 1, unknown athlete 0"),
+      Right(
+        "nf-subs.csv: recorded 0, updated 0, unchanged 0, older 1, unknown athlete 0, friends 0"
+      ),
     )
     assertEquals(TestDb.rows(ds).map(_.source), Vector("<emailed@example.com>"))
 

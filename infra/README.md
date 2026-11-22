@@ -36,6 +36,9 @@ Two sbt builds, Scala 3:
    and one with the same answers changes nothing, so a redelivery or a retry
    is harmless. The form comes after connecting Strava, so an id with no
    `athletes` row is a typo, and is logged instead of stored.
+6. When the athlete's latest submission answers "Gonna play?" with anything
+   but yes, they are marked a friend (`athletes.friend`). Nothing here clears
+   it; friends have a form of their own.
 
 ## Backfilling from an export
 
@@ -106,14 +109,22 @@ One-time setup in the account:
 
 - `cdk bootstrap aws://299196842131/us-east-1`, once, from anywhere with
   admin credentials.
-- An IAM role for GitHub with this trust policy subject (the ids are the
-  org's and the repo's, so renames do not break it):
+- GitHub's OIDC provider in the account, if it is not there already:
 
-      repo:freezingsaddles@35430981/freezing@1373805993:ref:refs/heads/main
+      aws iam create-open-id-connect-provider \
+        --url https://token.actions.githubusercontent.com \
+        --client-id-list sts.amazonaws.com
 
-  against the account's `token.actions.githubusercontent.com` OIDC provider,
-  and this permission policy, which is all a CDK deploy needs because the
-  bootstrap roles do the work:
+- An IAM role for GitHub trusting that provider, with audience
+  `sts.amazonaws.com` and this subject:
+
+      repo:freezingsaddles@35430981/freezing@1373805993:environment:production
+
+  The ids are the org's and the repo's, which the repository puts in its
+  subjects so that renames do not break them. A job that runs in an
+  environment is named by the environment, not the branch; only `main` may
+  deploy to `production`. The role needs this permission policy, which is all
+  a CDK deploy needs because the bootstrap roles do the work:
 
       {"Version": "2012-10-17", "Statement": [
         {"Effect": "Allow", "Action": "sts:AssumeRole",

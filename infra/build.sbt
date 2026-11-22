@@ -1,7 +1,7 @@
 ThisBuild / scalaVersion := "3.9.0"
 ThisBuild / organization := "org.freezingsaddles"
 
-lazy val awsSdkVersion = "2.30.0"
+lazy val awsSdkVersion = "2.30.38"
 
 // The url-connection HTTP client serves the SDK clients; the default netty and
 // apache clients would only bloat the Lambda jar and slow its cold start.
@@ -22,23 +22,23 @@ lazy val registration = (project in file("."))
       "-java-output-version:21",
     ),
     libraryDependencies ++= Seq(
-      "ch.qos.logback"        % "logback-classic"        % "1.6.3",
-      "com.amazonaws"         % "aws-lambda-java-core"   % "1.2.3",
-      "com.amazonaws"         % "aws-lambda-java-events" % "3.14.0",
-      "com.lihaoyi"          %% "upickle"                % "4.1.0",
-      "com.augustnagro"      %% "magnum"                 % "1.3.1",
-      "com.mysql"             % "mysql-connector-j"      % "9.3.0",
+      "ch.qos.logback"    % "logback-classic"        % "1.6.3",
+      "com.amazonaws"     % "aws-lambda-java-core"   % "1.4.1",
+      "com.amazonaws"     % "aws-lambda-java-events" % "3.16.1",
+      "com.lihaoyi"      %% "upickle"                % "4.1.0",
+      "com.augustnagro"  %% "magnum"                 % "1.3.1",
+      "com.mysql"         % "mysql-connector-j"      % "9.3.0",
       // MIME parsing: the API plus the Eclipse implementation that provides it.
-      "jakarta.mail"          % "jakarta.mail-api"       % "2.1.3",
-      "org.eclipse.angus"     % "angus-mail"             % "2.0.3",
-      "org.jsoup"             % "jsoup"                  % "1.24.1",
-      "org.log4s"            %% "log4s"                  % "1.10.0",
+      "jakarta.mail"      % "jakarta.mail-api"       % "2.1.5",
+      "org.eclipse.angus" % "angus-mail"             % "2.0.5",
+      "org.jsoup"         % "jsoup"                  % "1.24.1",
+      "org.log4s"        %% "log4s"                  % "1.10.0",
       awsSdk("s3"),
       awsSdk("ssm"),
       awsSdk("url-connection-client"),
-      "org.scalameta"        %% "munit"                  % "1.1.0"   % Test,
+      "org.scalameta"    %% "munit"                  % "1.1.0"   % Test,
       // In-process MySQL-compatible database for the repository tests.
-      "com.h2database"        % "h2"                     % "2.3.232" % Test,
+      "com.h2database"    % "h2"                     % "2.3.232" % Test,
     ),
     // Patched versions of vulnerable transitive dependencies of the Scala tools: scaladoc
     // brings Jackson, the REPL brings jline. None of them reach the jar.
