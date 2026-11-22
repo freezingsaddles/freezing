@@ -311,6 +311,12 @@ server {
 		add_header Cache-Control "no-store" always;
 	}
 
+	{{ if hasPrefix "www." $host }}
+	# One host, so the login cookie is always the one the next page sees.
+	location / {
+		return 301 https://{{ trimPrefix "www." $host }}$request_uri;
+	}
+	{{ else }}
 	location / {
 		{{ if eq $proto "uwsgi" }}
 		include uwsgi_params;
@@ -333,6 +339,7 @@ server {
 		include /etc/nginx/vhost.d/default_location;
 		{{ end }}
 	}
+	{{ end }}
 }
 
 {{ end }}
