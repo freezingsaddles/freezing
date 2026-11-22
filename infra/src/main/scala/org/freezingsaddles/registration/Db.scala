@@ -98,12 +98,20 @@ object Registrations:
   /** Keeps the athlete's latest submission. One that says what the row already says changes
     * nothing, wherever it came from, so a submission both emailed and exported is one row, and an
     * export mailed in twice changes nothing the second time. An id no athlete has is a typo.
+    *
+    * Any submission, even an older one, says the athlete registered: where nothing has recorded
+    * their registered and friend yet, they become true and false.
     */
   def record(reg: Registration)(using DbTx): Outcome =
     if !athletes.existsById(reg.athleteId) then Outcome.UnknownAthlete
-    else record(reg, repo.findById(reg.athleteId))
+    else
+      val outcome = record(reg, repo.findById(reg.athleteId))
+      sql"""update athletes
+            set registered = coalesce(registered, true), friend = coalesce(friend, false)
+            where id = ${reg.athleteId}""".update.run()
+      outcome
 
-  /** Records the submission, and if it is the athlete's latest and says they won't play, marks them
+  /** Records the submission and, if it is the athlete's latest and says they won't play, marks them
     * a friend. Nothing here unmarks one: friends register through a form of their own.
     *
     * @return
@@ -115,6 +123,7 @@ object Registrations:
     val friend  = latest && playing.contains(false)
     if friend then sql"update athletes set friend = true where id = ${reg.athleteId}".update.run()
     (outcome, friend)
+  end record
 
   private def record(reg: Registration, existing: Option[Registration])(using DbTx): Outcome =
     existing match

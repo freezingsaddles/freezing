@@ -12,7 +12,7 @@ object TestDb:
       s"jdbc:h2:mem:$name;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1"
     )
     transact(d):
-      sql"""create table if not exists athletes (id bigint primary key, friend boolean)""".update
+      sql"""create table if not exists athletes (id bigint primary key, registered boolean, friend boolean)""".update
         .run()
       sql"""merge into athletes (id) key (id) values (12345678), (87654321)""".update.run()
       sql"""create table if not exists registrations (
@@ -33,7 +33,13 @@ object TestDb:
 
   def clear(ds: JdbcDataSource): Unit = transact(ds):
     sql"delete from registrations".update.run()
-    sql"update athletes set friend = null".update.run()
+    sql"update athletes set registered = null, friend = null".update.run()
+
+  def flags(ds: JdbcDataSource, id: Long): (Option[Boolean], Option[Boolean]) = transact(ds):
+    sql"select registered, friend from athletes where id = $id"
+      .query[(Option[Boolean], Option[Boolean])]
+      .run()
+      .head
 
   def friends(ds: JdbcDataSource): Vector[Long] = transact(ds):
     sql"select id from athletes where friend order by id".query[Long].run()
@@ -111,6 +117,21 @@ class RegistrationsTest extends munit.FunSuite:
       val older = Registration("<f3>", when.minusDays(1), ann).get
       assertEquals(Registrations.record(older, Some(false)), (Outcome.Older, false))
     assertEquals(TestDb.friends(ds), Vector.empty)
+
+  test("a submission fills in registered and friend where nothing has said"):
+    record("<r1>", when, ann)
+    assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(false)))
+
+  test("what the web app recorded stands"):
+    transact(ds)(sql"update athletes set registered = false, friend = true".update.run())
+    record("<r2>", when, ann)
+    assertEquals(TestDb.flags(ds, 12345678L), (Some(false), Some(true)))
+
+  test("an older submission still says they registered"):
+    record("<r3>", when, ann)
+    transact(ds)(sql"update athletes set registered = null, friend = null".update.run())
+    assertEquals(record("<r4>", when.minusDays(1), ann), Outcome.Older)
+    assertEquals(TestDb.flags(ds, 12345678L), (Some(true), Some(false)))
 
   test("different athletes are different rows"):
     record("<a>", when, ann)
