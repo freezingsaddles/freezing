@@ -1,7 +1,7 @@
 ThisBuild / scalaVersion := "3.9.0"
 ThisBuild / organization := "org.freezingsaddles"
 
-lazy val awsSdkVersion = "2.30.0"
+lazy val awsSdkVersion = "2.30.38"
 
 // The url-connection HTTP client serves the SDK clients; the default netty and
 // apache clients would only bloat the Lambda jar and slow its cold start.
