@@ -26,7 +26,7 @@ function add_basemap(map) {
 // Where riders live, as [lat, lon, riders] at zip code centres: a haze, not
 // pins, and never close enough to look like a street.
 function create_zip_map(id, points) {
-  const map = L.map(id, {gestureHandling: true, minZoom: 6, maxZoom: 11}).setView([38.9072, -77.0369], 9);
+  const map = L.map(id, {gestureHandling: true, minZoom: 6, maxZoom: 12}).setView([38.9072, -77.0369], 9);
   add_basemap(map);
   map.attributionControl.addAttribution('Zip codes &copy; <a href="https://www.geonames.org/">GeoNames</a>');
   const most = Math.max(...points.map(p => p[2]));
