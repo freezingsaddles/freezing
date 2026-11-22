@@ -12,7 +12,7 @@ lazy val freezebot = (project in file("."))
       "-java-output-version:21",
     ),
     libraryDependencies ++= Seq(
-      "ch.qos.logback"   % "logback-classic"   % "1.6.7",
+      "ch.qos.logback"   % "logback-classic"   % "1.6.8",
       "com.augustnagro" %% "magnum"            % "2.0.0",
       "com.lihaoyi"     %% "upickle"           % "4.4.3",
       "com.mysql"        % "mysql-connector-j" % "26.10.0",

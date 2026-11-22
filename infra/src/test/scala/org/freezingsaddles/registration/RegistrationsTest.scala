@@ -12,8 +12,9 @@ object TestDb:
       s"jdbc:h2:mem:$name;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1"
     )
     transact(d):
-      sql"""create table if not exists athletes (id bigint primary key)""".update.run()
-      sql"""merge into athletes key (id) values (12345678), (87654321)""".update.run()
+      sql"""create table if not exists athletes (id bigint primary key, friend boolean)""".update
+        .run()
+      sql"""merge into athletes (id) key (id) values (12345678), (87654321)""".update.run()
       sql"""create table if not exists registrations (
               athlete_id bigint primary key references athletes(id) on delete cascade,
               source varchar(255) not null,
@@ -30,7 +31,12 @@ object TestDb:
   def rows(ds: JdbcDataSource): Vector[Registration] = transact(ds):
     sql"select * from registrations order by athlete_id".query[Registration].run()
 
-  def clear(ds: JdbcDataSource): Unit = transact(ds)(sql"delete from registrations".update.run())
+  def clear(ds: JdbcDataSource): Unit = transact(ds):
+    sql"delete from registrations".update.run()
+    sql"update athletes set friend = null".update.run()
+
+  def friends(ds: JdbcDataSource): Vector[Long] = transact(ds):
+    sql"select id from athletes where friend order by id".query[Long].run()
 end TestDb
 
 /** The repository against H2, so the case-class mapping and the upsert are exercised rather than
@@ -90,6 +96,21 @@ class RegistrationsTest extends munit.FunSuite:
   test("an id no athlete has is a typo, and not recorded"):
     assertEquals(record("<m8>", when, ann.copy(stravaId = Some(1234567L))), Outcome.UnknownAthlete)
     assertEquals(TestDb.rows(ds), Vector.empty)
+
+  test("the latest submission saying they won't play makes them a friend"):
+    val (outcome, friend) =
+      transact(ds)(Registrations.record(Registration("<f1>", when, ann).get, Some(false)))
+    assertEquals((outcome, friend), (Outcome.Recorded, true))
+    assertEquals(TestDb.friends(ds), Vector(12345678L))
+
+  test("playing, no answer, or an older submission leaves them as they were"):
+    val reg = Registration("<f2>", when, ann).get
+    transact(ds):
+      assertEquals(Registrations.record(reg, Some(true))._2, false)
+      assertEquals(Registrations.record(reg, None)._2, false)
+      val older = Registration("<f3>", when.minusDays(1), ann).get
+      assertEquals(Registrations.record(older, Some(false)), (Outcome.Older, false))
+    assertEquals(TestDb.friends(ds), Vector.empty)
 
   test("different athletes are different rows"):
     record("<a>", when, ann)
