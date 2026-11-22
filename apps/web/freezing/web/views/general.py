@@ -731,5 +731,6 @@ def authorization() -> ResponseReturnValue:
         multiple_teams=multiple_teams,
         no_teams=no_teams,
         blank=blank,
+        not_registered=athlete is not None and not athlete.registered,
         rides_url=url_for("user.rides"),
     )
