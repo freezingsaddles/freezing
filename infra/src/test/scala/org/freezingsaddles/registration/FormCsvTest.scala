@@ -16,7 +16,7 @@ class CsvTest extends munit.FunSuite:
     assertEquals(Csv.parse("a,b\nc,d"), List(List("a", "b"), List("c", "d")))
 end CsvTest
 
-object BackfillTest:
+object FormCsvTest:
   val header   =
     "\"#\",\"Date Submitted\",\"Started in the right place?\",\"First Name\",\"Last Name\"," +
       "\"Zip Code\",\"E-mail\",\"Opt in to e-mails?\",\"Strava user ID\"," +
@@ -33,20 +33,27 @@ object BackfillTest:
        |"11","June 3, 2026 9:00 am","","Eve","Typo","20004","eve@example.com","","876543","","","Yes."
        |""".stripMargin
 
+  /** The attachment on one submission's notification: the export's columns, but no number. */
+  val single =
+    "\"Date Submitted\",\"First Name\",\"Last Name\",\"Zip Code\",\"E-mail\",\"Opt in to e-mails?\"," +
+      "\"Strava user ID\",\"Willing to be a team captain?\",\"Gonna play?\"\n" +
+      "\"November 22, 2026 9:55 am\",\"Ann\",\"Rider\",\"22201\",\"ann@example.com\",\"Checked\"," +
+      "\"12345678\",\"\",\"Just watching\"\n"
+
   val ann =
     Submission("Ann", "Rider", "22201", "ann@example.com", Some(12345678L), true, Some(true))
-end BackfillTest
+end FormCsvTest
 
-class BackfillTest extends munit.FunSuite:
-  import BackfillTest.*
+class FormCsvTest extends munit.FunSuite:
+  import FormCsvTest.*
 
   test("an export's rows become submissions, with their number as their source"):
-    val Right((rows, skipped)) = Backfill.parse(exported.getBytes(UTF_8)): @unchecked
+    val Right((rows, skipped)) = FormCsv.parse(exported.getBytes(UTF_8), "<m>"): @unchecked
     assertEquals(
       rows,
       // Oldest first, whatever the file's order.
       List(
-        BackfillRow(
+        FormRow(
           "form-submission:10",
           LocalDateTime.of(2026, 6, 2, 13, 0), // EDT, UTC-4
           Submission(
@@ -59,13 +66,13 @@ class BackfillTest extends munit.FunSuite:
             Some(false),
           ),
         ),
-        BackfillRow(
+        FormRow(
           "form-submission:11",
           LocalDateTime.of(2026, 6, 3, 13, 0),
           Submission("Eve", "Typo", "20004", "eve@example.com", Some(876543L), false, Some(true)),
         ),
-        BackfillRow("form-submission:6", LocalDateTime.of(2026, 11, 19, 16, 34), ann), // EST, UTC-5
-        BackfillRow(
+        FormRow("form-submission:6", LocalDateTime.of(2026, 11, 19, 16, 34), ann), // EST, UTC-5
+        FormRow(
           "form-submission:9",
           LocalDateTime.of(2026, 11, 20, 13, 0),
           ann.copy(zipCode = "22202"),
@@ -74,14 +81,30 @@ class BackfillTest extends munit.FunSuite:
     )
     assertEquals(skipped, List("row 3: no Strava id", "row 4: unreadable date sometime"))
 
+  test("a submission's own CSV has no number, so the email is its source"):
+    val Right((rows, Nil)) = FormCsv.parse(single.getBytes(UTF_8), "<n1@example.com>"): @unchecked
+    assertEquals(
+      rows,
+      List(
+        FormRow(
+          "<n1@example.com>",
+          LocalDateTime.of(2026, 11, 22, 14, 55),
+          ann.copy(teamCaptain = false, playing = Some(false)),
+        )
+      ),
+    )
+
   test("a file that isn't an export says why"):
-    assertEquals(Backfill.parse("name,address\nAnn,here\n".getBytes(UTF_8)), Left("no # column"))
-    assertEquals(Backfill.parse(Array.emptyByteArray), Left("empty file"))
-end BackfillTest
+    assertEquals(
+      FormCsv.parse("name,address\nAnn,here\n".getBytes(UTF_8), "<m>"),
+      Left("no date submitted column"),
+    )
+    assertEquals(FormCsv.parse(Array.emptyByteArray, "<m>"), Left("empty file"))
+end FormCsvTest
 
 /** A mailed-in export, through the handler into the table. */
-class BackfillHandlerTest extends munit.FunSuite:
-  import BackfillTest.*
+class FormCsvHandlerTest extends munit.FunSuite:
+  import FormCsvTest.*
 
   private val ds = TestDb("backfill")
 
@@ -161,7 +184,21 @@ class BackfillHandlerTest extends munit.FunSuite:
     )
     assertEquals(TestDb.rows(ds).map(_.source), Vector("<emailed@example.com>"))
 
+  test("a submission's notification records its athlete"):
+    val raw = mail("submission.csv", "text/csv", single)
+    assertEquals(
+      Handler.handle(aws(raw), "b", "k", ds, secret),
+      Right(
+        "submission.csv: recorded 1, updated 0, unchanged 0, older 0, unknown athlete 0, friends 1"
+      ),
+    )
+    assertEquals(TestDb.rows(ds).map(_.source), Vector("<backfill@example.com>"))
+    assertEquals(TestDb.friends(ds), Vector(12345678L))
+
   test("an attachment that isn't an export fails the invocation"):
     val raw = mail("contacts.csv", "text/csv", "name,address\nAnn,here\n")
-    assertEquals(Handler.handle(aws(raw), "b", "k", ds, secret), Left("contacts.csv: no # column"))
-end BackfillHandlerTest
+    assertEquals(
+      Handler.handle(aws(raw), "b", "k", ds, secret),
+      Left("contacts.csv: no date submitted column"),
+    )
+end FormCsvHandlerTest

@@ -3,7 +3,8 @@ package org.freezingsaddles.registration
 import scala.jdk.CollectionConverters.*
 
 class HandlerTest extends munit.FunSuite:
-  private val raw = getClass.getResourceAsStream("/registration.eml").readAllBytes()
+  private val raw =
+    "Subject: New registration\r\nFrom: Freezing Saddles Registration <registration@freezingsaddles.info>\r\n\r\nx\r\n".getBytes
   private val db  = DbConfig("localhost", 3306, "freezing", "u", "p").dataSource
 
   private def aws(bytes: Array[Byte]) = new Aws:
@@ -12,17 +13,11 @@ class HandlerTest extends munit.FunSuite:
 
   private val secret = Some("open-sesame")
 
-  test("a mail that is not a registration is ignored, not failed"):
-    val plain = "Subject: spam open-sesame\r\nContent-Type: text/html\r\n\r\n<p>buy now</p>\r\n"
+  test("a mail with no CSV attached is ignored, not failed"):
+    val plain =
+      "Subject: spam open-sesame\r\nFrom: x@example.com\r\nContent-Type: text/html\r\n\r\n<p>buy now</p>\r\n"
     val r     = Handler.handle(aws(plain.getBytes), "b", "k", db, secret)
-    assertEquals(r, Right("ignored: missing field: First Name (spam open-sesame)"))
-
-  test("a mail with no html part is ignored"):
-    val plain = "Subject: hello open-sesame\r\nContent-Type: text/plain\r\n\r\nwords\r\n"
-    assertEquals(
-      Handler.handle(aws(plain.getBytes), "b", "k", db, secret),
-      Right("ignored: no HTML part in hello open-sesame"),
-    )
+    assertEquals(r, Right("ignored: no CSV attached, from x@example.com"))
 
   test("a registration without the secret in its subject is not read"):
     val from = "Freezing Saddles Registration <registration@freezingsaddles.info>"

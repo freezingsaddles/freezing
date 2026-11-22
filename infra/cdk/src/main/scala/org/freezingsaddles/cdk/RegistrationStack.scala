@@ -43,11 +43,11 @@ import scala.jdk.CollectionConverters.*
 import software.amazon.awscdk.services.ses.actions.{Lambda as LambdaAction, S3 as S3Action}
 import software.constructs.Construct
 
-/** Receives the WordPress registration confirmation email and records it in the database.
+/** Receives the WordPress registration form's submissions by email and records them.
   *
   * Mail for the recipient address lands at SES (the MX record on its domain points there), which
-  * writes the raw message to the bucket and invokes the function; the function parses the form
-  * table out of the HTML and inserts a `registrations` row.
+  * writes the raw message to the bucket and invokes the function; the function reads the CSV of
+  * answers attached to it and upserts `registrations` rows.
   *
   * Context (cdk.json or -c):
   *   - hostedZoneId, zoneName: the Route 53 zone for freezingsaddles.org, in this account. Given as

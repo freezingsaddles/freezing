@@ -6,14 +6,14 @@ import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.util.Locale
 import scala.util.Try
 
-/** One row of the registration form's submissions export, ready to store. */
-case class BackfillRow(key: String, registeredAt: LocalDateTime, form: Submission)
+/** One row of the registration form's submissions, ready to store. */
+case class FormRow(key: String, registeredAt: LocalDateTime, form: Submission)
 
-/** The registration form's submissions, exported from WordPress as CSV and mailed in as an
-  * attachment, for the registrations that arrived while no email reached this service.
+/** The registration form's submissions as CSV: one attached to each submission's notification, or
+  * the whole export from WordPress, mailed in to fill a gap.
   */
-object Backfill:
-  /** A row's source: its submission's number, which the export carries and the email does not. */
+object FormCsv:
+  /** A row's source: its submission's number, which only the export carries. */
   def key(submission: String): String = s"form-submission:$submission"
 
   /** The site's clock, which the export's dates are written in. */
@@ -27,9 +27,10 @@ object Backfill:
       .toFormatter(Locale.US)
 
   /** The rows that could be read, and a reason for each that could not, by its line in the file.
-    * Left when the file is not a submissions export at all.
+    * Left when the file is not the form's submissions at all. A row with no submission number takes
+    * `source`, the email's Message-Id, as its own.
     */
-  def parse(bytes: Array[Byte]): Either[String, (List[BackfillRow], List[String])] =
+  def parse(bytes: Array[Byte], source: String): Either[String, (List[FormRow], List[String])] =
     Csv.parse(String(bytes, UTF_8).stripPrefix("﻿")) match
       case Nil             => Left("empty file")
       case header :: lines =>
@@ -46,7 +47,6 @@ object Backfill:
             .toRight("no team captain column")
 
         for
-          number  <- column("#")
           date    <- column("date submitted")
           first   <- column("first name")
           last    <- column("last name")
@@ -55,6 +55,8 @@ object Backfill:
           strava  <- column("strava user id")
           captain <- captainColumn
         yield
+          val number  = columns.get("#")
+          val data    = lines.count(cells => !cells.forall(_.isBlank))
           val playing = columns.collectFirst:
             case (name, i) if name.contains("gonna play") => i
           val read    = lines.zipWithIndex
@@ -63,14 +65,16 @@ object Backfill:
               def at(c: Int) = cells.lift(c).getOrElse("").trim
               val row        =
                 for
-                  n    <- Some(at(number)).filter(_.nonEmpty).toRight("no submission number")
                   when <- Try(LocalDateTime.parse(at(date), submitted)).toEither.left
                             .map(_ => s"unreadable date ${at(date)}")
                   _    <-
                     Either.cond(at(first).nonEmpty && at(email).nonEmpty, (), "no name or e-mail")
                   id   <- Submission.stravaId(at(strava)).toRight("no Strava id")
-                yield BackfillRow(
-                  key(n),
+                yield FormRow(
+                  number.map(at).filter(_.nonEmpty) match
+                    case Some(n)           => key(n)
+                    case None if data == 1 => source
+                    case None              => s"$source row ${i + 2}",
                   when.atZone(siteZone).withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime,
                   Submission(
                     firstName = at(first),
@@ -85,7 +89,7 @@ object Backfill:
               // Line numbers count the header as line 1, as a spreadsheet would show them.
               row.left.map(reason => s"row ${i + 2}: $reason")
           // Oldest first, so an athlete's latest submission is the one that stays. Dates are only
-          // to the minute; submission numbers count up.
+          // to the minute; submission numbers count up, and without them the file's order stands.
           (
             read
               .collect:
@@ -105,7 +109,7 @@ object Backfill:
 
   private def normalise(header: String): String =
     header.trim.stripSuffix(":").trim.replaceAll("\\s+", " ").toLowerCase
-end Backfill
+end FormCsv
 
 /** RFC 4180: quoted fields may hold commas, doubled quotes and line breaks. */
 object Csv:

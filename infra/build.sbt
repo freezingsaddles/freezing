@@ -31,7 +31,6 @@ lazy val registration = (project in file("."))
       // MIME parsing: the API plus the Eclipse implementation that provides it.
       "jakarta.mail"      % "jakarta.mail-api"       % "2.1.5",
       "org.eclipse.angus" % "angus-mail"             % "2.0.5",
-      "org.jsoup"         % "jsoup"                  % "1.24.1",
       "org.log4s"        %% "log4s"                  % "1.10.0",
       awsSdk("s3"),
       awsSdk("ssm"),
