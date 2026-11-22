@@ -1,2 +1,3 @@
 recursive-include freezing/web/templates *
 recursive-include freezing/web/static *
+recursive-include freezing/web/geo *

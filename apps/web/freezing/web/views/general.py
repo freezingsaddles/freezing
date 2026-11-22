@@ -36,6 +36,7 @@ from freezing.web.autolog import log
 from freezing.web.exc import MultipleTeamsError, NoTeamsError
 from freezing.web.utils import auth
 from freezing.web.utils.tribes import load_tribes, query_tribes
+from freezing.web.utils.zipmap import registered_points
 from freezing.web.views.shared_sql import team_leaderboard_query
 
 blueprint = Blueprint("general", __name__)
@@ -243,6 +244,7 @@ def index():
         team_count=len(config.COMPETITION_TEAMS),
         contestant_count=contestant_count,
         registered_count=int(registered["contestants"]),
+        zip_points=[] if after_competition_start else registered_points(),
         friend_count=int(registered["friends"]),
         total_rides=total_rides,
         total_hours=total_hours,
