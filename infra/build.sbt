@@ -1,7 +1,7 @@
 ThisBuild / scalaVersion := "3.9.0"
 ThisBuild / organization := "org.freezingsaddles"
 
-lazy val awsSdkVersion = "2.30.0"
+lazy val awsSdkVersion = "2.30.38"
 
 // The url-connection HTTP client serves the SDK clients; the default netty and
 // apache clients would only bloat the Lambda jar and slow its cold start.
@@ -23,13 +23,13 @@ lazy val registration = (project in file("."))
     ),
     libraryDependencies ++= Seq(
       "ch.qos.logback"    % "logback-classic"        % "1.6.3",
-      "com.amazonaws"     % "aws-lambda-java-core"   % "1.2.3",
+      "com.amazonaws"     % "aws-lambda-java-core"   % "1.4.1",
       "com.amazonaws"     % "aws-lambda-java-events" % "3.16.1",
       "com.lihaoyi"      %% "upickle"                % "4.1.0",
       "com.augustnagro"  %% "magnum"                 % "1.3.1",
       "com.mysql"         % "mysql-connector-j"      % "9.3.0",
       // MIME parsing: the API plus the Eclipse implementation that provides it.
-      "jakarta.mail"      % "jakarta.mail-api"       % "2.1.3",
+      "jakarta.mail"      % "jakarta.mail-api"       % "2.1.5",
       "org.eclipse.angus" % "angus-mail"             % "2.0.5",
       "org.jsoup"         % "jsoup"                  % "1.24.1",
       "org.log4s"        %% "log4s"                  % "1.10.0",
