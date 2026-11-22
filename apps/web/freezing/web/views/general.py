@@ -235,6 +235,7 @@ def index():
         "index.html",
         show_registration=registration_open,
         registered=bool(athlete and athlete.registered),
+        registered_as=_registered_as(athlete),
         year=config.START_DATE.year,
         spring_is_over=post_summer_solstice,
         winter_is_coming=post_autumnal_equinox,
@@ -336,6 +337,17 @@ def _non_rider_stats():
         "no_team": no_team,
         "not_logged_in": after_competition_start and before_competition_end,
     }
+
+
+def _registered_as(athlete: Athlete | None) -> str | None:
+    """How a registered athlete is taking part, as the front page words it."""
+    if not (athlete and athlete.registered):
+        return None
+    if athlete.friend:
+        return "friend"
+    if athlete.registration and athlete.registration.team_captain:
+        return "potential captain"
+    return "competitor"
 
 
 # Get rider stats
