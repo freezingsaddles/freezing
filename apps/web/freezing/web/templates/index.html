@@ -11,7 +11,23 @@
     gap: 1rem;
   }
 
-  @media (min-width: 992px) {
+  .d-clippy-light, .d-clippy-dark {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    @media (prefers-color-scheme: light) {
+      .d-clippy-light {
+        display: block;
+      }
+    }
+    @media (prefers-color-scheme: dark) {
+      .d-clippy-dark {
+        display: block;
+      }
+    }
+  }
+    @media (min-width: 992px) {
     .content-block {
         gap: 1.5rem;
     }
@@ -162,9 +178,16 @@
     {% if show_registration and not registered %}
         <div id="sect-how"
              class="card bg-light p-3 px-lg-4 flex-row gap-4 align-items-center">
-            <div style="font-size: 4rem; line-height: 1" class="d-none d-lg-block">
-                ☃️
-            </div>
+            <img src="/img/clippy-light.png"
+                 style="width: 5rem;
+                        height: 5rem"
+                 class="d-clippy-light"
+                 alt="Snowman clippy" />
+            <img src="/img/clippy-dark.png"
+                 style="width: 5rem;
+                        height: 5rem"
+                 class="d-clippy-dark"
+                 alt="Snowman clippy" />
             <div>
                 <h4>How Do I Sign Up For Freezing Saddles?</h4>
                 <div>
