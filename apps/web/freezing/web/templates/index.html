@@ -159,6 +159,22 @@
             </div>
         </div>
     </div>
+    {% if show_registration and not registered %}
+        <div id="sect-how"
+             class="card bg-light p-3 px-lg-4 flex-row gap-4 align-items-center">
+            <div style="font-size: 4rem; line-height: 1" class="d-none d-lg-block">
+                ☃️
+            </div>
+            <div>
+                <h4>How Do I Sign Up For Freezing Saddles?</h4>
+                <div>
+                    Just click the giant <strong>Register Now</strong> button, right there, and follow the <strong>5</strong>
+                    simple steps. When it says you're registered, you're registered. If you do something else, you're not
+                    registered.
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <div class="{{ 'd-grid grid-xl-2 grid-gap-3 grid-gap-lg-4' if zip_points }}">
         <div class="d-flex flex-column gap-3 gap-lg-4">
             {% if show_registration %}
