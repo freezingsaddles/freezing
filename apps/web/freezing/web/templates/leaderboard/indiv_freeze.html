@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% block title %}
+    Freeze Points{{ ' with Friends' if friends }}
+{% endblock %}
 {% block content %}
     <h2 class="mb-3">Freeze Points{{' with Friends' if friends else ''}}</h2>
     <p>

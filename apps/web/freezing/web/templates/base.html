@@ -2,9 +2,9 @@
 <html lang="en" data-bs-theme="{{ request.cookies.get('theme', 'light') }}">
     <head>
         <title>
-            {% block title %}
-                {{ competition_title }}
-            {% endblock %}
+            {% block title %}{% endblock %}
+            {{ "–" if self.title() | trim }}
+            {{ competition_title }}
         </title>
         <meta charset="utf-8" />
         <meta name="keywords"
@@ -13,7 +13,8 @@
               content="Freezing Saddles winter cycling competiton" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="{{ competition_title }}" />
-        <meta property="og:title" content="{{ self.title() | trim }}" />
+        <meta property="og:title"
+              content="{{ self.title() | trim or competition_title }}" />
         <meta property="og:description"
               content="Freezing Saddles winter cycling competiton" />
         <meta property="og:image" content="{{ og_image }}" />
