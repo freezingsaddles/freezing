@@ -576,7 +576,7 @@ def register():
         blank_strava=athlete is not None and session.get("blank_strava") == athlete.id,
         tribal_groups=load_tribes() if step == "tribes" else [],
         tribes=query_tribes(athlete.id) if step == "tribes" and athlete else {},
-        mean_team=config.MAIN_TEAM,
+        main_team=config.MAIN_TEAM,
         public_authorize_url=public_url,
         private_authorize_url=private_url,
         after_competition_start=now_tz >= config.START_DATE,
