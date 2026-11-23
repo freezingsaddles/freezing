@@ -722,6 +722,14 @@ def authorization() -> ResponseReturnValue:
             return redirect(url_for(".register", step="login", profile="blank"))
         return redirect(url_for(".register", step="club"))
 
+    # Logging in does not register anyone; the registration takes them through
+    # the club and their Strava account as well.
+    if athlete is not None and not athlete.registered:
+        return redirect(url_for(".register"))
+    # Only a problem with their Strava account or clubs is worth a page.
+    if athlete is not None and not (blank or no_teams or multiple_teams):
+        return redirect(url_for(".index"))
+
     return render_template(
         "authorization_success.html",
         after_competition_start_start=after_competition_start,
@@ -733,6 +741,5 @@ def authorization() -> ResponseReturnValue:
         multiple_teams=multiple_teams,
         no_teams=no_teams,
         blank=blank,
-        not_registered=athlete is not None and not athlete.registered,
         rides_url=url_for("user.rides"),
     )
