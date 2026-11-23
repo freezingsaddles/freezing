@@ -186,7 +186,7 @@
                             <div>Register Now</div>
                         </a>
                         <div class="text-muted mt-2">
-                            You have until December 24<sup>th</sup> to register for this year's competition!
+                            You have until December 24<sup>th</sup> to <a href="/register">register</a> for this year's competition!
                         </div>
                     {% endif %}
                 </div>
@@ -222,11 +222,10 @@
             {% if not bafs_is_live %}
                 <div class="alert alert-info mb-0">
                     The shiny new Freezing Saddles competition for the upcoming winter hasn't
-                    started yet. So far, <strong>{{ registered_count }}</strong>
+                    started yet, but <strong>{{ registered_count }}</strong>
                     contestant{{ registered_count|ess }} and <strong>{{ friend_count }}</strong>
-                    friend{{ friend_count|ess }} have
-                    registered.
-                    In the meantime, there are still bike rides going on, so go for a ride.
+                    friend{{ friend_count|ess }} have already registered.
+                    In the meantime, there are still bike rides going on, you should go for a ride.
                 </div>
             {% else %}
                 {% if yourself.missed_today %}
