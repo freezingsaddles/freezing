@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "blank_strava.html" import blank_warning, account_check %}
 {% block title %}
-    {{ "Register for " + competition_title }}
+    Register
 {% endblock %}
 {% block content %}
     {% if after_competition_start and not g.finished %}
