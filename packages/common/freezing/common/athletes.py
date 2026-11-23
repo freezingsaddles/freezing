@@ -40,8 +40,9 @@ def display_name(
     Return the leaderboard name: a first name and a last initial.
 
     Falls back to the full name when there is no surname to abbreviate, when
-    the abbreviated form is already the display name of another athlete in a
-    club, or until this one is in a club. Riders who connect a second, empty
+    the first name is an initial (A Smith, not A S), when the abbreviated form
+    is already the display name of another athlete in a club, or until this one
+    is in a club. Riders who connect a second, empty
     Strava account by mistake leave it in no club, and it shouldn't take the
     short name from the account they ride with.
     """
@@ -50,7 +51,7 @@ def display_name(
         return name
     first = (strava_athlete.firstname or "").strip()
     last = (strava_athlete.lastname or "").strip()
-    if not first or not last:
+    if not first or not last or len(first.rstrip(".")) <= 1:
         return name
 
     abbreviated = f"{first} {last[0]}"

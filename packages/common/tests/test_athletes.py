@@ -54,6 +54,13 @@ def test_display_name_abbreviates_the_surname(session):
     assert register_athlete(strava(), **TOKENS).display_name == "Ann R"
 
 
+@pytest.mark.parametrize("initial", ["A", "A."])
+def test_an_initial_keeps_the_surname(session, initial):
+    session.get.return_value = in_a_club()
+    name = register_athlete(strava(firstname=initial), **TOKENS).display_name
+    assert name == f"{initial} Rider"
+
+
 def test_display_name_falls_back_when_it_collides(session):
     session.get.return_value = in_a_club()
     collides(session)
