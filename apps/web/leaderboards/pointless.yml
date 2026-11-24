@@ -90,6 +90,8 @@ prizes:
     category: unsponsored
   - name: Meh-diocrity
     category: hidden
+  - url: /pointless/generic/nightrider
+    category: active
   - url: /pointless/generic/opmdays
     category: unsponsored
   - url: /pointless/hashtag/monuments

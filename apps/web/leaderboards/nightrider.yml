@@ -1,0 +1,51 @@
+---
+title: Nightrider
+description: |
+  Become a creature of the dark! The rider who logs the most miles after sunset
+  shall be dubbed the Dark Knight. One point per mile, for rides that start
+  between sunset and bar close (3 am), local time where the ride starts.
+  Early birds who set out at 4 am, sorry, this one isn't for you.
+discord: 1574540310246203482
+sponsors: [97522953]
+fields:
+  - name: athlete_id
+    visible: false
+  - name: athlete_name
+    label: Rider
+    type: athlete
+  - name: night_rides
+    label: Rides
+    type: number
+    format: "{0:.0f}"
+  - name: night_miles
+    label: Points
+    type: number
+    rank_by: true
+  - name: ride_ids
+    visible: false
+query: |
+  -- A ride whose weather hasn't synced yet, or whose sunset is midnight,
+  -- meaning none, takes the day's sunset where everyone else rode.
+  with daily_sunset as (
+    select
+      date(R.local_start_date) as ride_date,
+      sec_to_time(avg(time_to_sec(W.sunset))) as sunset
+    from rides R
+      join ride_weather W on W.ride_id = R.id
+    where W.sunset > '00:00:00'
+    group by date(R.local_start_date)
+  )
+  select
+    A.id as athlete_id,
+    A.display_name as athlete_name,
+    count(R.id) as night_rides,
+    sum(R.distance) as night_miles,
+    group_concat(hex(R.id)) as ride_ids
+  from athletes A
+    join rides R on R.athlete_id = A.id
+    left join ride_weather W on W.ride_id = R.id
+    left join daily_sunset D on D.ride_date = date(R.local_start_date)
+  where time(R.local_start_date) < '03:00'
+    or time(R.local_start_date) >= coalesce(nullif(W.sunset, '00:00:00'), D.sunset)
+  group by A.id, A.display_name
+  order by night_miles desc, athlete_name asc
