@@ -26,6 +26,19 @@ from freezing.web.utils.segboard import load_segment
 blueprint = Blueprint("pointless", __name__)
 
 
+@blueprint.route("/active")
+def active():
+    from freezing.web import _load_pointless
+
+    prizes = _load_pointless().get("active")
+    sponsors = {
+        athlete_id: _load_sponsor(athlete_id)
+        for prize in prizes
+        for athlete_id in prize.sponsors or []
+    }
+    return render_template("pointless/active.html", prizes=prizes, sponsors=sponsors)
+
+
 @blueprint.route("/generic/<leaderboard>")
 def generic(leaderboard):
     try:
