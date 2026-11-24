@@ -275,11 +275,16 @@ tags:
   - tag: publicartfinder
     name: Public Art Finder
     description: |
-      Take a picture and upload your ride with hashtag <code>#publicartfinder</code>.
-    # discord: 1446691565555814572
-    rank_by: rides
+      Ride at least a mile, photograph public art you find on your ride, and tag the
+      <em>photo</em> with <code>#publicartfinder</code> in its description on Strava.
+      Each find counts once. The sponsor scores the finds; see the rules.
+    discord: 1574630233284550757
+    freezebot: true
+    sponsors: [38633292]
+    rank_by: judged
     default_view: photos
     friendless: true
+    min_miles: 1
 
   - tag: scavhunt
     name: Photo Scavenger Hunt

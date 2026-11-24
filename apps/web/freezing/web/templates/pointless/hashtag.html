@@ -87,12 +87,14 @@
         {{ rules.tab(view == "rules", hashtag_notag ~ "?view=rules") }}
     </ul>
     {% if view == "leaderboard" %}
+        {% set judged = meta and meta.rank_by == "judged" %}
         <div class="leaderboard-overflow mt-2">
             <table class="table table-condensed">
                 <tr>
-                    <th class="number rank">Rank</th>
+                    {% if not judged %}<th class="number rank">Rank</th>{% endif %}
                     <th>Rider</th>
-                    {% if meta and meta.rank_by == "days" %}
+                    {% if judged %}
+                    {% elif meta and meta.rank_by == "days" %}
                         <th class="number">Ride Days</th>
                     {% elif meta and meta.rank_by == "photos" %}
                         <th class="number">Photos</th>
@@ -103,7 +105,7 @@
                 </tr>
                 {% for a, b, c, d, e, f, g in tdata %}
                     <tr class="{{ a | myself }}">
-                        <td class="number rank">{{ f }}</td>
+                        {% if not judged %}<td class="number rank">{{ f }}</td>{% endif %}
                         <td>
                             {% if a in banned %}
                                 <a href="/people/{{ a }}"
@@ -113,9 +115,11 @@
                                    class="hover-underline">{{ b }}</a>
                             {% endif %}
                         </td>
-                        <td class="number">
-                            {{ e if meta and meta.rank_by == 'days' else g if meta and meta.rank_by == 'photos' else c }}
-                        </td>
+                        {% if not judged %}
+                            <td class="number">
+                                {{ e if meta and meta.rank_by == 'days' else g if meta and meta.rank_by == 'photos' else c }}
+                            </td>
+                        {% endif %}
                         <td class="number">{{ d | round(1) }} mi</td>
                     </tr>
                 {% endfor %}

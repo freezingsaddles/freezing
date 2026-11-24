@@ -113,7 +113,12 @@ def _tagged_rides(photo_tags: bool) -> str:
 
 
 def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_tags):
-    """Build the hashtag table data; orderby is 'miles', 'rides', 'days' or 'photos'."""
+    """
+    Build the hashtag table data.
+
+    orderby is 'miles', 'rides', 'days', 'photos', or 'judged' for a prize the
+    sponsor scores, which lists riders by name.
+    """
     sess = meta.scoped_session()
     rank_by = "hashtag_miles"
     if orderby == "days":
@@ -122,6 +127,11 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_ta
         rank_by = "hashtag_rides"
     elif orderby == "photos":
         rank_by = "hashtag_photos"
+    order = (
+        "lower(H.athlete_name) asc"
+        if orderby == "judged"
+        else f"H.{rank_by} desc, lower(H.athlete_name) asc"
+    )
     q = text(f"""
         with tagged as (
             {_tagged_rides(photo_tags)}
@@ -172,7 +182,7 @@ def _get_hashtag_tdata(hashtag, alttag, orderby, friendless, min_miles, photo_ta
         from
             htdata H
         order by
-            H.{rank_by} desc, lower(H.athlete_name) asc
+            {order}
         """).bindparams(
         hashtag=hashtag,
         alttag=alttag or hashtag,
