@@ -122,7 +122,7 @@ prizes:
   - url: /pointless/hashtag/po
     category: hidden
   - url: /pointless/hashtag/publicartfinder
-    category: hidden
+    category: active
   - url: /pointless/hashtag/withkid
     category: kids
   - url: /pointless/generic/rosshillloop
