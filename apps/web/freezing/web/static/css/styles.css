@@ -878,3 +878,14 @@ fieldset[disabled] .btn-primary.active {
   color: #00A4E4;
   background-color: #ffffff;
 }
+
+/* Links inside a clickable prize card stay clickable above its stretched link. */
+.prize-card .card-text a,
+.prize-card .card-footer a {
+  position: relative;
+  z-index: 2;
+}
+
+.prize-card:hover {
+  box-shadow: var(--bs-box-shadow-sm);
+}

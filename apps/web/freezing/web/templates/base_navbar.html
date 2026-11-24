@@ -125,7 +125,12 @@
                         aria-labelledby="pointlessDropdown">
                         {% for category in pointless_prizes.categories %}
                             <li class="px-3 text-center small text-muted menu-subheading">
-                                {{ category.name | safe }}
+                                {% if category.id == "active" %}
+                                    <a href="/pointless/active"
+                                       class="text-reset hover-underline">{{ category.name | safe }}</a>
+                                {% else %}
+                                    {{ category.name | safe }}
+                                {% endif %}
                             </li>
                             <li>
                                 <hr class="dropdown-divider" />

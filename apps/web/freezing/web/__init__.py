@@ -146,6 +146,9 @@ class PointlessPrize(BaseMessage):
     name: str | None = None
     discord: int | None = None
     category: str | None = None
+    # From the prize's own board, for the list of active prizes.
+    description: str | None = None
+    sponsors: list[int] | None = None
 
 
 class PointlessPrizeSchema(BaseSchema):
@@ -190,11 +193,15 @@ def _load_pointless() -> PointlessPrizes:
             if tag:
                 prize.name = prize.name or tag.name
                 prize.discord = prize.discord or tag.discord
+                prize.description = tag.description
+                prize.sponsors = tag.sponsors
         elif prize.url and prize.url.startswith("/pointless/segment/"):
             seg = segments.get(int(prize.url.removeprefix("/pointless/segment/")))
             if seg:
                 prize.name = prize.name or seg.name
                 prize.discord = prize.discord or seg.discord
+                prize.description = seg.description
+                prize.sponsors = seg.sponsors
         elif prize.url and prize.url.startswith("/pointless/club/"):
             club = meta.scoped_session().get(
                 Team, int(prize.url.removeprefix("/pointless/club/"))
@@ -208,6 +215,8 @@ def _load_pointless() -> PointlessPrizes:
                 if board:
                     prize.name = prize.name or board.name or board.title
                     prize.discord = prize.discord or board.discord
+                    prize.description = board.description
+                    prize.sponsors = board.sponsors
             except Exception:
                 log.warning(
                     f"Could not load generic board {board_name} for pointless prize: {str(prize)}"

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}
+    Active Pointless Prizes
+{% endblock %}
+{% block content %}
+    <h2 class="mb-3">Active Pointless Prizes</h2>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 g-lg-4">
+        {% for prize in prizes %}
+            <div class="col">
+                <div class="card h-100 bg-light prize-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ prize.url }}"
+                               class="stretched-link text-reset text-decoration-none"
+                               {% if prize.url.startswith("http") %}target="_blank" rel="noreferrer"{% endif %}>{{ prize.name }}</a>
+                        </h5>
+                        {% if prize.description %}<div class="card-text">{{ prize.description | safe }}</div>{% endif %}
+                    </div>
+                    {% if prize.sponsors %}
+                        <div class="card-footer small text-muted">
+                            Sponsored by
+                            {% for athlete_id in prize.sponsors %}
+                                {# djlint:off #}<a href="{{ sponsors[athlete_id].url }}">{{ sponsors[athlete_id].name }}</a>{% if not loop.last %}, {% endif %}{# djlint:on #}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <p class="mt-4">
+        If you want to sponsor your own pointless prize, please contact us on the
+        <strong>#pointless-prize</strong> channel on
+        <a href="{{ discord_invitation }}" target="_blank" rel="noreferrer">Discord</a>.
+    </p>
+{% endblock %}
