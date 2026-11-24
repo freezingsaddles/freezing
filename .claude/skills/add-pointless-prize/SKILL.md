@@ -34,7 +34,8 @@ Read a neighbouring entry of the same kind before writing; the schemas are in
 
 ### Hashtag boards
 
-Fields: `tag`, `name`, `description` (HTML), `rank_by` (`miles`, `rides`, `days`, `photos`),
+Fields: `tag`, `name`, `description` (HTML), `rank_by` (`miles`, `rides`, `days`, `photos`,
+or `judged`: riders by name with distance, no rank, for prizes the sponsor scores),
 optional `alt` (a second tag), `sponsors`, `banned`, `discord`, `freezebot`, `default_view`,
 `min_miles`, `friendless`.
 
@@ -44,8 +45,9 @@ optional `alt` (a second tag), `sponsors`, `banned`, `discord`, `freezebot`, `de
 ### Photo prizes
 
 - `rank_by: photos` counts photos whose caption carries the tag; a ride titled with the tag
-  adds nothing. Use it when the sponsor says "most X wins" about photos. For judged photo
-  prizes keep the ranking the sponsor describes (often `days`) and set `default_view: photos`.
+  adds nothing. Use it when the sponsor says "most X wins" about photos. For photo prizes the
+  sponsor scores, use `rank_by: judged` with `default_view: photos` (see `publicartfinder`);
+  the site can't score them, so a rank would mislead.
   Either setting makes every tab match tags in photo captions, not only ride titles.
 - Say in the description that the tag goes in the **photo's** description, not the ride's,
   e.g. `tag the <em>photo</em> with <code>#bridge</code>`. Riders get this wrong.
@@ -87,7 +89,8 @@ Keep the sponsor's rules and voice, but:
 - Turn first person into third: "allow me to follow you" → "allow the sponsor to follow you".
 - Drop dates that just restate the season ("Jan 1 to end of FS2027").
 - Wrap tags in `<code>`, and link out with `target="_blank" rel="noreferrer"`.
-- Keep it short; the Rules tab holds the detail.
+- Keep it short; the Rules tab holds the detail. The rules live in the database, not the repo:
+  give the user the full rules as Markdown, with the same edits, for the sponsor to paste.
 
 ## 4. List it
 
