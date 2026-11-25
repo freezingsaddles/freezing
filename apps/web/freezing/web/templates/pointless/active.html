@@ -11,7 +11,7 @@
                     <div class="card-body">
                         <h5 class="card-title">
                             <a href="{{ prize.url }}"
-                               class="stretched-link text-reset text-decoration-none"
+                               class="stretched-link text-reset hover-underline"
                                {% if prize.url.startswith("http") %}target="_blank" rel="noreferrer"{% endif %}>{{ prize.name }}</a>
                         </h5>
                         {% if prize.description %}<div class="card-text">{{ prize.description | safe }}</div>{% endif %}
@@ -20,7 +20,7 @@
                         <div class="card-footer small text-muted">
                             Sponsored by
                             {% for athlete_id in prize.sponsors %}
-                                {# djlint:off #}<a href="{{ sponsors[athlete_id].url }}">{{ sponsors[athlete_id].name }}</a>{% if not loop.last %}, {% endif %}{# djlint:on #}
+                                {# djlint:off #}<a class="hover-underline" href="{{ sponsors[athlete_id].url }}">{{ sponsors[athlete_id].name }}</a>{% if not loop.last %}, {% endif %}{# djlint:on #}
                             {% endfor %}
                         </div>
                     {% endif %}
