@@ -95,6 +95,12 @@
             </div>
         </div>
     </div>
+    {% if session.athlete_id == data.user.id and not data.user.registered %}
+        <div class="alert alert-warning mt-3 mt-lg-4 mb-0">
+            You are not yet registered for Freezing Saddles. Please <a href="/register"
+                                                                       class="alert-link">register</a>.
+        </div>
+    {% endif %}
     <div class="mt-3 mt-lg-4 d-grid grid-gap-3 grid-gap-lg-4 grid-lg-2">
         <div>
             <h5 class="ps-2">Ride Statistics</h5>
