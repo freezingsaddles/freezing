@@ -469,12 +469,10 @@ def login_page(state: str | None = None) -> str:
         scope=["read_all", "activity:read_all", "profile:read_all"],
         state=state,
     )
-    now_tz = datetime.now(config.START_DATE.tzinfo)
     return render_template(
         "authorize.html",
         public_authorize_url=public_url,
         private_authorize_url=private_url,
-        after_competition_start=now_tz >= config.START_DATE,
     )
 
 

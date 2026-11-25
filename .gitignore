@@ -3,6 +3,8 @@
 !example.cfg
 !test.cfg
 !development.cfg
+# The apps' own, made from example.cfg, hold real settings.
+/apps/*/development.cfg
 .env*
 !example.env
 /apps/*/data/
@@ -40,3 +42,11 @@ env/
 infra/cdk/node_modules/
 infra/cdk/cdk.out/
 infra/cdk/cdk.context.json
+
+# Caches the apps write where they run
+/cache/
+/apps/*/cache/
+
+# Metals
+**/project/metals.sbt
+**/project/project/
