@@ -6,15 +6,16 @@
 {% import "pointless/rules.html" as rules with context %}
 {% block content %}
     <h2 class="mb-3">{{ meta.name if meta else data.segment_name + " Rides" }}</h2>
-    <p>
-        Leaderboard for all rides of the
-        <a href="https://www.strava.com/segments/{{ data.segment_id }}">{{ data.segment_name }}</a>
-        segment on Strava.
-    </p>
+    {% if meta and meta.description %}
+        <p>{{ meta.description | safe }}</p>
+    {% else %}
+        <p>
+            Leaderboard for all rides of the
+            <a href="https://www.strava.com/segments/{{ data.segment_id }}">{{ data.segment_name }}</a>
+            segment on Strava.
+        </p>
+    {% endif %}
     {% if meta %}
-        {% if meta.description %}
-            <p>{{ meta.description | safe }}</p>
-        {% endif %}
         <p>
             {% if meta.discord %}
                 See the
