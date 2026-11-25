@@ -397,11 +397,8 @@ body.logged-in #sect-main {
 
 @media (max-width: 575px) {
     .container .card.register {
-        border-radius: 0;
-        margin-left: -.75rem;
-        margin-right: -.75rem;
-        border-left: none;
-        border-right: none;
+        border: none;
+        padding: 0 !important;
     }
 }
 

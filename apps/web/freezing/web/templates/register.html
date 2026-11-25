@@ -80,7 +80,7 @@
                     <em>dark</em>. If that sounds like fun to you, then welcome!
                 </strong>
             </p>
-            <a class="btn btn-primary mb-1"
+            <a class="btn btn-primary mb-1 btn-lg me-auto"
                href="/register?step=login">Start Registration</a>
         {% elif step == "login" %}
             <h3 class="mb-3">
@@ -92,7 +92,6 @@
                 the competition. If you wander by mistake, just head back to the
                 <a href="/">homepage</a>, click <em>Register Now</em> and finish your registration.
                 <strong>If the site does not state that you're registered, you're not registered.</strong>
-                Friends don't let friends misregister for Freezing Saddles.
             </div>
             {% if not authorized or request.args.get("profile") in ("missing", "blank", "account") %}
                 {% if request.args.get("profile") == "blank" %}
