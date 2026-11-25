@@ -7,6 +7,7 @@ Created on Feb 10, 2013.
 import time
 from datetime import datetime, timedelta
 from re import findall, fullmatch, sub
+from typing import Literal
 
 from flask import (
     Blueprint,
@@ -439,20 +440,34 @@ def logout():
 @blueprint.route("/authorize")
 @blueprint.route("/login")
 def join():
+    return login_page()
+
+
+def login_page(state: str | None = None) -> str:
+    """
+    Render the login form.
+
+    The state comes back to :func:`authorization` to say where the rider goes
+    once logged in.
+    """
     # Forced, Strava asks again which account and what it may read.
-    approval_prompt = "force" if "reconnect" in request.args else "auto"
+    approval_prompt: Literal["auto", "force"] = (
+        "force" if "reconnect" in request.args else "auto"
+    )
     c = Client()
     public_url = c.authorization_url(
         client_id=config.STRAVA_CLIENT_ID,
-        redirect_uri=url_for(".authorization", _external=True),
+        redirect_uri=url_for("general.authorization", _external=True),
         approval_prompt=approval_prompt,
         scope=["read", "activity:read", "profile:read_all"],
+        state=state,
     )
     private_url = c.authorization_url(
         client_id=config.STRAVA_CLIENT_ID,
-        redirect_uri=url_for(".authorization", _external=True),
+        redirect_uri=url_for("general.authorization", _external=True),
         approval_prompt=approval_prompt,
         scope=["read_all", "activity:read_all", "profile:read_all"],
+        state=state,
     )
     now_tz = datetime.now(config.START_DATE.tzinfo)
     return render_template(
@@ -721,6 +736,9 @@ def authorization() -> ResponseReturnValue:
         if blank:
             return redirect(url_for(".register", step="login", profile="blank"))
         return redirect(url_for(".register", step="club"))
+
+    if state == "me":
+        return redirect(url_for("people.people_show_me"))
 
     # Logging in does not register anyone; the registration takes them through
     # the club and their Strava account as well.

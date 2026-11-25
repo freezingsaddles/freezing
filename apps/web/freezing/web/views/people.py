@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
 from math import ceil
 
-from flask import Blueprint, abort, render_template, session
+from flask import Blueprint, abort, g, render_template, session
 from sqlalchemy import case, distinct, func, text
 
 from freezing.model import meta
 from freezing.model.orm import Athlete, AthleteSeason, Team
 from freezing.web import config
-from freezing.web.utils.auth import requires_auth
 from freezing.web.utils.tribes import load_tribes, query_tribes
+from freezing.web.views.general import login_page
 
 blueprint = Blueprint("people", __name__)
 
@@ -42,8 +42,11 @@ def people_list_users():
 
 
 @blueprint.route("/me")
-@requires_auth
 def people_show_me():
+    # The link gets shared, so whoever opens it logged out is asked to log in
+    # and comes back here, rather than being turned away.
+    if not g.logged_in:
+        return login_page(state="me")
     return people_show_person(session["athlete_id"])
 
 
