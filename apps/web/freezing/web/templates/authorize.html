@@ -1,16 +1,14 @@
 {% extends "base.html" %}
 {% block title %}
-    {{ "Discord Invitation" if request.path == "/discord" else "Login" if after_competition_start else "Join the Competition" }}
+    {{ "Discord Invitation" if request.path == "/discord" else "Log In" }}
 {% endblock %}
 {% block content %}
     <div class="jumbotron">
         <h1>
             {% if request.path == "/discord" %}
                 Discord Invitation
-            {% elif after_competition_start %}
-                Login
             {% else %}
-                Join the Competition!
+                Log in to Freezing Saddles
             {% endif %}
         </h1>
         <p class="lead">
@@ -18,13 +16,15 @@
                 Please log in by clicking "Connect with Strava" below, then you will see the Discord
                 invitation link in the instructions.
             {% else %}
-                In order to count your ride statistics, we need you to authorize the Freezing Saddles application
-                to access (read) your Strava data.
+                Log in with <em>Connect with Strava</em> to see your own stats and settings.
             {% endif %}
         </p>
-        <p>
-            Login via <em>Connect with Strava</em> and you can also view personalized competition information.
-        </p>
+        {% if request.path != "/discord" and g.registration_open and not g.finished %}
+            <p>
+                Logging in does not register you for the competition. To take part,
+                <a href="/register">register</a>.
+            </p>
+        {% endif %}
         <p>
             <div class="form-check">
                 <input class="form-check-input"
