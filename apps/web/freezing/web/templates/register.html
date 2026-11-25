@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "blank_strava.html" import blank_warning, account_check %}
+{% from "blank_strava.html" import blank_warning %}
 {% block title %}
     Register
 {% endblock %}
@@ -206,59 +206,72 @@
                         <a class="btn btn-primary mb-1"
                            href="/register?step={{ 'discord' if discord_linking else 'tribes' }}">Next</a>
                 {% else %}
+                    {% set club_url = "https://www.strava.com/clubs/" ~ main_team %}
+                    {% set checking = "refresh" in request.args %}
                     {% if blank_strava %}
-                        {{ blank_warning(athlete.name if athlete else None, "/register?step=login&profile=blank", "/register?step=club") }}
-                    {% elif athlete and "refresh" in request.args %}
-                        {{ account_check(athlete.id, athlete.name, "/register?step=login&profile=account") }}
+                        {{ blank_warning(athlete.name, "/register?step=login&profile=blank") }}
                     {% endif %}
-                    <ul>
-                        <li>
-                            The next step is to join the Freezing Saddles {{ end_date.year }} Strava
-                            club.
-                        </li>
-                        <li>
-                            Please click on the <em>Freezing Saddles {{ end_date.year }}</em> button
-                            below.
-                            <br />
-                            <a class="btn btn-strava my-2 ms-3"
-                               href="https://www.strava.com/clubs/{{ main_team }}"
+                    {% if checking %}
+                        <p>
+                            <strong>We can't see you in the club yet.</strong>
+                            If you've just joined, Strava can take a few minutes to tell us, so
+                            give it a moment and refresh.
+                        </p>
+                    {% else %}
+                        <p>
+                            Open the club on Strava and choose <strong>Join Club</strong>, then come
+                            back to this page.
+                        </p>
+                    {% endif %}
+                    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                        {% if checking %}
+                            <a class="btn btn-primary btn-lg"
+                               href="/register?step=club&refresh=true">Refresh</a>
+                            <a class="btn btn-outline-secondary"
+                               href="{{ club_url }}"
                                rel="noreferrer"
-                               target="_blank">
-                            Freezing Saddles {{ end_date.year }}</a>
-                        </li>
-                        <li>
-                            Strava will open in a new window and you should choose
-                            <strong>Join Club</strong>.
-                        </li>
-                        <li>
-                            Then come back to this window and click the <em>Refresh</em>
-                            button below to refresh this page.
-                        </li>
-                        <ul>
+                               target="_blank">Open the Club on Strava</a>
+                        {% else %}
+                            <a class="btn btn-strava btn-lg"
+                               href="{{ club_url }}"
+                               rel="noreferrer"
+                               target="_blank">Join Freezing Saddles {{ end_date.year }}</a>
+                            <a class="btn btn-outline-primary"
+                               href="/register?step=club&refresh=true">Refresh</a>
+                        {% endif %}
+                    </div>
+                    <p class="small text-muted">This page checks again whenever you come back to it.</p>
+                    <details>
+                        <summary>Joined, but it still says you're not in the club?</summary>
+                        <ul class="mt-2">
                             <li>
-                                It can sometimes take a few minutes for the club membership to
-                                propagate.
+                                Check that you connected the Strava account you joined with: open
+                                <a href="https://www.strava.com/athletes/{{ athlete.id }}"
+                                   target="_blank"
+                                   rel="noreferrer">{{ athlete.name or "your connected account" }} on Strava</a>
+                                and make sure it has your rides and clubs. Signing in to Strava with
+                                Google or Apple can make a second, empty account. If it's the wrong
+                                one, log out at
+                                <a href="https://www.strava.com"
+                                   target="_blank"
+                                   rel="noreferrer">strava.com</a>,
+                                log in to the account you ride with, and
+                                <a href="/register?step=login&profile=account">connect Strava again</a>.
                             </li>
                             <li>
-                                If you have joined but Refresh doesn't find it, check that you
-                                connected the same Strava account you joined with: signing in to
-                                Strava with Google or Apple can make a second, empty account.
-                                Or you may not have allowed Freezing Saddles to <em>View your
-                                complete Strava profile</em>. Either way,
-                                <a href="/register?step=login&profile=missing">connect Strava again</a>,
-                                with the right account and that box ticked.
+                                Freezing Saddles needs permission to <em>View your complete Strava
+                                profile</em> to see your clubs. If you unticked it,
+                                <a href="/register?step=login&profile=missing">connect Strava again</a>
+                                and leave it ticked.
                             </li>
                             <li>
-                                If things aren't working, use the top-right menu to log out and
-                                <a href="/register">try registering again</a>, or
+                                Still stuck?
                                 <a rel="noreferrer"
                                    target="_blank"
-                                   href="{{ registration_site }}contact-form/">contact us</a>.
+                                   href="{{ registration_site }}contact-form/">Contact us</a>.
                             </li>
                         </ul>
-                    </ul>
-                    <a class="btn btn-primary mb-1"
-                       href="/register?step=club&refresh=true">Refresh</a>
+                    </details>
                 {% endif %}
         {% elif step == "discord" %}
             <h3 class="mb-3">
