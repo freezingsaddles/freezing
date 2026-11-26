@@ -90,7 +90,7 @@ def register_athlete_team(
         riders are left off its leaderboards. Membership of one of these does
         not count as a conflict with a real team.
     :param main_team: The club everyone joins; used as a fallback when the
-        athlete is in no other configured team.
+        athlete is in no other competition team, ahead of any observer team.
     :raise MultipleTeamsError: if the athlete is in more than one real team.
     :raise NoTeamsError: if no configured team matches.
     """
@@ -145,15 +145,14 @@ def _choose_team(
     matches = [c for c in strava_athlete.clubs if c.id in configured]
     logger.debug("Matched: %r", matches)
     athlete_model.team = None
-    if len(matches) > 1:
-        # You can be on multiple teams as long as only one is a real team.
-        matches = [c for c in matches if c.id not in observer_teams]
-    if len(matches) > 1:
-        logger.info("Multiple teams matched for %s: %s", strava_athlete, matches)
-        raise MultipleTeamsError(matches)
-    if not matches:
-        # Fall back to the main team if it is the only team they are in.
-        matches = [c for c in strava_athlete.clubs if c.id == main_team]
+    # Observer teams only count for someone in no competition team.
+    real = [c for c in matches if c.id not in observer_teams]
+    if len(real) > 1:
+        logger.info("Multiple teams matched for %s: %s", strava_athlete, real)
+        raise MultipleTeamsError(real)
+    if not real:
+        real = [c for c in strava_athlete.clubs if c.id == main_team]
+    matches = real or matches
     if not matches:
         raise NoTeamsError(
             "Athlete {} ({} {}): {} {}".format(
