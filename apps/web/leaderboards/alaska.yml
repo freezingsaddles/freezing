@@ -1,10 +1,17 @@
 ---
-title: Juneau how far away Alaska is?
+title: The Hains Point Alaska Salmon Award
 description: |
-  The person who, in a single ride completed on the same day, combines the most
-  HP salmon laps (ie qualifying reverse segments) with riding the full length of
-  Alaska Avenue NW (<a href="/pointless/segment/23962584">Alaska to Georgia</a>
-  or <a href="/pointless/segment/40631604">Olive Alaska</a>).
+  A subprize of the <a href="/pointless/segment/37893544">Hains Point Salmon Award</a>,
+  for 1 lb of Kirkland Alaska Smoked Sockeye Salmon. The winner shall be the cyclist who,
+  in a single ride, completes the most
+  <a href="https://www.strava.com/segments/37893544" target="_blank" rel="noreferrer">Hains Point Gate to Gate (Reverse)</a>
+  segments and rides the length of Alaska Avenue, measured by completing either the
+  <a href="https://www.strava.com/segments/23962584" target="_blank" rel="noreferrer">Alaska to Georgia</a>
+  segment (northbound) or the
+  <a href="https://www.strava.com/segments/40631604" target="_blank" rel="noreferrer">Olive Alaska</a>
+  segment (southbound).
+discord: 1575131434627367033
+sponsors: [29577875]
 fields:
   - name: athlete_id
     visible: false
