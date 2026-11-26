@@ -8,7 +8,8 @@ segments:
     description: |
       The winner of the Hains Point Salmon Award shall be the cyclist who completes the most
       <a href="https://www.strava.com/segments/37893544" target="_blank" rel="noreferrer">Hains Point Gate to Gate (Reverse)</a>
-      segments during Freezing Saddles.
+      segments during Freezing Saddles. See also the
+      <a href="/pointless/generic/alaska">Hains Point Alaska Salmon Award</a> subprize.
 
   - segment: 650024
     segment_name: POGGIO
