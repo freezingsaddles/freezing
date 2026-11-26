@@ -9,6 +9,7 @@ import freezing.web._faulthandler  # noqa isort: skip
 import freezing.web.utils.sqlog  # noqa isort: skip
 
 import os
+import re
 from datetime import datetime
 from socket import gethostbyname
 from time import sleep
@@ -166,8 +167,13 @@ class PointlessPrizes(BaseMessage):
 
     def get(self, category: str) -> list[PointlessPrize]:
         prizes = [p for p in self.prizes if p.category == category]
-        prizes.sort(key=lambda p: (p.name or "").lower())
+        prizes.sort(key=lambda p: _sort_name(p.name))
         return prizes
+
+
+def _sort_name(name: str | None) -> str:
+    """File "The Bridge" with the Bs."""
+    return re.sub(r"^the\s+", "", (name or "").strip(), flags=re.IGNORECASE).lower()
 
 
 class PointlessPrizesSchema(BaseSchema):
