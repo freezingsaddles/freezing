@@ -58,6 +58,10 @@ def test_observer_membership_does_not_conflict(session):
         athlete(club(RED), club(OBSERVERS)), Athlete(), **TEAMS
     )
     assert team.id == RED
+    team = register_athlete_team(
+        athlete(club(OBSERVERS), club(RED)), Athlete(), **TEAMS
+    )
+    assert team.id == RED
 
 
 def test_observer_only_is_excluded_from_leaderboard(session):
@@ -117,12 +121,27 @@ def test_observer_also_listed_in_teams_still_works(session):
     assert [t.id for t in model.clubs] == [OBSERVERS]
 
 
-def test_main_team_fallback_is_a_club_too(session):
+def test_main_team_beats_an_observer_team(session):
     model = Athlete()
     team = register_athlete_team(
-        athlete(club(MAIN), club(OBSERVERS)), model, main_team=MAIN, **TEAMS
+        athlete(club(OBSERVERS), club(MAIN)), model, main_team=MAIN, **TEAMS
     )
-    assert team.id == OBSERVERS
+    assert team.id == MAIN
+    assert sorted(t.id for t in model.clubs) == [MAIN, OBSERVERS]
+
+
+def test_listed_main_team_beats_an_observer_team(session):
+    team = register_athlete_team(
+        athlete(club(OBSERVERS), club(MAIN)),
+        Athlete(),
+        competition_teams=[MAIN],
+        observer_teams=[OBSERVERS],
+        main_team=MAIN,
+    )
+    assert team.id == MAIN
+
+
+def test_main_team_fallback_is_a_club_too(session):
     model = Athlete()
     team = register_athlete_team(athlete(club(MAIN)), model, main_team=MAIN, **TEAMS)
     assert team.id == MAIN
