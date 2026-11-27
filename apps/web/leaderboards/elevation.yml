@@ -1,0 +1,37 @@
+---
+title: Elevation Challenge
+description: |
+  What goes up must come down, but only the up counts. The rider with the most
+  total elevation gain over the season, as Strava reports it, wins. Riders on
+  observer teams aren't eligible.
+discord: 1575705528254996591
+sponsors: [124421702]
+fields:
+  - name: athlete_id
+    visible: false
+  - name: athlete_name
+    label: Rider
+    type: athlete
+  - name: rides
+    label: Rides
+    type: number
+    format: "{0:.0f}"
+  - name: miles
+    label: Miles
+    type: number
+  - name: elevation
+    label: Elevation (ft)
+    type: number
+    format: "{0:,.0f}"
+    rank_by: true
+query: |
+  select
+    A.id as athlete_id,
+    A.display_name as athlete_name,
+    count(R.id) as rides,
+    sum(R.distance) as miles,
+    coalesce(sum(R.elevation_gain), 0) as elevation
+  from lbd_athletes A
+    join rides R on R.athlete_id = A.id
+  group by A.id, A.display_name
+  order by elevation desc, athlete_name asc

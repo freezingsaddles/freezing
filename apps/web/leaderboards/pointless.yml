@@ -68,6 +68,8 @@ prizes:
     category: active
   - url: /pointless/generic/alaska
     category: active
+  - url: /pointless/generic/elevation
+    category: active
   - url: /pointless/generic/doompatrol
     category: hidden
   - name: Kidathon
