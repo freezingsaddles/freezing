@@ -154,7 +154,7 @@
     <link rel="stylesheet" href="/css/leaflet-gesture-handling.min.css" />
     <script src="/js/leaflet-gesture-handling.min.js"></script>
     <script src="/js/leaflet-heat.js"></script>
-    <script src="/js/ride-map.js?1"></script>
+    <script src="/js/ride-map.js?2"></script>
 {% endblock %}
 {% block content %}
     <div id="sect-main" class="card mt-lg-4 bg-light">
@@ -283,7 +283,19 @@
             {% endif %}
         </div>
         {% if zip_points %}
-            <div id="zipmap"></div>
+            <div id="zipmap">
+                <div class="leaflet-control-container">
+                    <div class="leaflet-top leaflet-right">
+                        <div class="leaflet-bar leaflet-control">
+                            <a id="play-zipmap"
+                               class="leaflet-control-expand"
+                               href="#"
+                               role="button"
+                               title="Pause the sign-ups">⏸</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         {% endif %}
     </div>
     {% if not bafs_is_live %}
@@ -515,13 +527,23 @@
 {% block foot %}
     <script>
   $(() => {
+    // Someone who has asked their machine to stop things moving gets maps
+    // that sit still: every sign-up, and the most recent rides.
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     {% if zip_points %}
-        create_zip_map('zipmap', {{ zip_points|tojson }});
+        const zipmap = still
+            ? create_zip_map('zipmap', {{ zip_points|tojson }})
+            : animate_zip_map('zipmap', {{ zip_points|tojson }});
+        if (still) $('#play-zipmap').hide();
+        $('#play-zipmap').click(e => {
+            e.preventDefault();
+            const playing = zipmap.playing();
+            if (playing) zipmap.pause(); else zipmap.play();
+            $('#play-zipmap').text(playing ? '▶' : '⏸')
+                             .attr('title', playing ? 'Play the sign-ups' : 'Pause the sign-ups');
+        });
     {% endif %}
     if ($('#map').length) {
-        // Someone who has asked their machine to stop things moving gets the
-        // map the way it has always been: the most recent rides, sitting still.
-        const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         const map = still
             ? create_ride_map('map', '/api/all/trackmap.json')
             : animate_ride_map('map', '/api/all/trackmap/pages.json');

@@ -245,7 +245,7 @@ def index():
         team_count=len(config.COMPETITION_TEAMS),
         contestant_count=contestant_count,
         registered_count=int(registered["contestants"]),
-        zip_points=[] if after_competition_start else registered_points(),
+        zip_points=None if after_competition_start else registered_points(),
         friend_count=int(registered["friends"]),
         total_rides=total_rides,
         total_hours=total_hours,
