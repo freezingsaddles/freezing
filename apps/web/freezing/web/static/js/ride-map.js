@@ -25,13 +25,54 @@ function add_basemap(map) {
 
 // Where riders live, as [lat, lon, riders] at zip code centres: a haze, not
 // pins, and never close enough to look like a street.
-function create_zip_map(id, points) {
+// Every rider's place at once, the way the sign-ups end.
+function create_zip_map(id, signups) {
+  return zip_map(id, signups, all_signups(signups));
+}
+
+// The sign-ups played back in order, at a pace that does not depend on when
+// anyone registered, then held a while and played again.
+const ZIP_PLAY_SECONDS = 10, ZIP_HOLD_SECONDS = 4;
+
+function animate_zip_map(id, signups) {
+  const map = zip_map(id, signups, signups.start.slice());
+  const {heat} = map;
+  const {start, then} = signups;
+  let clock = 0, shown = 0, previous = 0, frame = 0;
+
+  function tick(now) {
+    if (previous) clock += Math.min(now - previous, 250) / 1000;
+    previous = now;
+    if (clock > ZIP_PLAY_SECONDS + ZIP_HOLD_SECONDS) {
+      clock = shown = 0;
+      heat.setLatLngs(start.slice());
+    }
+    const due = Math.min(then.length, Math.floor(then.length * clock / ZIP_PLAY_SECONDS));
+    for (; shown < due; shown++) heat.addLatLng([...then[shown], 1]);
+    frame = requestAnimationFrame(tick);
+  }
+
+  map.playing = () => !!frame;
+  map.play = () => { if (!frame) frame = requestAnimationFrame(tick); };
+  map.pause = () => { cancelAnimationFrame(frame); frame = previous = 0; };
+  map.play();
+  return map;
+}
+
+function all_signups({start, then}) {
+  return start.concat(then.map(([lat, lon]) => [lat, lon, 1]));
+}
+
+function zip_map(id, signups, points) {
   const map = L.map(id, {gestureHandling: true, minZoom: 6, maxZoom: 11}).setView([38.9072, -77.0369], 10);
   add_basemap(map);
   map.attributionControl.addAttribution('Zip codes &copy; <a href="https://www.geonames.org/">GeoNames</a>');
-  const most = Math.max(...points.map(p => p[2]));
+  // Scaled to the busiest place at the end, so the map warms up as it fills.
+  const riders = new Map();
+  for (const [lat, lon, n] of all_signups(signups)) riders.set(`${lat},${lon}`, (riders.get(`${lat},${lon}`) ?? 0) + n);
+  const most = Math.max(...riders.values());
   // Full strength at every zoom: the layer otherwise fades points out below its maxZoom.
-  L.heatLayer(points, {radius: 30, blur: 25, max: most, minOpacity: .3, maxZoom: map.getMinZoom()}).addTo(map);
+  map.heat = L.heatLayer(points, {radius: 30, blur: 25, max: most, minOpacity: .3, maxZoom: map.getMinZoom()}).addTo(map);
   return map;
 }
 

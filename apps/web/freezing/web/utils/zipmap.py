@@ -25,24 +25,30 @@ def _centroids() -> dict[str, tuple[float, float]]:
         }
 
 
-def registered_points() -> list[tuple[float, float, int]]:
-    """Each place registered contestants live, and how many, by zip code centre.
+def registered_points() -> dict | None:
+    """Where registered contestants live, by zip code centre, in the order they registered.
 
-    Empty while fewer than MINIMUM can be placed. No zip code leaves here.
+    ``start`` is the first MINIMUM riders who can be placed, as places and counts in no
+    particular order; ``then`` is each later rider's place, one at a time. None while
+    fewer than MINIMUM can be placed. No zip code or registration time leaves here.
     """
     q = text("""
-             select left(trim(R.zip_code), 5) as zip, count(*) as riders
+             select left(trim(R.zip_code), 5) as zip
              from registrations R
              join athletes A on A.id = R.athlete_id
              where A.registered and not coalesce(A.friend, false)
-             group by left(trim(R.zip_code), 5)
+             order by R.registered_at, R.athlete_id
              """)
     centroids = _centroids()
-    places: Counter[tuple[float, float]] = Counter()
-    for row in meta.scoped_session().execute(q):
-        place = centroids.get(row.zip)
-        if place:
-            places[place] += row.riders
-    if places.total() < MINIMUM:
-        return []
-    return [(lat, lon, riders) for (lat, lon), riders in sorted(places.items())]
+    placed = [
+        centroids[row.zip]
+        for row in meta.scoped_session().execute(q)
+        if row.zip in centroids
+    ]
+    if len(placed) < MINIMUM:
+        return None
+    start = Counter(placed[:MINIMUM])
+    return {
+        "start": [(lat, lon, riders) for (lat, lon), riders in sorted(start.items())],
+        "then": [(lat, lon) for lat, lon in placed[MINIMUM:]],
+    }
